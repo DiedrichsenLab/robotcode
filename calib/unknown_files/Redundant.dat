@@ -1,0 +1,30 @@
+0       // Board for Shoulder Encoder
+3       // Channel for Shoulder Encoder: 0B
+1       // Direction for Shoulder Encoder
+0       // Board for Elbow Encoder 
+4       // Channel for Elbow Encoder: 1B
+1       // Direction for Elbow Encoder
+0       // Board for Wrist Encoder 
+5       // Channel for Wrist Encoder: 2B
+1       // Direction for Wrist Encoder
+0       // Board for DA Output to the motors
+0	  // Offset for the DA channels for motors 
+0       // Offset for Shoulder encoder [radians]
+0       // Offset for Elbow Enconder [radians]
+0       // Offset for Wrist Enconder [radians]
+26.25   // Upper arm left [cm]
+26.25   // Upper arm Right [cm]
+45.00   // Lower arm Left [cm]
+45.00   // Lower arm Right [cm]
+30.00   // Robot distance [cm]
+0.2         // Length of wrist[m]
+0.0700      // Tranformation Nm to V at shoulder
+0.0700      // Tranformation Nm to V at elbow
+0.0700      // Tranformation Nm to V at wrist
+0		// Angle of ATI transducer to arm 
+0 		// Transformation (x-shift) from Local to Global coordinates
+0 		// Transformation (y-shift) from Local to Global coordinates
+0 		// Transformation (rotation 1,1) from Local to Global coordinates
+0 		// Transformation (rotation 1,2) from Local to Global coordinates
+0 		// Transformation (rotation 2,1) from Local to Global coordinates
+0		// Transformation (rotation 2,2) from Local to Global coordinates

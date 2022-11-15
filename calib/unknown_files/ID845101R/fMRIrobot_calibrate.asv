@@ -1,0 +1,23 @@
+function fMRIrobot_calibrate(calibfile,configfile,newconfig)
+CONST_abs=1638400	
+D=dload(calibfile); 
+p=textread(configfile,'%f','commentstyle','c++');
+P.offset=p(6:7);
+P.jointLength=p(8:9);
+P.linkLength=p(10:11); 
+pred=fMRIrobot_model([P.offset;0;0;0]);
+
+
+function pred=fMRIrobot_model(x,D,P); 
+    P.offset=x(1:2);
+    trans=x(3:4);
+    rot=x(5); 
+	theta(:,1)= -(D.CntSh./CONST_abs*2*pi-offset(1));      //convert values to radian
+	theta(:,2) = D.CntEl./CONST_abs*2*Pi-offset(2));
+
+    local.x =  jointLength(1)*sin(theta(:,1)) - jointLength(2)*cos(theta(:,2));
+	local.y =  jointLength(1)*cos(theta(:,1)) + jointLength(2)*sin(theta(:,2));
+
+    for i=1:length(pred.x)
+        Pred=AFromLocal*[local.x local.y]'
+	pred=AFromLocal*positionLocal+vFromLocal; 

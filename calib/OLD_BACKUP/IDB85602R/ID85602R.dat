@@ -1,0 +1,14 @@
+0       // Board for Shoulder Encoder
+4       // Channel for Shoulder Encoder: 1B
+-1       // Direction for Shoulder Encoder
+0       // Board for Elbow Encoder 
+5       // Channel for Elbow Encoder: 2B
+1       // Direction for Elbow Encoder
+0       // Board for DA Output to the motors 
+2	  // Offset in channels for the motors 
+-0.1195       // Offset for Shoulder encoder [radians]
+0.3104      // Offset for Elbow Enconder [radians]
+0.5218       // Length of upper arm length [m]
+0.5122       // Length of lower arm [m]
+0.0700        // Tranformation Nm to V at shoulder
+0.0700        // Tranformation Nm to V at elbow

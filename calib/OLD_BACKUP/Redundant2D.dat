@@ -1,0 +1,32 @@
+0       	//1 Board for Shoulder Encoder
+3      		//2 Channel for Shoulder Encoder: 0B
+-1       	//3 Direction for Shoulder Encoder
+0       	//4 Board for Shoulder Encoder 
+4       	//5 Channel for Shoulder Encoder: 1B
+-1       	//6 Direction for Shoulder Encoder
+0       	//7 Board for Wrist Encoder 
+5       	//8 Channel for Wrist Encoder: 2B
+1       	//9 Direction for Wrist Encoder
+0       	//10 Board for DA Output to the motors
+0	  	//11 Offset for the DA channels for motors 
+25627.8971      //12 Offset for right Shoulder encoder [count]
+5090.1459       //13 Offset for left Shoulder Enconder [count]
+2640     	//14 Offset for Wrist Enconder [count]
+26.25   	//15 Upper arm left [cm]
+26.25   	//16 Upper arm Right [cm]
+45.00   	//17 Lower arm Left [cm]
+45.00   	//18 Lower arm Right [cm]
+30.00   	//19 Robot distance [cm]
+0.2         	//20 Length of wrist[m]
+-0.871		//21 Tranformation Nm to V at right Shoulder 
+-0.871      	//22 Tranformation Nm to V at left Shoulder 
+2.66      	//23 Tranformation Nm to V at wrist
+28		//24 Angle of ATI transducer to arm [Deg]
+5		//25 Shoulder safe volt limit
+5		//26 Wrist safe volt limit
+90		//27 Right Shoulder -ive Limit Angle [Deg]
+190		//28 Right Shoulder +ive Limit Angle [Deg]
+-10		//29 Left Shoulder -ive Limit Angle [Deg]
+90		//30 Left Shoulder +ive Limit Angle [Deg]
+-120		//31 Wrist -ive Limit Angle [Deg]
+120		//32 Wrist +ive Limit Angle [Deg]

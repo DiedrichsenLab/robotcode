@@ -1,0 +1,9 @@
+2	// Number of Boards 
+4	// PCI bus board 0 
+5	// Slot board 0 (Device number) 
+4	// PCI bus board 1 
+7	// Slot board 1 (Device number) 
+0	// Board for interrupt time (-1 for none) 
+0	// Board for timer 
+1	// Channel for timer low word Xa 
+4 	// Channel for timer high word  Xb (-1 for none)  

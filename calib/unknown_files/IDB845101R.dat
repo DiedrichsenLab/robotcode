@@ -1,0 +1,15 @@
+0       // Board for Shoulder Encoder
+2       // Channel for Shoulder Encoder
+-1       // Direction for Shoulder Encoder
+0       // Board for Elbow Encoder 
+5       // Channel for Elbow Encoder
+-1       // Direction for Elbow Encoder
+0       // Board for DA Output to the valves
+-1.5958       // Offset for Shoulder encoder [radians]
+1.7727      // Offset for Elbow Enconder [radians]
+-51.9333       // Length of upper arm [cm]
+51.6636       // Length of lower arm [cm]
+12.7000       // Link Length for Piston, Shoulder [cm]
+12.4500       // Link Length for Piston, Elbow [cm]
+0.0700        // Tranformation N to V at pistons 
+0.0150       // Time constant for the pistons [ms]

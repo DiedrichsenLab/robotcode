@@ -1,0 +1,26 @@
+fMRI Robot (left arm)
+	3 April 2014
+		re-calibration left arm (subject perspective) => fMRIrobotL_april2014.dat 
+		documentation of the calib routine (Joern)
+		left arm needs to be rotated in C++ code
+	28 March 2014
+		Robot suddenly lost calibration. Shoulder encoder seems to have flipped direction.
+		Running calib matlab scripts gives bizarre fitting errors therefore I just manually set
+		the calib file parameters (encoder direction/encoder offsets) to approximate values and that
+		appears to work on-screen despite giving weird fitting errors. - Peter Zatka-Haas
+	nEW CALIBRATION aPRIL 2014
+	calibpointsl.txt	
+	Board oriented out of the perspective of subject 
+
+fMRI Robot (right arm)
+	2012
+		One of the carbon fibre rod's connection to the plastic holder came loose (glue snapped) therefore
+		we reglued this joint, ensuring that the upper arm forms a parallelogram. We then recalibrated and 		it worked fine however the calibration routine only worked when tinkering with the encoder
+		directions in the starting .dat file - Peter Zatka-Haas
+
+
+
+
+Dual-Arm Robot (B05)
+	No entries...
+

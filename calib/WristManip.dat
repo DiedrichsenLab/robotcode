@@ -1,0 +1,12 @@
+5			// output voltage
+24			// Left Horizontal Encoder Channel (in terminal block)
+26			// Left Vertical Encoder Channel (in terminal block)
+28			// Right Horizontal Encoder Channel (in terminal block)
+30			// Right Vertical Encoder Channel (in terminal block)
+0			// board (usually 0)
+0			// initial angle x (same for both devices, they are centered)
+0			// initial angle y (same for both devices, they are centered)
+100			// Kalman Filter for Angles: aceleration noise variance
+0.01		// Kalman Filter for Angles: angle noise variance	
+0			// Transformation (angles to position) type: 0 is LINEAR, 1 is SINE, 2 is TANGENT
+1			// angles (0) or angles filtered (1)

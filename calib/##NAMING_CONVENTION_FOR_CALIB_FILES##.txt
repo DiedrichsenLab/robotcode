@@ -1,0 +1,8 @@
+################# NAMING CONVENTION ################
+
+
+PLEASE keep all calibration files named consistently as:
+
+device_amplifier_(HAND)_date
+
+e.g. flatbox1_highforce_RIGHT_07-Jun-2017.txt

@@ -1,0 +1,21 @@
+0       // Board for Shoulder Encoder
+1       // Channel for Shoulder Encoder
+-1       // Direction for Shoulder Encoder
+0       // Board for Elbow Encoder 
+2       // Channel for Elbow Encoder
+1       // Direction for Elbow Encoder
+0       // Board for DA Output to the motors
+0       // Offset for DA Output channel for motors
+-0.7860       // Offset for Shoulder encoder [radians]
+-0.7168      // Offset for Elbow Enconder [radians]
+40.6800       // Length of upper arm [m]
+40.6800       // Length of lower arm [m]
+-0.0044        // Tranformation NM to V at Shoulder
+0.0048       // Tranformation NM to V at Elbow
+1.4259        // Rotation of the frame of ATI to forearm 
+-20.1800        // vFromLocal1
+49.1400       // vFromLocal2
+-1.0000        // AFromLocal11
+0.0000       // AFromLocal12
+0.0000        // AFromLocal21
+-1.0000       // AFromLocal22

@@ -1,0 +1,14 @@
+fMRI robots:
+IDB845101R: Original right-arm fMRI robot 
+IDB845102L: New left-arm fMRI robot 
+	IDB845102R???
+IDB845103R: Bimingham right arm
+IDB845104R: Nottingham right arm 
+IDB845105L: Nottingham left arm 
+
+Dual-arm robots:
+IDB85601L: Dual arm robot Left
+IDB85602R: Dual arm robot right 
+ 
+
+Please note: Many of the files had been mistakenly named 'ID845...' etc not 'IDB845...' Please make sure to include the 'B'.

@@ -1,4 +1,0 @@
-﻿  Experiment.cpp
-C:\robotcode\source\Experiment.cpp(264,16): warning C4018: '<': signed/unsigned mismatch
-C:\robotcode\source\Experiment.cpp(294,17): warning C4018: '<': signed/unsigned mismatch
-  efc1.vcxproj -> C:\robotcode\projects\ExtFlexChord\Debug\efc1.exe

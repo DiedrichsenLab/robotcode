@@ -84,7 +84,7 @@ void S626sManager::init(string paramfile) {
 	int i; 
 	string s; 
 	ifstream inputFile(paramfile.c_str(),ios::in);
-	if(inputFile ==0){
+	if(inputFile.fail()){ //Ali: if(inputFile ==0) -> if(inputFile.fail())
 		cout<<"s626sManager.init: Parameterfile could not be found\n";
 		exit(-1); 
 	} else{
@@ -343,7 +343,7 @@ int S626sManager::registerAD(int c,int r,int b){
 		cout << "s626error: Channel already in use:"<< b << " " <<c<<endl; 
 		exit(-1);
 	} 
-	if (numAD[b]>15) { 
+	if (numAD[b]>15) {
 		cout<< "s626error: Too many channels registered"<<endl;
 	} 
 
@@ -351,10 +351,11 @@ int S626sManager::registerAD(int c,int r,int b){
 	if (r==5) { 
 		poll_list[b][numAD[b]] = ((c & ADC_CHANMASK) | ADC_RANGE_5V | ADC_EOPL); // Chan c, range.
 	} else { 
-		poll_list[b][numAD[b]] = ((c & ADC_CHANMASK) | ADC_RANGE_10V | ADC_EOPL); 
+		poll_list[b][numAD[b]] = ((c & ADC_CHANMASK) | ADC_RANGE_10V | ADC_EOPL);
 	} 
-	if (numAD>0) { 
-		poll_list[b][numAD[b]-1]=poll_list[b][numAD[b]-1] - ADC_EOPL;
+	if (numAD[b] >0) { // Ali: if (numAD>0) -> if (numAD[b]>0) ~ numAD>0 is always true because numAD is an array! So it might have been numAD[b] like others. 
+					  // I had to change this because u get a compile error otherwise. Also, I couldn't find any place that S626sManager::registerAD(int c,int r,int b) is used so it should be fine anyways.
+		poll_list[b][numAD[b] -1]=poll_list[b][numAD[b] -1] - ADC_EOPL;
 	} 
 	numAD[b]++;
 	S626_ResetADC( b, poll_list[b]);	

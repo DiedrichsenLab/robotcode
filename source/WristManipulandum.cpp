@@ -86,7 +86,7 @@ bool WristManipulandum::init(int kind, string filename) // TODO: input calib fil
 	string s; 
 	paramfilename=filename; 
 	ifstream inputFile(paramfilename.c_str(),ios::in);
-	if(inputFile ==0){
+	if(inputFile.fail()){
 		cout<<"WristManipulandum.init: Robot parameter file could not be opened\n";
 		exit(-1);
 	} else{

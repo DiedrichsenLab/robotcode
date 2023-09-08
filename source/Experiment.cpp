@@ -102,10 +102,10 @@ void onExit()
 {
 	gExp->onExit();
 
-	cout<<"Press Key when ready"<<endl;
-	getchar();
-	cout<<"Press Key when ready"<<endl;
-	getchar();
+	//cout<<"Press Key when ready"<<endl;
+	//getchar();
+	//cout<<"Press Key when ready"<<endl;
+	//getchar();
 
 	delete gExp;
 }
@@ -199,6 +199,14 @@ void Experiment::redirectIOToConsole()
 	FILE *fp;
 	// allocate a console for this app
 	AllocConsole();
+	
+	// ============================================================ Ali
+	freopen("CONIN$", "r", stdin);
+	freopen("CONOUT$", "w", stdout);
+	freopen("CONOUT$", "w", stderr);
+	std::cout << "Hello\n"; //you should see this on the console
+	// ============================================================
+	
 
 	// set the screen buffer to be big enough to let us scroll text
 	GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE),&coninfo);
@@ -459,9 +467,11 @@ void Block::control(){
 		} 
 		break;
 	case SAVING:
+		
 		this->giveFeedback();			// Call give feedback routine 
 		this->save();
-		TextDisplay::keyPressed=0;
+		
+		//TextDisplay::keyPressed=0;
 		state=FEEDBACK;
 		break; 
 	case FEEDBACK: 

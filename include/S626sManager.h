@@ -10,7 +10,7 @@
 #ifndef S626sManager_H_
 #define S626sManager_H_
 
-#define NUMBOARDS 2												///<Maximal numbers of boards 
+#define NUMBOARDS 1												///<Maximal numbers of boards 
 #include "WIN626.h" 
 #include <string> 
 #include <iostream>
@@ -48,8 +48,8 @@ public:
 	int registerAD(int c,int range,int board=0);				 ///< puts an AD-channel on the poll-list 
 	void updateAD(int board=0);									 ///< pulls all registered AD channels 
 	void outDA(int channel,double volts,int board=0);			 ///< Put voltage on outDA 
-	void outDIO(int channel,short state,int board=0);				 ///< Put state(1/0) on DIO
-	unsigned int S626sManager::readDIO(int channel, int board);			///< read DIO
+	void outDIO(int channel,short state,int board=0);			///< Put state(1/0) on DIO
+	unsigned int readDIO(int channel, int board);				///< read DIO - Ali: unsigned int S626sManager::readDIO(int channel, int board); to unsigned int readDIO(int channel, int board);
 private: 
 	double updateRate;												 ///< update rate in ms
 	int ErrCode;

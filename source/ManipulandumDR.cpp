@@ -79,7 +79,7 @@ void ManipulandumDR::init(string paramfile)
 	string s; 
 	paramfilename=paramfile; 
 	ifstream inputFile(paramfilename.c_str(),ios::in);
-	if(inputFile ==0){
+	if(inputFile.fail()){
 		cout<<"ManipulandumDR.init: Robot parameter file could not be opened\n";
 		exit(-1);
 	} else{

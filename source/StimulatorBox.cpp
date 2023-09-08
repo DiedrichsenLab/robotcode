@@ -125,7 +125,7 @@ bool StimulatorBox::init(int kind, string filename)
 	//----set the vots2foce factors 
 	ifstream inputFile(filename.c_str(),ios::in);
 	
-	if(inputFile ==0){
+	if(inputFile.fail()){ //Ali: if(inputFile ==0) -> if(inputFile.fail())
 		cout<<"Couldn't open file: " <<filename<<endl;
 		exit(-1);
 	} else{
@@ -204,7 +204,7 @@ void StimulatorBox::readSeq(string filename,int numseq){				/// read stimultion 
 		cout<<"StimulatorBox::readSeq: number seqeuence not in range"<<endl;
 		exit(-1); 
 	} 
-	if(inputFile ==0){
+	if (inputFile.fail()) { //Ali: if(inputFile ==0) -> if(inputFile.fail())
 		cout<<"Couldn't open file: " <<filename<<endl;
 		exit(-1);
 	} else{

@@ -1,0 +1,3 @@
+﻿  BimanualWrist_MR.cpp
+C:\robotcode\projects\BimanualWrist_MR_ported\BimanualWrist_MR_ported\BimanualWrist_MR.cpp(572,19): warning C4477: 'sprintf' : format string '%d' requires an argument of type 'int', but variadic argument 1 has type 'double'
+  BimanualWrist_MR_ported.vcxproj -> C:\robotcode\projects\BimanualWrist_MR_ported\Debug\BimanualWrist_MR_ported.exe

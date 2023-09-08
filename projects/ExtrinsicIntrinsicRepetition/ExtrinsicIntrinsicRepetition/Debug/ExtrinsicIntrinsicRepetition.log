@@ -1,0 +1,5 @@
+﻿  eir2.cpp
+C:\robotcode\projects\ExtrinsicIntrinsicRepetition\ExtrinsicIntrinsicRepetition\eir2.cpp(362,9): warning C4101: 'ER': unreferenced local variable
+C:\robotcode\projects\ExtrinsicIntrinsicRepetition\ExtrinsicIntrinsicRepetition\eir2.cpp(646,179): warning C4474: 'sprintf' : too many arguments passed for format string
+C:\robotcode\projects\ExtrinsicIntrinsicRepetition\ExtrinsicIntrinsicRepetition\eir2.cpp(646,179): message : placeholders and their parameters expect 4 variadic arguments, but 5 were provided
+  ExtrinsicIntrinsicRepetition.vcxproj -> C:\robotcode\projects\ExtrinsicIntrinsicRepetition\Debug\ExtrinsicIntrinsicRepetition.exe

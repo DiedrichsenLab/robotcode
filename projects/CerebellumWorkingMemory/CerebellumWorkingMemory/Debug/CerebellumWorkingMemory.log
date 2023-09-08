@@ -1,0 +1,4 @@
+﻿  S626sManager.cpp
+C:\robotcode\source\S626sManager.cpp(262,47): warning C4244: 'argument': conversion from 'double' to 'unsigned long', possible loss of data
+  WIN626.C
+  CerebellumWorkingMemory.vcxproj -> C:\robotcode\projects\CerebellumWorkingMemory\Debug\CerebellumWorkingMemory.exe

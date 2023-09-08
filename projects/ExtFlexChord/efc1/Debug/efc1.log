@@ -1,8 +1,4 @@
-﻿  efc1.cpp
-C:\robotcode\include\StimulatorBox.h(11,1): warning C4005: 'NUMFINGERS': macro redefinition
-C:\robotcode\projects\ExtFlexChord\efc1\efc1.h(24,1): message : see previous definition of 'NUMFINGERS'
-C:\robotcode\projects\ExtFlexChord\efc1\efc1.cpp(198,6): warning C4101: 'msg': unreferenced local variable
-C:\robotcode\projects\ExtFlexChord\efc1\efc1.cpp(444,9): warning C4101: 'j': unreferenced local variable
-C:\robotcode\projects\ExtFlexChord\efc1\efc1.cpp(444,6): warning C4101: 'i': unreferenced local variable
-C:\robotcode\projects\ExtFlexChord\efc1\efc1.cpp(499,7): warning C4101: 'header': unreferenced local variable
+﻿  Experiment.cpp
+C:\robotcode\source\Experiment.cpp(264,16): warning C4018: '<': signed/unsigned mismatch
+C:\robotcode\source\Experiment.cpp(294,17): warning C4018: '<': signed/unsigned mismatch
   efc1.vcxproj -> C:\robotcode\projects\ExtFlexChord\Debug\efc1.exe

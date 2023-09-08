@@ -249,3 +249,5 @@ paket-files/
 *.sln.iml
 *.vsidx
 *.db
+*.db
+projects/ExtFlexChord/.vs/ExtFlexChord/v17/.suo

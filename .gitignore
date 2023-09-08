@@ -1,6 +1,5 @@
 
 data/
-/.vs
 *.tgt
 *.xlsx
 *.csv

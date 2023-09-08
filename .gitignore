@@ -1,3 +1,6 @@
 
 data/
 *.tgt
+*.xlsx
+*.csv
+projects/ExtFlexChord/efc1/target/targetExcel/.DS_Store

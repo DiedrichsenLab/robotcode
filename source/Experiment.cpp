@@ -422,7 +422,7 @@ void Block::save(){
 /// After the block it calls give_feedback and save. 
 /// \sa start() give_feedback() save() end() 
 /////////////////////////////////////////////////////////
-void Block::control(){
+void Block::control(){ 
 	
 	/// check if user interrupted current block 
 	if (TextDisplay::keyPressed && state == RUNNING) { 

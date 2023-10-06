@@ -15,6 +15,7 @@
 #ifndef DEF_TEXTDISP
 #define DEF_TEXTDISP
 #include <stdlib.h> 
+#include <GL/glut.h>
 #if defined(WIN32) || defined(linux)
 #include <GL/glut.h>
 #elif defined(__APPLE__)

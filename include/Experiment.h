@@ -58,6 +58,7 @@ public:
 	virtual void updateTextDisplay(){}			///< Update the text display (call from Text display)
 	virtual void copyHaptics(){}				///< Copy haptic state for thread safe copying 
 	virtual void record(){}						///< recording of data frame 
+	virtual void force(int finger) = 0;							/// record force of individual fingers (e.g. max force) added by Marco
 };
 
 

@@ -21,6 +21,9 @@
     <ClCompile Include="..\..\..\source\Experiment.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\source\PneumaticBox4F.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\source\S626sManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -43,9 +46,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\source\WIN626.C">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\source\PneumaticBox4F.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -80,7 +80,7 @@
     <ClInclude Include="..\..\..\include\Win626.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\include\PneumaticBox4F.h">
+    <ClInclude Include="..\..\..\include\PneumaticBox.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

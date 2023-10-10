@@ -216,34 +216,34 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 		double volts[5] = { 0,0,0,0,0 };
 		int n, j;
 		for (n = 0; n < 100; n++) {
-				for (j = 0; j < 5; j++) {
-					// Here it reads baseline values, I added baseline_correction 
-					// so the calibrated values are outside the baseline area
-					volts[j] += gBox.getVolts(j); 
-				}
+			for (j = 0; j < 5; j++) {
+				// Here it reads baseline values, I added baseline_correction 
+				// so the calibrated values are outside the baseline area
+				volts[j] += gBox.getVolts(j);
+			}
 			InvalidateRect(tDisp.windowHnd, NULL, TRUE);
 			UpdateWindow(tDisp.windowHnd);
 			Sleep(10);
 		}
 		cout << endl;
-			for (j = 0; j < 5; j++) {
-				volts[j] /= 100;
-				cout << volts[j] << "  " << endl;
-			}
-			gBox.zeroForce(volts);
+		for (j = 0; j < 5; j++) {
+			volts[j] /= 100;
+			cout << volts[j] << "  " << endl;
+		}
+		gBox.zeroForce(volts);
 		tDisp.unlock();
 	}
 
 	// Compute Max Force of each finger
 	else if (arguments[0] == "maxForce") {
-			if (numArgs != 2) {
-				tDisp.print("USAGE: maxForce finger->1 to 5, exit->-1)");
-			}
-		
-			else {
-				int finger = std::stoi(arguments[1]);
-				theTrial->force(finger);
-			}	
+		if (numArgs != 2) {
+			tDisp.print("USAGE: maxForce finger->1 to 5, exit->-1)");
+		}
+
+		else {
+			int finger = std::stoi(arguments[1]);
+			theTrial->force(finger);
+		}
 	}
 
 	//  Valves Command: set voltage channels directly 
@@ -640,7 +640,7 @@ void MyTrial::updateTextDisplay() {
 	// display max forces
 	tDisp.setText("Max forces", 10, 0);
 	sprintf(buffer, "maxF1: %2.2f   maxF2: %2.2f   maxF3: %2.2f   maxF4: %2.2f   maxF5: %2.2f", maxForce[0], maxForce[1], maxForce[2],
-	maxForce[3], maxForce[4]);
+		maxForce[3], maxForce[4]);
 	tDisp.setText(buffer, 11, 0);
 
 	// display forces
@@ -919,6 +919,7 @@ void MyTrial::control() {
 		gs.showMaxForces = 0;
 		gs.showTimer5 = 0;
 		// gs.showForceBars = 1;
+		//gBox.setVolts(-5.0, -5.0, -5.0, -5.0, -5.0);
 		gs.rewardTrial = 0;
 		trialPoint = 0;
 		gs.planError = 0;
@@ -934,8 +935,8 @@ void MyTrial::control() {
 			}
 		}
 		break;
-	
-	case MAX_FORCE: 
+
+	case MAX_FORCE:
 		gs.showLines = 0;
 		gs.showForces = 0;
 		gs.showMaxForces = 1;
@@ -1081,7 +1082,7 @@ void MyTrial::control() {
 
 		}
 
-		gBox.setVolts(0, 
+		gBox.setVolts(0,
 			sF[1],
 			0,
 			sF[3],

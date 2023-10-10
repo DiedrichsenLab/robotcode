@@ -172,4 +172,5 @@ public:
 };
 
 void SetDacVoltage(WORD channel, DOUBLE volts);
-void SetDIOState(WORD group, WORD states); 
+void SetDIOState(WORD group, WORD states);
+

@@ -132,18 +132,29 @@ public:
 	virtual bool isFinished();					// Trial Finished ? 
 	virtual void writeDat(ostream& out);		// has to be implemented 
 	virtual void writeMov(ostream& out);		// Trial output to data file 
-	virtual void force(int finger);						// Force exerted by individual fingers (for Max force calculation)
+	//virtual void force(int finger);						// Force exerted by individual fingers (for Max force calculation)
 	friend  void MyBlock::giveFeedback();
-private:
-	TrialState state;						///< State of the Trial 
 
+
+	//virtual void force(int finger) {
+	//			if (finger == -1) {
+	//				state = WAIT_TRIAL;
+	//			}
+	//			else {
+	//				state = MAX_FORCE;
+	//				forceFinger = finger;
+	//			}
+	//		}
+
+private:
+	int forceFinger;								///< finger for max force calculation
+	TrialState state;						///< State of the Trial 
 	int subNum;								///< Subjet number
 	int trialNum;							///< trial number
 	int planTime;							///< Duration between cue onset (visual stimulus) and go onset
 	int execMaxTime;						///< Maximum duration for execution of the chord
 	int feedbackTime;						///< The duration between giveFeedback and giveScore
 	int iti;								///< inter trial interval
-	int forceFinger;								///< finger for max force calculation
 	//double Random;							///< random number
 	string trialLabel;						///< Condition label
 	string chordID;							///< Chord identifier. 0: neutral , 1: flexion , 2: extension
@@ -170,6 +181,10 @@ public:
 	virtual bool parseCommand(string args[], int numArgs);
 
 };
+
+
+
+
 
 void SetDacVoltage(WORD channel, DOUBLE volts);
 void SetDIOState(WORD group, WORD states);

@@ -26,6 +26,8 @@ Trial* currentTrial;			///< Pointer to current Trial
 bool gTimerFlagFirst = 0;
 bool startTriggerEMG = 0;       // Ali added this: experimental - under construction
 float emgTrigVolt = 2;	        // Ali added this: experimental - under construction
+bool maxF = 0;
+int finger = 0;
 
 
 ///< Basic imaging parameters
@@ -187,6 +189,7 @@ void MyExperiment::control(void) { // here is B
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
+		
 		theBlock->control();
 		currentTrial->copyHaptics();		// Thread save copy 
 		//cout << gTimer[4] << " ";
@@ -208,6 +211,7 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 	int b, i;
 	float arg[4];
 	MSG msg;
+
 
 	/// Zero the force of the two fingerBox
 	if (arguments[0] == "zeroF") {
@@ -235,14 +239,20 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 	}
 
 	// Compute Max Force of each finger
-	else if (arguments[0] == "maxForce") {
+	else if (arguments[0] == "maxF") {
 		if (numArgs != 2) {
-			tDisp.print("USAGE: maxForce finger->1 to 5, exit->-1)");
+			tDisp.print("USAGE: maxF finger> 0 (thumb) to 4 (pinkie), exit>-1)");
+		}
+
+		else if (arguments[1] == "-1") {
+			tDisp.print("Exit maxF");
+			maxF = 0;
+			//theTrial->MyTri();
 		}
 
 		else {
-			int finger = std::stoi(arguments[1]);
-			theTrial->force(finger);
+			finger = std::stoi(arguments[1]);
+			maxF = 1;
 		}
 	}
 
@@ -460,20 +470,20 @@ void MyBlock::giveFeedback() {
 	gNumCorr = n;
 	gNumWrong = trialNum - n;
 
-	//gScreen.setColor(Screen::white);
-	sprintf(buffer, "End of Block");
-	gs.line[0] = buffer;
-	gs.lineColor[0] = 1;
+	////gScreen.setColor(Screen::white);
+	//sprintf(buffer, "End of Block");
+	//gs.line[0] = buffer;
+	//gs.lineColor[0] = 1;
 
-	sprintf(buffer, "Perc Correct = %d/%d", gNumCorr, gNumCorr + gNumWrong);
-	gs.line[1] = buffer;
-	gs.lineColor[1] = 1;
+	//sprintf(buffer, "Perc Correct = %d/%d", gNumCorr, gNumCorr + gNumWrong);
+	//gs.line[1] = buffer;
+	//gs.lineColor[1] = 1;
 
-	if (n > 2) {
-		sprintf(buffer, "Med RT = %.0f ms", medianRT);
-		gs.line[2] = buffer;
-		gs.lineColor[2] = 1;
-	}
+	//if (n > 2) {
+	//	sprintf(buffer, "Med RT = %.0f ms", medianRT);
+	//	gs.line[2] = buffer;
+	//	gs.lineColor[2] = 1;
+	//}
 }
 
 ///////////////////////////////////////////////////////////////
@@ -491,15 +501,15 @@ MyTrial::MyTrial() {
 	RT = 0;
 }
 
-void MyTrial::force(int finger) {
-	if (finger == -1) {
-		state = WAIT_TRIAL;
-	}
-	else {
-		state = MAX_FORCE;
-		forceFinger = finger;
-	}
-}
+//void MyTrial::force(int finger) {
+//	if (finger == -1) {
+//		state = WAIT_TRIAL;
+//	}
+//	else {
+//		state = MAX_FORCE;
+//		forceFinger = finger;
+//	}
+//}
 
 ///////////////////////////////////////////////////////////////
 // Read - Done
@@ -649,6 +659,11 @@ void MyTrial::updateTextDisplay() {
 		gBox.getVolts(3), gBox.getVolts(4));
 	tDisp.setText(buffer, 14, 0);
 
+	// display maxF
+	sprintf(buffer, "maxF: %d", maxF);
+	tDisp.setText(buffer, 13, 1);
+
+
 	//// differential forces
 	//for (i = 0; i < 5; i++) {
 	//	diffForce[i] = gBox.getForce(i) - gBox.getForce(i);
@@ -678,197 +693,204 @@ void MyTrial::updateGraphics(int what) {
 		gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));
 	}
 
-	if (gs.showTarget == 1) { // show target squares
-		for (i = 0; i < 5; i++) {
-			tmpChord = chordID[i];
-			x1 = ((i * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) + FINGER_SPACING;
-			x2 = (((i + 1) * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) - FINGER_SPACING;
-			xPos = (x1 + x2) * 0.5;
-			yPos = (FLX_TOP_Y1 + FLX_BOT_Y1) * 0.5 + VERT_SHIFT;
-			xSize = x2 - x1;
-			ySize = FLX_TOP_Y1 - FLX_BOT_Y1;
+	if (maxF == 0) {
 
-			// 0% probability
-			if (tmpChord == '0') {
 
-			}
-			// 25% probability
-			else if (tmpChord == '1') {
-				//yPos = (FLX_TOP_Y1 + FLX_BOT_Y1) * 0.5 + VERT_SHIFT;
-				if (gs.fingerCorrectGraphic[i]) {
-					gScreen.setColor(Screen::green);
-					gScreen.drawBox(xSize, ySize, xPos, yPos);
-				}
-				else {
-					gScreen.setColor(myColor[7]);
-					gScreen.drawBox(xSize, ySize, xPos, yPos);
-				}
-			}
-			// 75% probability
-			else if (tmpChord == '2') {
+		if (gs.showTarget == 1) { // show target squares
+			for (i = 0; i < 5; i++) {
+				tmpChord = chordID[i];
+				x1 = ((i * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) + FINGER_SPACING;
+				x2 = (((i + 1) * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) - FINGER_SPACING;
+				xPos = (x1 + x2) * 0.5;
 				yPos = (FLX_TOP_Y1 + FLX_BOT_Y1) * 0.5 + VERT_SHIFT;
-				if (gs.fingerCorrectGraphic[i]) {
-					gScreen.setColor(Screen::green);
-					gScreen.drawBox(xSize, ySize, xPos, yPos);
+				xSize = x2 - x1;
+				ySize = FLX_TOP_Y1 - FLX_BOT_Y1;
+
+				// 0% probability
+				if (tmpChord == '0') {
+
 				}
-				else {
-					gScreen.setColor(myColor[6]);
-					gScreen.drawBox(xSize, ySize, xPos, yPos);
+				// 25% probability
+				else if (tmpChord == '1') {
+					//yPos = (FLX_TOP_Y1 + FLX_BOT_Y1) * 0.5 + VERT_SHIFT;
+					if (gs.fingerCorrectGraphic[i]) {
+						gScreen.setColor(Screen::green);
+						gScreen.drawBox(xSize, ySize, xPos, yPos);
+					}
+					else {
+						gScreen.setColor(myColor[7]);
+						gScreen.drawBox(xSize, ySize, xPos, yPos);
+					}
+				}
+				// 75% probability
+				else if (tmpChord == '2') {
+					yPos = (FLX_TOP_Y1 + FLX_BOT_Y1) * 0.5 + VERT_SHIFT;
+					if (gs.fingerCorrectGraphic[i]) {
+						gScreen.setColor(Screen::green);
+						gScreen.drawBox(xSize, ySize, xPos, yPos);
+					}
+					else {
+						gScreen.setColor(myColor[6]);
+						gScreen.drawBox(xSize, ySize, xPos, yPos);
+					}
+				}
+				// 100% probability
+				else if (tmpChord == '3') {
+					yPos = (FLX_TOP_Y1 + FLX_BOT_Y1) * 0.5 + VERT_SHIFT;
+					if (gs.fingerCorrectGraphic[i]) {
+						gScreen.setColor(Screen::green);
+						gScreen.drawBox(xSize, ySize, xPos, yPos);
+					}
+					else {
+						gScreen.setColor(Screen::white);
+						gScreen.drawBox(xSize, ySize, xPos, yPos);
+					}
+				}
+
+				// 50% probability
+				else if (tmpChord == '4') {
+					yPos = (FLX_TOP_Y1 + FLX_BOT_Y1) * 0.5 + VERT_SHIFT;
+					if (gs.fingerCorrectGraphic[i]) {
+						gScreen.setColor(Screen::green);
+						gScreen.drawBox(xSize, ySize, xPos, yPos);
+					}
+					else {
+						gScreen.setColor(myColor[5]);
+						gScreen.drawBox(xSize, ySize, xPos, yPos);
+					}
 				}
 			}
-			// 100% probability
-			else if (tmpChord == '3') {
-				yPos = (FLX_TOP_Y1 + FLX_BOT_Y1) * 0.5 + VERT_SHIFT;
-				if (gs.fingerCorrectGraphic[i]) {
-					gScreen.setColor(Screen::green);
-					gScreen.drawBox(xSize, ySize, xPos, yPos);
-				}
-				else {
-					gScreen.setColor(Screen::white);
-					gScreen.drawBox(xSize, ySize, xPos, yPos);
-				}
+		}
+
+		if (gs.showLines == 1) { // show lines
+			// Baseline box
+			gScreen.setColor(myColor[gs.boxColor]);
+			gScreen.drawBox(FINGWIDTH * N_FINGERS, (baseTHhi) * 2, 0, VERT_SHIFT);
+
+			// Baseline lines
+			gScreen.setColor(Screen::grey);
+			gScreen.drawLine(BASELINE_X1 + 0 * (FINGWIDTH * N_FINGERS), VERT_SHIFT + baseTHhi, BASELINE_X2 + 0 * (FINGWIDTH * N_FINGERS), VERT_SHIFT + baseTHhi);
+			gScreen.drawLine(BASELINE_X1 + 0 * (FINGWIDTH * N_FINGERS), VERT_SHIFT - baseTHhi, BASELINE_X2 + 0 * (FINGWIDTH * N_FINGERS), VERT_SHIFT - baseTHhi);
+
+			// Ext Bottom threshold
+			gScreen.setColor(Screen::grey);
+			gScreen.drawLine(BASELINE_X1, VERT_SHIFT + FLX_BOT_Y1, BASELINE_X2, VERT_SHIFT + FLX_BOT_Y2);
+			// Ext Top threshold
+			gScreen.setColor(Screen::grey);
+			gScreen.drawLine(BASELINE_X1, VERT_SHIFT + FLX_TOP_Y1, BASELINE_X2, VERT_SHIFT + FLX_TOP_Y2);
+			// Ext Box
+			//gScreen.setColor(Screen::green);
+			//gScreen.drawBox(FINGWIDTH * N_FINGERS, FLX_ZONE_WIDTH, 0, VERT_SHIFT + 0.5 + FLX_BOT_Y1 + FLX_ZONE_WIDTH/2);
+
+			// Flx Top threshold	
+			//gScreen.setColor(Screen::grey);
+			//gScreen.drawLine(1. * BASELINE_X1, VERT_SHIFT - FLX_BOT_Y1, 1. * BASELINE_X2, VERT_SHIFT - (FLX_BOT_Y2));
+			// Flx Bottom threshold
+			//gScreen.setColor(Screen::grey);
+			//gScreen.drawLine(1. * BASELINE_X1, VERT_SHIFT - (FLX_TOP_Y1), 1. * BASELINE_X2, VERT_SHIFT - (FLX_TOP_Y2));
+			// Flx Box
+			//gScreen.setColor(Screen::green);
+			//gScreen.drawBox(FINGWIDTH * N_FINGERS, FLX_ZONE_WIDTH, 0, VERT_SHIFT -0.5 + EXT_TOP_Y1 - FLX_ZONE_WIDTH / 2);
+
+			/*
+			// Finger forces (flexion)
+			for (i = 0; i < 5; i++) {
+				gScreen.setColor(Screen::red);
+				gScreen.drawLine(((i * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) + FINGER_SPACING, VERT_SHIFT + forceGain*gBox[1].getForce(i), (((i + 1) * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) - FINGER_SPACING, VERT_SHIFT + forceGain*gBox[1].getForce(i));
+			}
+			// Finger forces (extension)
+			for (i = 0; i < 5; i++) {
+				gScreen.setColor(Screen::blue);
+				gScreen.drawLine(((i * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) + FINGER_SPACING, VERT_SHIFT - forceGain*gBox[0].getForce(i), (((i + 1) * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) - FINGER_SPACING, VERT_SHIFT - forceGain*gBox[0].getForce(i));
+			}
+			*/
+		}
+
+		if (gs.showForces == 1) {
+			for (i = 0; i < 5; i++) {
+				diffForce[i] = fGain[i] * gBox.getForce(i) + baselineCorrection;
+			}
+			// Finger forces (difference -> force = f_ext - f_flex)
+			for (i = 0; i < 5; i++) {
+				gScreen.setColor(Screen::red);
+				gScreen.drawLine(((i * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) + FINGER_SPACING, VERT_SHIFT + forceGain * diffForce[i], (((i + 1) * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) - FINGER_SPACING, VERT_SHIFT + forceGain * diffForce[i]);
 			}
 
-			// 50% probability
-			else if (tmpChord == '4') {
-				yPos = (FLX_TOP_Y1 + FLX_BOT_Y1) * 0.5 + VERT_SHIFT;
-				if (gs.fingerCorrectGraphic[i]) {
-					gScreen.setColor(Screen::green);
-					gScreen.drawBox(xSize, ySize, xPos, yPos);
-				}
-				else {
-					gScreen.setColor(myColor[5]);
-					gScreen.drawBox(xSize, ySize, xPos, yPos);
-				}
+			//if (gs.showTimer5) {
+			//	gScreen.setColor(Screen::white);
+			//  gScreen.print(to_string(gBox.getVolts(0)), 6, 3, 4);
+			//	gScreen.print(to_string(gTimer[5]), 10, 3, 4);
+			//}
+		}
+
+		// Other letters
+		gScreen.setColor(Screen::white);
+		for (i = 0; i < NUMDISPLAYLINES; i++) {
+			if (!gs.line[i].empty()) {
+				gScreen.setColor(gs.lineColor[i]);
+				gScreen.print(gs.line[i].c_str(), gs.lineXpos[i], gs.lineYpos[i], gs.size[i] * 1.5);
 			}
+		}
+
+		if (gs.showFeedback) { // show feedback
+			gScreen.setColor(Screen::white);
+			if (gs.rewardTrial == 1)
+				gScreen.print("Point: +1", 0, 7, 4);
+			else if (gs.rewardTrial == 0)
+				gScreen.print("Point: 0", 0, 7, 4);
+			else if (gs.rewardTrial == -1)
+				gScreen.print("Point: -1", 0, 7, 4);
+			//if (gs.planError)
+				//gScreen.print("-Moved during planning-", 0, 3, 7);
+			//if (gs.chordError)
+				//gScreen.print("-Chord too short-", 0, 3, 7);
+		}
+
+		if (gs.showDiagnostics) {
+			string stateString;
+			switch (state)
+			{
+			case WAIT_TRIAL:
+				stateString = "Wait Trial";
+				break;
+			case START_TRIAL:
+				stateString = "Start Trial";
+				break;
+			case WAIT_PLAN:
+				stateString = "Wait Plan";
+				break;
+			case WAIT_EXEC:
+				stateString = "Wait Exec";
+				break;
+			case GIVE_FEEDBACK:
+				stateString = "Give Feedback";
+				break;
+			case WAIT_ITI:
+				stateString = "Wait ITI";
+				break;
+			case END_TRIAL:
+				stateString = "End Trial";
+				break;
+			case MAX_FORCE:
+				stateString = "Max Force";
+				break;
+			}
+			gScreen.setColor(Screen::white);
+			gScreen.print(stateString, -21, 12, 5);
 		}
 	}
 
-	if (gs.showLines == 1) { // show lines
-		// Baseline box
-		gScreen.setColor(myColor[gs.boxColor]);
-		gScreen.drawBox(FINGWIDTH * N_FINGERS, (baseTHhi) * 2, 0, VERT_SHIFT);
+	else {
 
-		// Baseline lines
-		gScreen.setColor(Screen::grey);
-		gScreen.drawLine(BASELINE_X1 + 0 * (FINGWIDTH * N_FINGERS), VERT_SHIFT + baseTHhi, BASELINE_X2 + 0 * (FINGWIDTH * N_FINGERS), VERT_SHIFT + baseTHhi);
-		gScreen.drawLine(BASELINE_X1 + 0 * (FINGWIDTH * N_FINGERS), VERT_SHIFT - baseTHhi, BASELINE_X2 + 0 * (FINGWIDTH * N_FINGERS), VERT_SHIFT - baseTHhi);
+		forceFinger = finger;
 
-		// Ext Bottom threshold
-		gScreen.setColor(Screen::grey);
-		gScreen.drawLine(BASELINE_X1, VERT_SHIFT + FLX_BOT_Y1, BASELINE_X2, VERT_SHIFT + FLX_BOT_Y2);
-		// Ext Top threshold
-		gScreen.setColor(Screen::grey);
-		gScreen.drawLine(BASELINE_X1, VERT_SHIFT + FLX_TOP_Y1, BASELINE_X2, VERT_SHIFT + FLX_TOP_Y2);
-		// Ext Box
-		//gScreen.setColor(Screen::green);
-		//gScreen.drawBox(FINGWIDTH * N_FINGERS, FLX_ZONE_WIDTH, 0, VERT_SHIFT + 0.5 + FLX_BOT_Y1 + FLX_ZONE_WIDTH/2);
-
-		// Flx Top threshold	
-		//gScreen.setColor(Screen::grey);
-		//gScreen.drawLine(1. * BASELINE_X1, VERT_SHIFT - FLX_BOT_Y1, 1. * BASELINE_X2, VERT_SHIFT - (FLX_BOT_Y2));
-		// Flx Bottom threshold
-		//gScreen.setColor(Screen::grey);
-		//gScreen.drawLine(1. * BASELINE_X1, VERT_SHIFT - (FLX_TOP_Y1), 1. * BASELINE_X2, VERT_SHIFT - (FLX_TOP_Y2));
-		// Flx Box
-		//gScreen.setColor(Screen::green);
-		//gScreen.drawBox(FINGWIDTH * N_FINGERS, FLX_ZONE_WIDTH, 0, VERT_SHIFT -0.5 + EXT_TOP_Y1 - FLX_ZONE_WIDTH / 2);
-
-		/*
-		// Finger forces (flexion)
-		for (i = 0; i < 5; i++) {
-			gScreen.setColor(Screen::red);
-			gScreen.drawLine(((i * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) + FINGER_SPACING, VERT_SHIFT + forceGain*gBox[1].getForce(i), (((i + 1) * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) - FINGER_SPACING, VERT_SHIFT + forceGain*gBox[1].getForce(i));
-		}
-		// Finger forces (extension)
-		for (i = 0; i < 5; i++) {
-			gScreen.setColor(Screen::blue);
-			gScreen.drawLine(((i * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) + FINGER_SPACING, VERT_SHIFT - forceGain*gBox[0].getForce(i), (((i + 1) * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) - FINGER_SPACING, VERT_SHIFT - forceGain*gBox[0].getForce(i));
-		}
-		*/
-	}
-
-	if (gs.showForces == 1) {
-		for (i = 0; i < 5; i++) {
-			diffForce[i] = fGain[i] * gBox.getForce(i) + baselineCorrection;
-		}
-		// Finger forces (difference -> force = f_ext - f_flex)
-		for (i = 0; i < 5; i++) {
-			gScreen.setColor(Screen::red);
-			gScreen.drawLine(((i * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) + FINGER_SPACING, VERT_SHIFT + forceGain * diffForce[i], (((i + 1) * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) - FINGER_SPACING, VERT_SHIFT + forceGain * diffForce[i]);
-		}
-
-		//if (gs.showTimer5) {
-		//	gScreen.setColor(Screen::white);
-		//  gScreen.print(to_string(gBox.getVolts(0)), 6, 3, 4);
-		//	gScreen.print(to_string(gTimer[5]), 10, 3, 4);
-		//}
-	}
-
-	if (gs.showMaxForces == 1) {
 		currentForce = gBox.getForce(forceFinger);
 		if (currentForce > maxForce[forceFinger]) {
 			maxForce[forceFinger] = currentForce;
 		}
 		gScreen.print(to_string(maxForce[forceFinger]), 6, 3, 4);
-	}
 
-	// Other letters
-	gScreen.setColor(Screen::white);
-	for (i = 0; i < NUMDISPLAYLINES; i++) {
-		if (!gs.line[i].empty()) {
-			gScreen.setColor(gs.lineColor[i]);
-			gScreen.print(gs.line[i].c_str(), gs.lineXpos[i], gs.lineYpos[i], gs.size[i] * 1.5);
-		}
 	}
-
-	if (gs.showFeedback) { // show feedback
-		gScreen.setColor(Screen::white);
-		if (gs.rewardTrial == 1)
-			gScreen.print("Point: +1", 0, 7, 4);
-		else if (gs.rewardTrial == 0)
-			gScreen.print("Point: 0", 0, 7, 4);
-		else if (gs.rewardTrial == -1)
-			gScreen.print("Point: -1", 0, 7, 4);
-		//if (gs.planError)
-			//gScreen.print("-Moved during planning-", 0, 3, 7);
-		//if (gs.chordError)
-			//gScreen.print("-Chord too short-", 0, 3, 7);
-	}
-
-	if (gs.showDiagnostics) {
-		string stateString;
-		switch (state)
-		{
-		case WAIT_TRIAL:
-			stateString = "Wait Trial";
-			break;
-		case START_TRIAL:
-			stateString = "Start Trial";
-			break;
-		case WAIT_PLAN:
-			stateString = "Wait Plan";
-			break;
-		case WAIT_EXEC:
-			stateString = "Wait Exec";
-			break;
-		case GIVE_FEEDBACK:
-			stateString = "Give Feedback";
-			break;
-		case WAIT_ITI:
-			stateString = "Wait ITI";
-			break;
-		case END_TRIAL:
-			stateString = "End Trial";
-			break;
-		case MAX_FORCE:
-			stateString = "Max Force";
-			break;
-		}
-		gScreen.setColor(Screen::white);
-		gScreen.print(stateString, -21, 12, 5);
-	}
-
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -910,312 +932,325 @@ void MyTrial::control() {
 
 	gs.showDiagnostics = 0;
 
-	switch (state) {
-	case WAIT_TRIAL: //0
-		gs.showLines = 1;	// set screen lines/force bars to show
-		gs.showForces = 1;
-		gs.showFeedback = 0;
-		gs.showTarget = 0;
-		gs.showMaxForces = 0;
-		gs.showTimer5 = 0;
-		// gs.showForceBars = 1;
-		//gBox.setVolts(-5.0, -5.0, -5.0, -5.0, -5.0);
-		gs.rewardTrial = 0;
-		trialPoint = 0;
-		gs.planError = 0;
-		gs.boxColor = 5;	// grey baseline box color
-		planErrorFlag = 0;
-		//SetDacVoltage(0, 0);	// Ali EMG - gets ~200us to change digital to analog. Does it interrupt the ADC?
-		SetDIOState(0, 0xFFFF); // Ali EMG
+	if (maxF == 0) {
 
-		for (i = 0; i < NUMDISPLAYLINES; i++) {
-			if (!gs.line[i].empty()) {
-				gs.lineColor[i] = 0;
-				gs.line[i] = "";
-			}
-		}
-		break;
 
-	case MAX_FORCE:
-		gs.showLines = 0;
-		gs.showForces = 0;
-		gs.showMaxForces = 1;
 
-		fGain[forceFinger] = abs(baselineCorrection) / (0.1 * maxForce[forceFinger]);
 
-		break;
-	case START_TRIAL: //1	e
-		gs.showLines = 1;	// set screen lines/force bars to show
-		gs.showFeedback = 0;
-		gs.showForces = 1;
-		gs.showTimer5 = 0;
-		// gs.showForceBars = 1;
-		gs.boxColor = 5;	// grey baseline box color
-		gs.planError = 0;
-		gs.chordError = 0;
-		planErrorFlag = 0;	// initialize planErrorFlag variable in the begining of each trial
-		chordErrorFlag = 1;	// initialize chordErrorFlag variable in the begining of each trial
-		startTriggerEMG = 1;	// Ali EMG: starts EMG trigger in the beginning of each trial
 
-		//SetDacVoltage(0, emgTrigVolt);	// Ali EMG - gets ~200us to change digital to analog. Does it interrupt the ADC?
-		SetDIOState(0, 0x0000);
-
-		for (i = 0; i < 5; i++) {
-			gs.fingerCorrectGraphic[i] = 0;
-		}
-
-		// start recording , reset timers
-		dataman.clear();
-		dataman.startRecording();
-		gTimer.reset(0);
-		gTimer.reset(1);	// timer for each trial
-		gTimer.reset(2);
-		gTimer.reset(3);
-		gTimer.reset(5);
-		gTimer.reset(6);
-
-		state = WAIT_PLAN;
-		break;
-
-	case WAIT_PLAN: //2
-		//gs.planCue = 1;
-		gs.showTimer5 = 0;
-		gs.showForces = 1;
-
-		//// if wait baseline zone is off, we have limited planning time and subjects might make planning error:
-		//if (wait_baseline_zone == 0) {
-		//	if (gTimer[3] >= 300) {	// turn on visual target after 300ms
-		//		gs.showTarget = 1;	// show visual target	
-		//	}
-		//	else {
-		//		gs.showTarget = 0;	// dont show visual target
-		//	}
-
-		//	for (i = 0; i < 5; i++) {	// check fingers' states -> fingers should stay in the baseline during planing
-		//		fingerForceTmp = VERT_SHIFT + forceGain * fGain[i] * gBox.getForce(i);
-		//		if (fingerForceTmp >= (VERT_SHIFT + baseTHhi) || fingerForceTmp <= (VERT_SHIFT - (baseTHhi))) {
-		//			planErrorFlag = 1;
-		//			// gs.showForceBars = 0;
-		//			break;
-		//		}
-		//	}
-		//	if (planErrorFlag) {
-		//		gs.boxColor = 3;	// baseline box becomes red
-		//	}
-
-		//	if (gTimer[1] >= planTime) {
-		//		if (planErrorFlag == 1) {
-		//			state = GIVE_FEEDBACK;
-		//		}
-		//		else {
-		//			state = WAIT_EXEC;
-		//		}
-		//		gTimer.reset(2);	// resetting timer 2 to use in next state
-		//		gTimer.reset(3);	// resetting timer 3 to use in next state
-		//		gTimer.reset(5);	// resetting timer 4 to use in next state
-
-		//		// give finger perturbation
-		//		//gBox.setVolts(0, 1, 0, 0, 0);
-		//	}
-		//}
-		// if wait baseline zone was on, the code waits until the subject holds the baseline zone for 500ms and then gives the go cue. 
-		// So in this case, planning error is impossible to happen:
-		//else {
-		for (i = 0; i < 5; i++) {	// check fingers' states -> fingers should stay in the baseline during planning
-			fingerForceTmp = VERT_SHIFT + forceGain * fGain[i] * gBox.getForce(i) + baselineCorrection;
-			check_baseline_hold = 1;
-			if (fingerForceTmp >= (VERT_SHIFT + baseTHhi) || fingerForceTmp <= (VERT_SHIFT - (baseTHhi))) {
-				// if even one finger was out of baseline zone, reset timer(1):
-				gTimer.reset(3);
-				check_baseline_hold = 0;
-				break;
-			}
-		}
-
-		if (gTimer[3] >= 500) {	// turn on visual target after 300ms of holding the baseline
-			gs.showTarget = 1;	// show visual target	
-		}
-		else {
+		switch (state) {
+		case WAIT_TRIAL: //0
+			gs.showLines = 1;	// set screen lines/force bars to show
+			gs.showForces = 1;
+			gs.showFeedback = 0;
 			gs.showTarget = 0;
-		}
+			gs.showMaxForces = 0;
+			gs.showTimer5 = 0;
+			// gs.showForceBars = 1;
+			//gBox.setVolts(-5.0, -5.0, -5.0, -5.0, -5.0);
+			gs.rewardTrial = 0;
+			trialPoint = 0;
+			gs.planError = 0;
+			gs.boxColor = 5;	// grey baseline box color
+			planErrorFlag = 0;
+			//SetDacVoltage(0, 0);	// Ali EMG - gets ~200us to change digital to analog. Does it interrupt the ADC?
+			SetDIOState(0, 0xFFFF); // Ali EMG
 
-		if (check_baseline_hold == 0) {
-			gs.boxColor = 3;	// baseline zone color becomes red
-		}
-		else {
-			gs.boxColor = 5;	// baseline zone color becomes grey
-		}
+			for (i = 0; i < NUMDISPLAYLINES; i++) {
+				if (!gs.line[i].empty()) {
+					gs.lineColor[i] = 0;
+					gs.line[i] = "";
+				}
+			}
+			break;
 
-		// if subjects holds the baseline zone for plan time after visual cue was shown go to execution state:
-		if (gTimer[3] >= 500 + planTime) {
-			state = WAIT_EXEC;
-			gTimer.reset(2);	// resetting timer 2 to use in next state
-			gTimer.reset(3);	// resetting timer 3 to use in next state
-			gTimer.reset(5);	// resetting timer 4 to use in next state
+			//case MAX_FORCE:
+			//	gs.showLines = 0;
+			//	gs.showForces = 0;
+			//	gs.showMaxForces = 1;
 
-			// give finger perturbation
-			//gBox.setVolts(0, 1, 0, 0, 0);
-		}
+			//	fGain[forceFinger] = abs(baselineCorrection) / (0.1 * maxForce[forceFinger]);
 
-		//tDisp.print(std::to_string(gTimer[3]));
+			break;
+		case START_TRIAL: //1	e
+			gs.showLines = 1;	// set screen lines/force bars to show
+			gs.showFeedback = 0;
+			gs.showForces = 1;
+			gs.showTimer5 = 0;
+			// gs.showForceBars = 1;
+			gs.boxColor = 5;	// grey baseline box color
+			gs.planError = 0;
+			gs.chordError = 0;
+			planErrorFlag = 0;	// initialize planErrorFlag variable in the begining of each trial
+			chordErrorFlag = 1;	// initialize chordErrorFlag variable in the begining of each trial
+			startTriggerEMG = 1;	// Ali EMG: starts EMG trigger in the beginning of each trial
 
-		//////// if subject takes too long to go in the planning zone:
-		//if (gTimer[1] >= 6000) {
-		////	planErrorFlag = 1;
-		////	state = GIVE_FEEDBACK;
-		////	gTimer.reset(2);	// resetting timer 2 to use in next state
-		////	gTimer.reset(3);	// resetting timer 3 to use in next state
-		////	gTimer.reset(5);	// resetting timer 4 to use in next state
+			//SetDacVoltage(0, emgTrigVolt);	// Ali EMG - gets ~200us to change digital to analog. Does it interrupt the ADC?
+			SetDIOState(0, 0x0000);
 
-		//}
-		//}
-		break;
-
-	case WAIT_EXEC:
-
-		// deliver finger perturbation
-		for (i = 0; i < 5; i++) {
-			if (stimFinger[i] == '1')
-			{
-				sF[i] = 5;
+			for (i = 0; i < 5; i++) {
+				gs.fingerCorrectGraphic[i] = 0;
 			}
 
-		}
-
-		gBox.setVolts(0,
-			sF[1],
-			0,
-			sF[3],
-			0);
-
-		gs.showLines = 1;		// show force bars and thresholds
-		gs.showForces = 0;
-		gs.showTarget = 0;		// show the targets on the screen (grey bars)
-		gs.showTimer5 = 0;		// show timer 4 value on screen (duration of holding a chord)
-		gs.boxColor = 5;		// grey baseline box color
-
-
-		//// checking state of each finger
-		//for (i = 0; i < 5; i++) {
-		//	tmpChord = chordID[i];	// required state of finger i -> 0:relaxed , 1:extended , 2:flexed -- chordID comes from the target file
-		//	fingerForceTmp = VERT_SHIFT + forceGain * fGain[i] * gBox.getForce(i);
-		//	switch (tmpChord) {
-		//	case '9':	// finger i stimulated with 0% probability
-		//		fingerCorrect[i] = ((fingerForceTmp <= VERT_SHIFT + baseTHhi) && (fingerForceTmp >= VERT_SHIFT - baseTHhi));
-		//		break;
-		//	case '1':	// finger i stimulated with 25% probability
-		//		fingerCorrect[i] = ((fingerForceTmp <= VERT_SHIFT + FLX_TOP_Y1) && (fingerForceTmp >= VERT_SHIFT + FLX_BOT_Y1));
-		//		break;
-		//	case '2':	// finger i stimulated with 75% probability
-		//		fingerCorrect[i] = ((fingerForceTmp <= VERT_SHIFT + FLX_BOT_Y1) && (fingerForceTmp >= VERT_SHIFT - (FLX_TOP_Y1)));
-		//		break;
-		//	case '3':	// finger i stimulated with 100% probability
-		//		fingerCorrect[i] = ((fingerForceTmp <= VERT_SHIFT + FLX_BOT_Y1) && (fingerForceTmp >= VERT_SHIFT - (FLX_TOP_Y1)));
-		//		break;
-		//	}
-		//	gs.fingerCorrectGraphic[i] = 1;
-		//}
-
-		//// Checking if the whole chord is correct
-		//chordCorrect = fingerCorrect[0];
-		//for (i = 1; i < 5; i++) {
-		//	chordCorrect = chordCorrect && fingerCorrect[i];
-		//}
-
-		//// resetting timer 5 every time the whole chord is wrong
-		//if (chordCorrect == 0) {
-		//	gTimer.reset(5);
-		//}
-
-		//// if subject held the chord for execAccTime (accepting hold time), trial is correct -> go to feedback state:
-		//if (gTimer[5] >= execAccTime) {
-		//	// chord was executed successfully so error = 0:
-		//	//chordErrorFlag = 0;
-
-		//	// RT equals the time it took the subject to execute the chord successfully after the go cue. 
-		//	// Also, remember that chord is held for 600ms so RT = 600ms + actual_RT:
-		//	//RT = gTimer[2];
-
-		//	// go to the give_feedback state:
-		//	state = GIVE_FEEDBACK;
-
-		//	// resetting timers:
-		//	gTimer.reset(2);
-		//	gTimer.reset(3);
-
-		//	// give finger perturbation
-		//	//gBox.setVolts(0, 0, 0, 0, 0);
-
-		//}
-
-		// If subject runs out of time:
-		if (gTimer[3] >= execMaxTime) {
-			//chordErrorFlag = 1;
-			//RT = 10000;
-			state = GIVE_FEEDBACK;
+			// start recording , reset timers
+			dataman.clear();
+			dataman.startRecording();
+			gTimer.reset(0);
+			gTimer.reset(1);	// timer for each trial
 			gTimer.reset(2);
 			gTimer.reset(3);
+			gTimer.reset(5);
+			gTimer.reset(6);
 
+			state = WAIT_PLAN;
+			break;
+
+		case WAIT_PLAN: //2
+			//gs.planCue = 1;
+			gs.showTimer5 = 0;
+			gs.showForces = 1;
+
+			//// if wait baseline zone is off, we have limited planning time and subjects might make planning error:
+			//if (wait_baseline_zone == 0) {
+			//	if (gTimer[3] >= 300) {	// turn on visual target after 300ms
+			//		gs.showTarget = 1;	// show visual target	
+			//	}
+			//	else {
+			//		gs.showTarget = 0;	// dont show visual target
+			//	}
+
+			//	for (i = 0; i < 5; i++) {	// check fingers' states -> fingers should stay in the baseline during planing
+			//		fingerForceTmp = VERT_SHIFT + forceGain * fGain[i] * gBox.getForce(i);
+			//		if (fingerForceTmp >= (VERT_SHIFT + baseTHhi) || fingerForceTmp <= (VERT_SHIFT - (baseTHhi))) {
+			//			planErrorFlag = 1;
+			//			// gs.showForceBars = 0;
+			//			break;
+			//		}
+			//	}
+			//	if (planErrorFlag) {
+			//		gs.boxColor = 3;	// baseline box becomes red
+			//	}
+
+			//	if (gTimer[1] >= planTime) {
+			//		if (planErrorFlag == 1) {
+			//			state = GIVE_FEEDBACK;
+			//		}
+			//		else {
+			//			state = WAIT_EXEC;
+			//		}
+			//		gTimer.reset(2);	// resetting timer 2 to use in next state
+			//		gTimer.reset(3);	// resetting timer 3 to use in next state
+			//		gTimer.reset(5);	// resetting timer 4 to use in next state
+
+			//		// give finger perturbation
+			//		//gBox.setVolts(0, 1, 0, 0, 0);
+			//	}
+			//}
+			// if wait baseline zone was on, the code waits until the subject holds the baseline zone for 500ms and then gives the go cue. 
+			// So in this case, planning error is impossible to happen:
+			//else {
+			for (i = 0; i < 5; i++) {	// check fingers' states -> fingers should stay in the baseline during planning
+				fingerForceTmp = VERT_SHIFT + forceGain * fGain[i] * gBox.getForce(i) + baselineCorrection;
+				check_baseline_hold = 1;
+				if (fingerForceTmp >= (VERT_SHIFT + baseTHhi) || fingerForceTmp <= (VERT_SHIFT - (baseTHhi))) {
+					// if even one finger was out of baseline zone, reset timer(1):
+					gTimer.reset(3);
+					check_baseline_hold = 0;
+					break;
+				}
+			}
+
+			if (gTimer[3] >= 500) {	// turn on visual target after 300ms of holding the baseline
+				gs.showTarget = 1;	// show visual target	
+			}
+			else {
+				gs.showTarget = 0;
+			}
+
+			if (check_baseline_hold == 0) {
+				gs.boxColor = 3;	// baseline zone color becomes red
+			}
+			else {
+				gs.boxColor = 5;	// baseline zone color becomes grey
+			}
+
+			// if subjects holds the baseline zone for plan time after visual cue was shown go to execution state:
+			if (gTimer[3] >= 500 + planTime) {
+				state = WAIT_EXEC;
+				gTimer.reset(2);	// resetting timer 2 to use in next state
+				gTimer.reset(3);	// resetting timer 3 to use in next state
+				gTimer.reset(5);	// resetting timer 4 to use in next state
+
+				// give finger perturbation
+				//gBox.setVolts(0, 1, 0, 0, 0);
+			}
+
+			//tDisp.print(std::to_string(gTimer[3]));
+
+			//////// if subject takes too long to go in the planning zone:
+			//if (gTimer[1] >= 6000) {
+			////	planErrorFlag = 1;
+			////	state = GIVE_FEEDBACK;
+			////	gTimer.reset(2);	// resetting timer 2 to use in next state
+			////	gTimer.reset(3);	// resetting timer 3 to use in next state
+			////	gTimer.reset(5);	// resetting timer 4 to use in next state
+
+			//}
+			//}
+			break;
+
+		case WAIT_EXEC:
+
+			// deliver finger perturbation
+			for (i = 0; i < 5; i++) {
+				if (stimFinger[i] == '1')
+				{
+					sF[i] = 5;
+				}
+
+			}
+
+			gBox.setVolts(0,
+				sF[1],
+				0,
+				sF[3],
+				0);
+
+			gs.showLines = 1;		// show force bars and thresholds
+			gs.showForces = 0;
+			gs.showTarget = 0;		// show the targets on the screen (grey bars)
+			gs.showTimer5 = 0;		// show timer 4 value on screen (duration of holding a chord)
+			gs.boxColor = 5;		// grey baseline box color
+
+
+			//// checking state of each finger
+			//for (i = 0; i < 5; i++) {
+			//	tmpChord = chordID[i];	// required state of finger i -> 0:relaxed , 1:extended , 2:flexed -- chordID comes from the target file
+			//	fingerForceTmp = VERT_SHIFT + forceGain * fGain[i] * gBox.getForce(i);
+			//	switch (tmpChord) {
+			//	case '9':	// finger i stimulated with 0% probability
+			//		fingerCorrect[i] = ((fingerForceTmp <= VERT_SHIFT + baseTHhi) && (fingerForceTmp >= VERT_SHIFT - baseTHhi));
+			//		break;
+			//	case '1':	// finger i stimulated with 25% probability
+			//		fingerCorrect[i] = ((fingerForceTmp <= VERT_SHIFT + FLX_TOP_Y1) && (fingerForceTmp >= VERT_SHIFT + FLX_BOT_Y1));
+			//		break;
+			//	case '2':	// finger i stimulated with 75% probability
+			//		fingerCorrect[i] = ((fingerForceTmp <= VERT_SHIFT + FLX_BOT_Y1) && (fingerForceTmp >= VERT_SHIFT - (FLX_TOP_Y1)));
+			//		break;
+			//	case '3':	// finger i stimulated with 100% probability
+			//		fingerCorrect[i] = ((fingerForceTmp <= VERT_SHIFT + FLX_BOT_Y1) && (fingerForceTmp >= VERT_SHIFT - (FLX_TOP_Y1)));
+			//		break;
+			//	}
+			//	gs.fingerCorrectGraphic[i] = 1;
+			//}
+
+			//// Checking if the whole chord is correct
+			//chordCorrect = fingerCorrect[0];
+			//for (i = 1; i < 5; i++) {
+			//	chordCorrect = chordCorrect && fingerCorrect[i];
+			//}
+
+			//// resetting timer 5 every time the whole chord is wrong
+			//if (chordCorrect == 0) {
+			//	gTimer.reset(5);
+			//}
+
+			//// if subject held the chord for execAccTime (accepting hold time), trial is correct -> go to feedback state:
+			//if (gTimer[5] >= execAccTime) {
+			//	// chord was executed successfully so error = 0:
+			//	//chordErrorFlag = 0;
+
+			//	// RT equals the time it took the subject to execute the chord successfully after the go cue. 
+			//	// Also, remember that chord is held for 600ms so RT = 600ms + actual_RT:
+			//	//RT = gTimer[2];
+
+			//	// go to the give_feedback state:
+			//	state = GIVE_FEEDBACK;
+
+			//	// resetting timers:
+			//	gTimer.reset(2);
+			//	gTimer.reset(3);
+
+			//	// give finger perturbation
+			//	//gBox.setVolts(0, 0, 0, 0, 0);
+
+			//}
+
+			// If subject runs out of time:
+			if (gTimer[3] >= execMaxTime) {
+				//chordErrorFlag = 1;
+				//RT = 10000;
+				state = GIVE_FEEDBACK;
+				gTimer.reset(2);
+				gTimer.reset(3);
+
+			}
+			break;
+
+		case GIVE_FEEDBACK:
+			//SetDacVoltage(0, 0); // Ali EMG
+			SetDIOState(0, 0xFFFF);
+
+			// end finger perturbation
+			sF[1] = 0;
+			sF[3] = 0;
+			gBox.setVolts(0, 0, 0, 0, 0);
+
+			gs.showLines = 1;			// no force lines/thresholds
+			gs.showForces = 1;
+			gs.showTarget = 0;			// no visual targets
+			gs.showTimer5 = 0;
+			gs.showFeedback = 0;		// showing feedback (refer to MyTrial::updateGraphics() for details)
+			//if (planErrorFlag == 1) {	// if error occurred during planning
+			//	gs.rewardTrial = -1;	// set reward to -1
+			//	trialPoint = -1;		// reward variable to save in .dat file
+			//	gs.planError = 1;		// set planError to 1 -> this enables verbal feedback to the participant
+			//	trialCorr = 0;
+			//	trialErrorType = 1;		// trial error type saved in the .dat file to know this was a planning error
+			//}
+			//else {
+			//	if (chordErrorFlag) {	// if exeution error happens; i.e. subject could not execute the chord before max trial time.
+			//		gs.rewardTrial = 0;	// set reward to zero
+			//		trialPoint = 0;		// reward variable to save in .dat file
+			//		gs.chordError = 1;	// give feedback for execution error 
+			//		trialCorr = 0;
+			//		trialErrorType = 2; // trial error type saved in the .dat file to know this was an execution error
+			//	}
+			//	else {
+			//		gs.rewardTrial = 1;	// If no error -> sets reward to 1
+			//		trialPoint = 1;		// reward variable to save in .dat file
+			//		trialCorr = 1;
+			//		trialErrorType = 0;
+			//	}
+			//}
+
+			if (gTimer[2] >= feedbackTime) {
+				state = WAIT_ITI;
+				gTimer.reset(2);
+			}
+			break;
+
+		case WAIT_ITI:
+			gs.showLines = 1;
+			gs.showForces = 0;
+			gs.showTarget = 0;
+			gs.showFeedback = 0;
+			if (gTimer[2] >= iti) {
+				state = END_TRIAL;
+				dataman.stopRecording();
+				gTimer.reset(2);
+			}
+			break;
+
+		case END_TRIAL:
+			break;
 		}
-		break;
+	}
 
-	case GIVE_FEEDBACK:
-		//SetDacVoltage(0, 0); // Ali EMG
-		SetDIOState(0, 0xFFFF);
+	else {
+		forceFinger = finger;
 
-		// end finger perturbation
-		sF[1] = 0;
-		sF[3] = 0;
-		gBox.setVolts(0, 0, 0, 0, 0);
-
-		gs.showLines = 1;			// no force lines/thresholds
-		gs.showForces = 1;
-		gs.showTarget = 0;			// no visual targets
-		gs.showTimer5 = 0;
-		gs.showFeedback = 0;		// showing feedback (refer to MyTrial::updateGraphics() for details)
-		//if (planErrorFlag == 1) {	// if error occurred during planning
-		//	gs.rewardTrial = -1;	// set reward to -1
-		//	trialPoint = -1;		// reward variable to save in .dat file
-		//	gs.planError = 1;		// set planError to 1 -> this enables verbal feedback to the participant
-		//	trialCorr = 0;
-		//	trialErrorType = 1;		// trial error type saved in the .dat file to know this was a planning error
-		//}
-		//else {
-		//	if (chordErrorFlag) {	// if exeution error happens; i.e. subject could not execute the chord before max trial time.
-		//		gs.rewardTrial = 0;	// set reward to zero
-		//		trialPoint = 0;		// reward variable to save in .dat file
-		//		gs.chordError = 1;	// give feedback for execution error 
-		//		trialCorr = 0;
-		//		trialErrorType = 2; // trial error type saved in the .dat file to know this was an execution error
-		//	}
-		//	else {
-		//		gs.rewardTrial = 1;	// If no error -> sets reward to 1
-		//		trialPoint = 1;		// reward variable to save in .dat file
-		//		trialCorr = 1;
-		//		trialErrorType = 0;
-		//	}
-		//}
-
-		if (gTimer[2] >= feedbackTime) {
-			state = WAIT_ITI;
-			gTimer.reset(2);
-		}
-		break;
-
-	case WAIT_ITI:
-		gs.showLines = 1;
-		gs.showForces = 0;
-		gs.showTarget = 0;
-		gs.showFeedback = 0;
-		if (gTimer[2] >= iti) {
-			state = END_TRIAL;
-			dataman.stopRecording();
-			gTimer.reset(2);
-		}
-		break;
-
-	case END_TRIAL:
-		break;
+		fGain[forceFinger] = abs(baselineCorrection) / (0.1 * maxForce[forceFinger]);
 	}
 }
 

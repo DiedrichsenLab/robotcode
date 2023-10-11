@@ -6,6 +6,7 @@
 #include <algorithm> 
 #include <iostream>
 #include <cmath>
+#include <windows.h>
 
 ///////////////////////////////////////////////////////////////
 /// Global variables 
@@ -24,11 +25,13 @@ Experiment* gExp;				///< Pointer to myExperiment
 Trial* currentTrial;			///< Pointer to current Trial 
 #define DAC_VSCALAR 819.1       ///< Binary-to-volts scalar for DAC.
 bool gTimerFlagFirst = 0;
-bool startTriggerEMG = 0;       // Ali added this: experimental - under construction
-float emgTrigVolt = 2;	        // Ali added this: experimental - under construction
-bool maxF = 0;
-int finger = 0;
+//bool startTriggerEMG = 0;       // Ali added this: experimental - under construction
+//float emgTrigVolt = 2;	        // Ali added this: experimental - under construction
 
+bool maxF = 0;					///< 0>Task 1>Max Voluntary Force Measurament (Marco)
+int finger = 0;					///< Finger from which Max Voluntary Force is measured (Marco)
+double currentForce = 0;			// max force recorded from <finger>
+double maxForce[5] = { 0, 0, 0 ,0, 0 };  // max force recorded from each finger
 
 ///< Basic imaging parameters
 #define TRTIME 1000				///< timer for simulating timer
@@ -41,21 +44,23 @@ char counterSignal = '5';		///< What char is used to count the TR
 //int sliceNumber = 32;			///< How many slices do we have
 
 ///< Screen graphics definitions
-#define baseTHhi  1.2 //0.8//1.0			// Baseline higher threshold (to check for premature movements during sequence planning phase)
+#define baseTHhi  1.2 // 1.2			// Half height of baseline area
 double fGain[5] = { 1.0 ,1.0,1.0,1.0,1.0 };	// finger specific force gains -> applied on each finger
 double forceGain = 1;						// universal force gain -> applied on all the fingers
-double mahdiyar = 123;
 bool blockFeedbackFlag = 0;
 bool wait_baseline_zone = 1;				// if 1, waits until the subject's fingers are all in the baseline zone. 
 
-#define FINGWIDTH 1.3
-#define N_FINGERS 5
-#define FINGER_SPACING 0.2
-#define BASELINE_X1 -(FINGWIDTH*N_FINGERS/2)
-#define BASELINE_X2 +(FINGWIDTH*N_FINGERS/2)
+#define FINGWIDTH 2 //previously 1.3
+#define X_CURSOR_DEV 1.5
+//#define N_FINGERS 5
+//#define FINGER_SPACING 0.2
+#define BASELINE_X1 -3//-(FINGWIDTH*N_FINGERS/2)
+#define BASELINE_X2 3//+(FINGWIDTH*N_FINGERS/2)
+//#define LINEWIDTH 1.5
 
+double xPosBox[2] = { -X_CURSOR_DEV, X_CURSOR_DEV};
 #define FLX_ZONE_WIDTH 6
-#define FLX_BOT_Y1 9
+#define FLX_BOT_Y1 6
 #define FLX_TOP_Y1 FLX_BOT_Y1+FLX_ZONE_WIDTH
 #define FLX_BOT_Y2 FLX_BOT_Y1
 #define FLX_TOP_Y2 FLX_TOP_Y1
@@ -90,14 +95,13 @@ int gNumCorr = 0;
 int gNumWrong = 0;
 char gKey;
 bool gKeyPressed;
-double gTargetWidth = 0.25;
-double baselineCorrection = -3.0;
-double gErrors[5] = { 0,0,0,0,0 };
-double execAccTime = 600;
-double sF[5] = { 0,0,0,0,0 };
-double gVolts[5] = { 0,0,0,0,0 };
-double currentForce = 0;
-double maxForce[5] = { 0, 0, 0 ,0, 0 };
+//double gTargetWidth = 0.25;
+double baselineCorrection = -3.0;    // move force cursor a little away from baseline area at rest (Marco)
+//double gErrors[5] = { 0,0,0,0,0 };
+//double execAccTime = 600;
+//double sF[5] = { 0,0,0,0,0 };       
+double gVolts[5] = { 0,0,0,0,0 };   // volts sent to the valves (Marco)
+
 
 ///////////
 ////////////////////////////////////////////////////
@@ -128,30 +132,9 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	gTimer.init(); // Ali Changed Here!!!!
 
 	// 3. stimulation box initialization and calibration
-	// high force 1
-	//gBox[0].init(BOX_LEFT,"c:/robot/calib/Flatbox1_highforce_LEFT_07-Jun-2017.txt");
-	//gBox.init(BOX_RIGHT,"c:/robot/calib/Flatbox1_highforce_RIGHT_31-July-2017.txt");
-
-	// STARK
-	//gBox[0].init(BOX_LEFT,"c:/robot/calib/Flatbox1_highforce2_LEFT_12-Feb-2022.txt");
-	//gBox.init(BOX_RIGHT,"c:/robot/calib/Flatbox1_highforce2_RIGHT_03-Dec-2021.txt");
-
-	// CHOMSKY
-	//gBox[0].init(BOX_LEFT, "c:/robot/calib/LEFT_lowForce_FlatBox2_24-Jan-2018.txt");
-	//gBox[1].init(BOX_RIGHT, "c:/robot/calib/flatbox2_lowforce_RIGHT_06-Jul-2017.txt");
-
-	//gBox[0].init(BOX_LEFT, "c:/robotcode/calib/Flatbox1_highforce2_LEFT_12-Feb-2022.txt"); 
-	//gBox.init(BOX_RIGHT, "c:/robotcode/calib/Flatbox1_highforce2_RIGHT_03-Dec-2021.txt");
 	gBox.init(BOX_RIGHT, "c:/robotcode/calib/right_lowforce_pneumatic1.txt");
 
-	// low force
-	//gBox[0].init(BOX_LEFT,"c:/robot/calib/flatbox2_lowforce_LEFT_03-Mar-2017.txt");
-	//gBox[1].init(BOX_RIGHT,"c:/robot/calib/flatbox2_lowforce_RIGHT_06-Jul-2017.txt");
-
-	//gBox[0].filterconst = 0.8;
-	//gBox[1].filterconst = 0.8;
-
-	gExp->control(); //from A goes to B
+	gExp->control(); 
 
 	return 0;
 }
@@ -173,14 +156,9 @@ MyExperiment::MyExperiment(string name, string code, string dDir) : Experiment(n
 ////////////////////////////////////////////////////////////////////////
 // MyExperiment: control 
 ////////////////////////////////////////////////////////////////////////
-void MyExperiment::control(void) { // here is B
+void MyExperiment::control(void) { 
 	MSG msg;
 	float emgTrigVolt = 0;	// Ali EMG
-
-	//if (!gTimerFlagFirst) { // Ali Changed Here!!!!
-	//	gTimer.init();
-	//	gTimerFlagFirst = TRUE;
-	//}
 
 	do {
 		//This function checks if there are any messages in the application's message queue. 
@@ -501,16 +479,6 @@ MyTrial::MyTrial() {
 	RT = 0;
 }
 
-//void MyTrial::force(int finger) {
-//	if (finger == -1) {
-//		state = WAIT_TRIAL;
-//	}
-//	else {
-//		state = MAX_FORCE;
-//		forceFinger = finger;
-//	}
-//}
-
 ///////////////////////////////////////////////////////////////
 // Read - Done
 ///////////////////////////////////////////////////////////////
@@ -531,12 +499,15 @@ void MyTrial::read(istream& in) {
 ///////////////////////////////////////////////////////////////
 void MyTrial::writeDat(ostream& out) {
 	// write to .dat file
+	// name of file is: smp0_<name of subject>_<session number>.dat
 	out << subNum << "\t"
 		<< chordID << "\t"
+		<< stimFinger << "\t"
 		<< planTime << "\t"
 		<< execMaxTime << "\t"
 		<< feedbackTime << "\t"
 		<< iti << "\t"
+		<< trialLabel << "\t"
 		<< fGain[0] << "\t"						// finger specific gains
 		<< fGain[1] << "\t"
 		<< fGain[2] << "\t"
@@ -549,10 +520,6 @@ void MyTrial::writeDat(ostream& out) {
 		<< VERT_SHIFT + FLX_BOT_Y1 << "\t"		// ext bottom threshold
 		<< VERT_SHIFT - (FLX_TOP_Y1) << "\t"	// flex top threshold
 		<< VERT_SHIFT - FLX_BOT_Y1 << "\t"		// flex bot threshold
-		<< trialCorr << "\t"					// trial is correct or not
-		<< trialErrorType << "\t"				// trial error type
-		<< RT << "\t"							// reaction time of each trial. 
-		<< trialPoint << "\t"					// points received in each trial
 		<< endl;
 }
 
@@ -563,10 +530,12 @@ void MyTrial::writeHeader(ostream& out) {
 	char header[200];
 	out << "subNum" << "\t"
 		<< "chordID" << "\t"
+		<< "stimFinger" << "\t"
 		<< "planTime" << "\t"
 		<< "execMaxTime" << "\t"
 		<< "feedbackTime" << "\t"
 		<< "iti" << "\t"
+		<< "trialLabel" << "\t"
 		<< "fGain1" << "\t"
 		<< "fGain2" << "\t"
 		<< "fGain3" << "\t"
@@ -579,10 +548,6 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "extBotThresh" << '\t'
 		<< "flexTopThresh" << '\t'
 		<< "flexBotThresh" << '\t'
-		<< "trialCorr" << "\t"
-		<< "trialErrorType" << "\t"
-		<< "RT" << "\t"
-		<< "trialPoint" << "\t"
 		<< endl;
 }
 
@@ -663,15 +628,6 @@ void MyTrial::updateTextDisplay() {
 	sprintf(buffer, "maxF: %d", maxF);
 	tDisp.setText(buffer, 13, 1);
 
-
-	//// differential forces
-	//for (i = 0; i < 5; i++) {
-	//	diffForce[i] = gBox.getForce(i) - gBox.getForce(i);
-	//}
-	//sprintf(buffer, "D1: %2.2f   D2: %2.2f   D3: %2.2f   D4: %2.2f   D5: %2.2f", diffForce[0], diffForce[1], diffForce[2],
-	//	diffForce[3], diffForce[4]);
-	//tDisp.setText(buffer, 9, 0);
-
 	// force gains
 	sprintf(buffer, "GlobalGain = %1.1f     forceGain = %1.1f %1.1f %1.1f %1.1f %1.1f", forceGain, fGain[0], fGain[1], fGain[2], fGain[3], fGain[4]);
 	tDisp.setText(buffer, 16, 0);
@@ -697,13 +653,11 @@ void MyTrial::updateGraphics(int what) {
 
 
 		if (gs.showTarget == 1) { // show target squares
-			for (i = 0; i < 5; i++) {
+			for (i = 0; i < 2; i++) {
 				tmpChord = chordID[i];
-				x1 = ((i * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) + FINGER_SPACING;
-				x2 = (((i + 1) * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) - FINGER_SPACING;
-				xPos = (x1 + x2) * 0.5;
+				xPos = xPosBox[i];//(x1 + x2) * 0.5;
 				yPos = (FLX_TOP_Y1 + FLX_BOT_Y1) * 0.5 + VERT_SHIFT;
-				xSize = x2 - x1;
+				xSize = FINGWIDTH;
 				ySize = FLX_TOP_Y1 - FLX_BOT_Y1;
 
 				// 0% probability
@@ -765,12 +719,12 @@ void MyTrial::updateGraphics(int what) {
 		if (gs.showLines == 1) { // show lines
 			// Baseline box
 			gScreen.setColor(myColor[gs.boxColor]);
-			gScreen.drawBox(FINGWIDTH * N_FINGERS, (baseTHhi) * 2, 0, VERT_SHIFT);
+			gScreen.drawBox(BASELINE_X2 - BASELINE_X1, (baseTHhi) * 2, 0, VERT_SHIFT);
 
 			// Baseline lines
 			gScreen.setColor(Screen::grey);
-			gScreen.drawLine(BASELINE_X1 + 0 * (FINGWIDTH * N_FINGERS), VERT_SHIFT + baseTHhi, BASELINE_X2 + 0 * (FINGWIDTH * N_FINGERS), VERT_SHIFT + baseTHhi);
-			gScreen.drawLine(BASELINE_X1 + 0 * (FINGWIDTH * N_FINGERS), VERT_SHIFT - baseTHhi, BASELINE_X2 + 0 * (FINGWIDTH * N_FINGERS), VERT_SHIFT - baseTHhi);
+			gScreen.drawLine(BASELINE_X1, VERT_SHIFT + baseTHhi, BASELINE_X2, VERT_SHIFT + baseTHhi);
+			gScreen.drawLine(BASELINE_X1, VERT_SHIFT - baseTHhi, BASELINE_X2, VERT_SHIFT - baseTHhi);
 
 			// Ext Bottom threshold
 			gScreen.setColor(Screen::grey);
@@ -778,32 +732,7 @@ void MyTrial::updateGraphics(int what) {
 			// Ext Top threshold
 			gScreen.setColor(Screen::grey);
 			gScreen.drawLine(BASELINE_X1, VERT_SHIFT + FLX_TOP_Y1, BASELINE_X2, VERT_SHIFT + FLX_TOP_Y2);
-			// Ext Box
-			//gScreen.setColor(Screen::green);
-			//gScreen.drawBox(FINGWIDTH * N_FINGERS, FLX_ZONE_WIDTH, 0, VERT_SHIFT + 0.5 + FLX_BOT_Y1 + FLX_ZONE_WIDTH/2);
 
-			// Flx Top threshold	
-			//gScreen.setColor(Screen::grey);
-			//gScreen.drawLine(1. * BASELINE_X1, VERT_SHIFT - FLX_BOT_Y1, 1. * BASELINE_X2, VERT_SHIFT - (FLX_BOT_Y2));
-			// Flx Bottom threshold
-			//gScreen.setColor(Screen::grey);
-			//gScreen.drawLine(1. * BASELINE_X1, VERT_SHIFT - (FLX_TOP_Y1), 1. * BASELINE_X2, VERT_SHIFT - (FLX_TOP_Y2));
-			// Flx Box
-			//gScreen.setColor(Screen::green);
-			//gScreen.drawBox(FINGWIDTH * N_FINGERS, FLX_ZONE_WIDTH, 0, VERT_SHIFT -0.5 + EXT_TOP_Y1 - FLX_ZONE_WIDTH / 2);
-
-			/*
-			// Finger forces (flexion)
-			for (i = 0; i < 5; i++) {
-				gScreen.setColor(Screen::red);
-				gScreen.drawLine(((i * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) + FINGER_SPACING, VERT_SHIFT + forceGain*gBox[1].getForce(i), (((i + 1) * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) - FINGER_SPACING, VERT_SHIFT + forceGain*gBox[1].getForce(i));
-			}
-			// Finger forces (extension)
-			for (i = 0; i < 5; i++) {
-				gScreen.setColor(Screen::blue);
-				gScreen.drawLine(((i * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) + FINGER_SPACING, VERT_SHIFT - forceGain*gBox[0].getForce(i), (((i + 1) * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) - FINGER_SPACING, VERT_SHIFT - forceGain*gBox[0].getForce(i));
-			}
-			*/
 		}
 
 		if (gs.showForces == 1) {
@@ -811,10 +740,19 @@ void MyTrial::updateGraphics(int what) {
 				diffForce[i] = fGain[i] * gBox.getForce(i) + baselineCorrection;
 			}
 			// Finger forces (difference -> force = f_ext - f_flex)
-			for (i = 0; i < 5; i++) {
-				gScreen.setColor(Screen::red);
-				gScreen.drawLine(((i * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) + FINGER_SPACING, VERT_SHIFT + forceGain * diffForce[i], (((i + 1) * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) - FINGER_SPACING, VERT_SHIFT + forceGain * diffForce[i]);
-			}
+			gScreen.setColor(Screen::red);
+			gScreen.drawLine(- X_CURSOR_DEV - FINGWIDTH / 2,
+				VERT_SHIFT + forceGain * diffForce[1], 
+				- X_CURSOR_DEV + FINGWIDTH / 2,
+				VERT_SHIFT + forceGain * diffForce[1]);
+			gScreen.drawLine(X_CURSOR_DEV - FINGWIDTH / 2,
+				VERT_SHIFT + forceGain * diffForce[3],
+				X_CURSOR_DEV + FINGWIDTH / 2,
+				VERT_SHIFT + forceGain * diffForce[3]);
+			//gScreen.drawLine(((3 * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) + FINGER_SPACING, VERT_SHIFT + forceGain * diffForce[3], (((3 + 1)* FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) - FINGER_SPACING, VERT_SHIFT + forceGain * diffForce[3]);
+
+			
+			//}
 
 			//if (gs.showTimer5) {
 			//	gScreen.setColor(Screen::white);
@@ -823,14 +761,14 @@ void MyTrial::updateGraphics(int what) {
 			//}
 		}
 
-		// Other letters
-		gScreen.setColor(Screen::white);
-		for (i = 0; i < NUMDISPLAYLINES; i++) {
-			if (!gs.line[i].empty()) {
-				gScreen.setColor(gs.lineColor[i]);
-				gScreen.print(gs.line[i].c_str(), gs.lineXpos[i], gs.lineYpos[i], gs.size[i] * 1.5);
-			}
-		}
+		//// Other letters
+		//gScreen.setColor(Screen::white);
+		//for (i = 0; i < NUMDISPLAYLINES; i++) {
+		//	if (!gs.line[i].empty()) {
+		//		gScreen.setColor(gs.lineColor[i]);
+		//		gScreen.print(gs.line[i].c_str(), gs.lineXpos[i], gs.lineYpos[i], gs.size[i] * 1.5);
+		//	}
+		//}
 
 		if (gs.showFeedback) { // show feedback
 			gScreen.setColor(Screen::white);
@@ -929,14 +867,11 @@ void MyTrial::control() {
 	double fingerForceTmp;
 	char tmpChord;
 	bool check_baseline_hold = 0;
+	int fi[2] = { 1, 3 };
 
-	gs.showDiagnostics = 0;
+	gs.showDiagnostics = 1;
 
 	if (maxF == 0) {
-
-
-
-
 
 		switch (state) {
 		case WAIT_TRIAL: //0
@@ -964,13 +899,6 @@ void MyTrial::control() {
 			}
 			break;
 
-			//case MAX_FORCE:
-			//	gs.showLines = 0;
-			//	gs.showForces = 0;
-			//	gs.showMaxForces = 1;
-
-			//	fGain[forceFinger] = abs(baselineCorrection) / (0.1 * maxForce[forceFinger]);
-
 			break;
 		case START_TRIAL: //1	e
 			gs.showLines = 1;	// set screen lines/force bars to show
@@ -983,7 +911,7 @@ void MyTrial::control() {
 			gs.chordError = 0;
 			planErrorFlag = 0;	// initialize planErrorFlag variable in the begining of each trial
 			chordErrorFlag = 1;	// initialize chordErrorFlag variable in the begining of each trial
-			startTriggerEMG = 1;	// Ali EMG: starts EMG trigger in the beginning of each trial
+			//startTriggerEMG = 1;	// Ali EMG: starts EMG trigger in the beginning of each trial
 
 			//SetDacVoltage(0, emgTrigVolt);	// Ali EMG - gets ~200us to change digital to analog. Does it interrupt the ADC?
 			SetDIOState(0, 0x0000);
@@ -1010,47 +938,8 @@ void MyTrial::control() {
 			gs.showTimer5 = 0;
 			gs.showForces = 1;
 
-			//// if wait baseline zone is off, we have limited planning time and subjects might make planning error:
-			//if (wait_baseline_zone == 0) {
-			//	if (gTimer[3] >= 300) {	// turn on visual target after 300ms
-			//		gs.showTarget = 1;	// show visual target	
-			//	}
-			//	else {
-			//		gs.showTarget = 0;	// dont show visual target
-			//	}
-
-			//	for (i = 0; i < 5; i++) {	// check fingers' states -> fingers should stay in the baseline during planing
-			//		fingerForceTmp = VERT_SHIFT + forceGain * fGain[i] * gBox.getForce(i);
-			//		if (fingerForceTmp >= (VERT_SHIFT + baseTHhi) || fingerForceTmp <= (VERT_SHIFT - (baseTHhi))) {
-			//			planErrorFlag = 1;
-			//			// gs.showForceBars = 0;
-			//			break;
-			//		}
-			//	}
-			//	if (planErrorFlag) {
-			//		gs.boxColor = 3;	// baseline box becomes red
-			//	}
-
-			//	if (gTimer[1] >= planTime) {
-			//		if (planErrorFlag == 1) {
-			//			state = GIVE_FEEDBACK;
-			//		}
-			//		else {
-			//			state = WAIT_EXEC;
-			//		}
-			//		gTimer.reset(2);	// resetting timer 2 to use in next state
-			//		gTimer.reset(3);	// resetting timer 3 to use in next state
-			//		gTimer.reset(5);	// resetting timer 4 to use in next state
-
-			//		// give finger perturbation
-			//		//gBox.setVolts(0, 1, 0, 0, 0);
-			//	}
-			//}
-			// if wait baseline zone was on, the code waits until the subject holds the baseline zone for 500ms and then gives the go cue. 
-			// So in this case, planning error is impossible to happen:
-			//else {
-			for (i = 0; i < 5; i++) {	// check fingers' states -> fingers should stay in the baseline during planning
-				fingerForceTmp = VERT_SHIFT + forceGain * fGain[i] * gBox.getForce(i) + baselineCorrection;
+			for (i = 0; i < 2; i++) {	// check fingers' states -> fingers should stay in the baseline during planning
+				fingerForceTmp = VERT_SHIFT + forceGain * fGain[fi[i]] * gBox.getForce(fi[i]) + baselineCorrection;
 				check_baseline_hold = 1;
 				if (fingerForceTmp >= (VERT_SHIFT + baseTHhi) || fingerForceTmp <= (VERT_SHIFT - (baseTHhi))) {
 					// if even one finger was out of baseline zone, reset timer(1):
@@ -1081,22 +970,8 @@ void MyTrial::control() {
 				gTimer.reset(3);	// resetting timer 3 to use in next state
 				gTimer.reset(5);	// resetting timer 4 to use in next state
 
-				// give finger perturbation
-				//gBox.setVolts(0, 1, 0, 0, 0);
 			}
 
-			//tDisp.print(std::to_string(gTimer[3]));
-
-			//////// if subject takes too long to go in the planning zone:
-			//if (gTimer[1] >= 6000) {
-			////	planErrorFlag = 1;
-			////	state = GIVE_FEEDBACK;
-			////	gTimer.reset(2);	// resetting timer 2 to use in next state
-			////	gTimer.reset(3);	// resetting timer 3 to use in next state
-			////	gTimer.reset(5);	// resetting timer 4 to use in next state
-
-			//}
-			//}
 			break;
 
 		case WAIT_EXEC:
@@ -1105,15 +980,15 @@ void MyTrial::control() {
 			for (i = 0; i < 5; i++) {
 				if (stimFinger[i] == '1')
 				{
-					sF[i] = 5;
+					gVolts[i] = 5;
 				}
 
 			}
 
 			gBox.setVolts(0,
-				sF[1],
+				gVolts[1],
 				0,
-				sF[3],
+				gVolts[3],
 				0);
 
 			gs.showLines = 1;		// show force bars and thresholds
@@ -1121,60 +996,6 @@ void MyTrial::control() {
 			gs.showTarget = 0;		// show the targets on the screen (grey bars)
 			gs.showTimer5 = 0;		// show timer 4 value on screen (duration of holding a chord)
 			gs.boxColor = 5;		// grey baseline box color
-
-
-			//// checking state of each finger
-			//for (i = 0; i < 5; i++) {
-			//	tmpChord = chordID[i];	// required state of finger i -> 0:relaxed , 1:extended , 2:flexed -- chordID comes from the target file
-			//	fingerForceTmp = VERT_SHIFT + forceGain * fGain[i] * gBox.getForce(i);
-			//	switch (tmpChord) {
-			//	case '9':	// finger i stimulated with 0% probability
-			//		fingerCorrect[i] = ((fingerForceTmp <= VERT_SHIFT + baseTHhi) && (fingerForceTmp >= VERT_SHIFT - baseTHhi));
-			//		break;
-			//	case '1':	// finger i stimulated with 25% probability
-			//		fingerCorrect[i] = ((fingerForceTmp <= VERT_SHIFT + FLX_TOP_Y1) && (fingerForceTmp >= VERT_SHIFT + FLX_BOT_Y1));
-			//		break;
-			//	case '2':	// finger i stimulated with 75% probability
-			//		fingerCorrect[i] = ((fingerForceTmp <= VERT_SHIFT + FLX_BOT_Y1) && (fingerForceTmp >= VERT_SHIFT - (FLX_TOP_Y1)));
-			//		break;
-			//	case '3':	// finger i stimulated with 100% probability
-			//		fingerCorrect[i] = ((fingerForceTmp <= VERT_SHIFT + FLX_BOT_Y1) && (fingerForceTmp >= VERT_SHIFT - (FLX_TOP_Y1)));
-			//		break;
-			//	}
-			//	gs.fingerCorrectGraphic[i] = 1;
-			//}
-
-			//// Checking if the whole chord is correct
-			//chordCorrect = fingerCorrect[0];
-			//for (i = 1; i < 5; i++) {
-			//	chordCorrect = chordCorrect && fingerCorrect[i];
-			//}
-
-			//// resetting timer 5 every time the whole chord is wrong
-			//if (chordCorrect == 0) {
-			//	gTimer.reset(5);
-			//}
-
-			//// if subject held the chord for execAccTime (accepting hold time), trial is correct -> go to feedback state:
-			//if (gTimer[5] >= execAccTime) {
-			//	// chord was executed successfully so error = 0:
-			//	//chordErrorFlag = 0;
-
-			//	// RT equals the time it took the subject to execute the chord successfully after the go cue. 
-			//	// Also, remember that chord is held for 600ms so RT = 600ms + actual_RT:
-			//	//RT = gTimer[2];
-
-			//	// go to the give_feedback state:
-			//	state = GIVE_FEEDBACK;
-
-			//	// resetting timers:
-			//	gTimer.reset(2);
-			//	gTimer.reset(3);
-
-			//	// give finger perturbation
-			//	//gBox.setVolts(0, 0, 0, 0, 0);
-
-			//}
 
 			// If subject runs out of time:
 			if (gTimer[3] >= execMaxTime) {
@@ -1192,8 +1013,8 @@ void MyTrial::control() {
 			SetDIOState(0, 0xFFFF);
 
 			// end finger perturbation
-			sF[1] = 0;
-			sF[3] = 0;
+			gVolts[1] = 0;
+			gVolts[3] = 0;
 			gBox.setVolts(0, 0, 0, 0, 0);
 
 			gs.showLines = 1;			// no force lines/thresholds
@@ -1201,28 +1022,6 @@ void MyTrial::control() {
 			gs.showTarget = 0;			// no visual targets
 			gs.showTimer5 = 0;
 			gs.showFeedback = 0;		// showing feedback (refer to MyTrial::updateGraphics() for details)
-			//if (planErrorFlag == 1) {	// if error occurred during planning
-			//	gs.rewardTrial = -1;	// set reward to -1
-			//	trialPoint = -1;		// reward variable to save in .dat file
-			//	gs.planError = 1;		// set planError to 1 -> this enables verbal feedback to the participant
-			//	trialCorr = 0;
-			//	trialErrorType = 1;		// trial error type saved in the .dat file to know this was a planning error
-			//}
-			//else {
-			//	if (chordErrorFlag) {	// if exeution error happens; i.e. subject could not execute the chord before max trial time.
-			//		gs.rewardTrial = 0;	// set reward to zero
-			//		trialPoint = 0;		// reward variable to save in .dat file
-			//		gs.chordError = 1;	// give feedback for execution error 
-			//		trialCorr = 0;
-			//		trialErrorType = 2; // trial error type saved in the .dat file to know this was an execution error
-			//	}
-			//	else {
-			//		gs.rewardTrial = 1;	// If no error -> sets reward to 1
-			//		trialPoint = 1;		// reward variable to save in .dat file
-			//		trialCorr = 1;
-			//		trialErrorType = 0;
-			//	}
-			//}
 
 			if (gTimer[2] >= feedbackTime) {
 				state = WAIT_ITI;
@@ -1248,9 +1047,9 @@ void MyTrial::control() {
 	}
 
 	else {
-		forceFinger = finger;
 
-		fGain[forceFinger] = abs(baselineCorrection) / (0.1 * maxForce[forceFinger]);
+		forceFinger = finger;
+		fGain[forceFinger] = abs(baselineCorrection) / (0.05 * maxForce[forceFinger]);
 	}
 }
 
@@ -1258,15 +1057,15 @@ void MyTrial::control() {
 /// Data Record: creator records the current data from the device 
 /////////////////////////////////////////////////////////////////////////////////////
 DataRecord::DataRecord(int s) {
-	int i, j;
+	int i;
 	state = s;
 	time = gTimer[1];
 	timeReal = gTimer.getRealtime();
 
 
-	//for (j = 0; j < 5; j++) {
-		//fforce[j] = gBox.getForce(j);
-	//}
+	for (i = 0; i < 5;i++) {
+		fforce[i] = gBox.getForce(i);
+	}
 
 	for (i = 0; i < 5; i++) {
 		//diffForceMov[i] = (gBox[0].getForce(i) - gBox[1].getForce(i));	// diffForceMov = f_ext - f_flex
@@ -1282,14 +1081,11 @@ void DataRecord::write(ostream& out) {
 	out << state << "\t"
 		<< timeReal << "\t"
 		<< time << "\t";
-	for (i = 0; i < 2; i++) {	// Flexion and extension force -> fforce[0][:] is extension forces and fforce[1][:] is flexion forces
-		for (j = 0; j < 5; j++) {
-			out << fforce[i][j] << "\t";
-		}
+	
+	for (i = 0; i < 5; i++) {
+		out << fforce[i] << "\t";
 	}
-	for (i = 0; i < 5; i++) {	// Differential forces -> diffForceMov = extension force - flexion force
-		out << diffForceMov[i] << "\t";
-	}
+	
 	for (i = 0; i < 5; i++) {	// Position of visualized force bars
 		out << visualizedForce[i] << "\t";
 	}

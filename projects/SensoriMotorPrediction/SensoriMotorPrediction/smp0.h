@@ -95,8 +95,8 @@ public:
 	int state;
 	double timeReal;
 	double time;
-	double fforce[2][5];
-	double diffForceMov[5];
+	double fforce[5];
+	//double diffForceMov[5];
 	double visualizedForce[5];
 };
 

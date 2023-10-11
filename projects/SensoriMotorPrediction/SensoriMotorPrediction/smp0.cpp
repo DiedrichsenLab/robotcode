@@ -949,9 +949,12 @@ void MyTrial::control() {
 				}
 			}
 
-			if (gTimer[3] >= 500) {	// turn on visual target after 300ms of holding the baseline
+			/// Because of this wait time, total trial duration in .mov is 500 ms longer 
+			/// than in the .tgt file and stim occurs 500 ms after planTime
+			if (gTimer[3] > 500) {	// turn on visual target after 500ms of holding the baseline
 				gs.showTarget = 1;	// show visual target	
 			}
+
 			else {
 				gs.showTarget = 0;
 			}
@@ -964,7 +967,7 @@ void MyTrial::control() {
 			}
 
 			// if subjects holds the baseline zone for plan time after visual cue was shown go to execution state:
-			if (gTimer[3] >= 500 + planTime) {
+			if (gTimer[3] > 500 + planTime) {
 				state = WAIT_EXEC;
 				gTimer.reset(2);	// resetting timer 2 to use in next state
 				gTimer.reset(3);	// resetting timer 3 to use in next state
@@ -974,7 +977,7 @@ void MyTrial::control() {
 
 			break;
 
-		case WAIT_EXEC:
+		case WAIT_EXEC: //3
 
 			// deliver finger perturbation
 			for (i = 0; i < 5; i++) {
@@ -1008,7 +1011,7 @@ void MyTrial::control() {
 			}
 			break;
 
-		case GIVE_FEEDBACK:
+		case GIVE_FEEDBACK: //4
 			//SetDacVoltage(0, 0); // Ali EMG
 			SetDIOState(0, 0xFFFF);
 

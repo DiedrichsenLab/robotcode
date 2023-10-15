@@ -66,7 +66,8 @@ public:
 	int lineColor[NUMDISPLAYLINES];
 	GLfloat size[NUMDISPLAYLINES];
 	bool showBoxes;
-	bool showLines;
+	bool showTgLines;
+	bool showBsLines;
 	bool showForces;
 	bool showMaxForces;
 	bool showTarget;
@@ -89,14 +90,14 @@ public:
 class DataRecord {
 public:
 	DataRecord() {}
-	DataRecord(int s);
+	DataRecord(int s, int t);
 	void write(ostream& out);
 public:
 	int state;
+	int trialNum;
 	double timeReal;
 	double time;
 	double fforce[5];
-	//double diffForceMov[5];
 	double visualizedForce[5];
 };
 
@@ -161,7 +162,7 @@ private:
 	string stimFinger;						///< Stimulated finger 
 	bool trialCorr;							///< 1: trial is correct , 2: trial is not correct
 	int trialErrorType;						///< 0: no error , 1: movement during planning , 2: could not execute
-	double RT;								///< Reaction time: time from go cue to full execution of chord
+	double Favf[2] = { 0, 0 };							///< Average force during response (for feedback)
 	int trialPoint;							///< point received in each trial
 
 	DataManager<DataRecord, 30000 / 2> dataman;///< For data recording for MOV file 

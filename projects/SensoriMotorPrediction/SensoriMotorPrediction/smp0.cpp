@@ -28,10 +28,17 @@ bool gTimerFlagFirst = 0;
 //bool startTriggerEMG = 0;       // Ali added this: experimental - under construction
 //float emgTrigVolt = 2;	        // Ali added this: experimental - under construction
 
+double baselineCorrection = -3.0;    // move force cursor 3 cm away from baseline area at rest (Marco)
 bool maxF = 0;					///< 0>Task 1>Max Voluntary Force Measurament (Marco)
-int finger = 0;					///< Finger from which Max Voluntary Force is measured (Marco)
+int finger[2] = { 1, 3 };					///< Finger from which Max Voluntary Force is measured (Marco)
 double currentForce = 0;			// max force recorded from <finger>
 double maxForce[5] = { 0, 0, 0 ,0, 0 };  // max force recorded from each finger
+double bsForce = 0.05;           // force (% max) when the cursor are held into the baseline area
+double tgForce = 0.20;           // force (% max) that must be exerted on response
+bool trainF = 0;
+
+string fingers[5] = { "thumb", "index", "middle", "ring", "pinkie" };
+string fingerTask[2] = { fingers[finger[0]], fingers[finger[1]] };
 
 ///< Basic imaging parameters
 #define TRTIME 1000				///< timer for simulating timer
@@ -44,11 +51,12 @@ char counterSignal = '5';		///< What char is used to count the TR
 //int sliceNumber = 32;			///< How many slices do we have
 
 ///< Screen graphics definitions
-#define baseTHhi  1.2 // 1.2			// Half height of baseline area
+#define baseTHhi  1.2			// Half height of baseline area
 double fGain[5] = { 1.0 ,1.0,1.0,1.0,1.0 };	// finger specific force gains -> applied on each finger
 double forceGain = 1;						// universal force gain -> applied on all the fingers
 bool blockFeedbackFlag = 0;
 bool wait_baseline_zone = 1;				// if 1, waits until the subject's fingers are all in the baseline zone. 
+
 
 #define FINGWIDTH 2 //previously 1.3
 #define X_CURSOR_DEV 1.5
@@ -60,7 +68,7 @@ bool wait_baseline_zone = 1;				// if 1, waits until the subject's fingers are a
 
 double xPosBox[2] = { -X_CURSOR_DEV, X_CURSOR_DEV};
 #define FLX_ZONE_WIDTH 6
-#define FLX_BOT_Y1 6
+#define FLX_BOT_Y1 fGain[1]*maxForce[1]*tgForce - FLX_ZONE_WIDTH / 2 + baselineCorrection
 #define FLX_TOP_Y1 FLX_BOT_Y1+FLX_ZONE_WIDTH
 #define FLX_BOT_Y2 FLX_BOT_Y1
 #define FLX_TOP_Y2 FLX_TOP_Y1
@@ -96,7 +104,6 @@ int gNumWrong = 0;
 char gKey;
 bool gKeyPressed;
 //double gTargetWidth = 0.25;
-double baselineCorrection = -3.0;    // move force cursor a little away from baseline area at rest (Marco)
 //double gErrors[5] = { 0,0,0,0,0 };
 //double execAccTime = 600;
 //double sF[5] = { 0,0,0,0,0 };       
@@ -116,7 +123,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	//gExp->redirectIOToConsole();
 
 	// gExp->redirectIOToConsole();		// I uncommented this!!!
-	tDisp.init(gThisInst, 0, 0, 600, 20, 9, 2, &(::parseCommand));		// Default setting for the Windows 10 PC
+	tDisp.init(gThisInst, 0, 0, 600, 30, 9, 2, &(::parseCommand));		// Default setting for the Windows 10 PC
 	tDisp.setText("Subj", 0, 0);
 	gScreen.init(gThisInst, 1920, 0, 1920, 1080, &(::updateGraphics));	// Default setting for the Windows 10 PC
 	gScreen.setCenter(Vector2D(0, 0)); // This set the center of the screen where forces are calibrated with zero force // In cm //0,2
@@ -218,20 +225,38 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 
 	// Compute Max Force of each finger
 	else if (arguments[0] == "maxF") {
-		if (numArgs != 2) {
-			tDisp.print("USAGE: maxF finger> 0 (thumb) to 4 (pinkie), exit>-1)");
-		}
 
-		else if (arguments[1] == "-1") {
+		if (numArgs == 2 && arguments[1] == "-1") {
 			tDisp.print("Exit maxF");
 			maxF = 0;
 			//theTrial->MyTri();
 		}
 
-		else {
-			finger = std::stoi(arguments[1]);
+		else if (numArgs == 3){
+			finger[0] = std::stoi(arguments[1]);
+			finger[1] = std::stoi(arguments[2]);
 			maxF = 1;
 		}
+
+		else if (numArgs == 6) {
+			for (i = 1; i < 6; i++) {
+				maxForce[i - 1] = std::stod(arguments[i]);
+				fGain[i - 1] = abs(baselineCorrection) / (bsForce * maxForce[i - 1]);
+			}
+		}
+
+		else {
+			tDisp.print("USAGE: maxF <finger> or maxF <maxF1> <maxF2> <maxF3> <maxF4> <maxF5>, exit>-1)");
+		}
+
+
+	}
+
+	// Train on the amount of force needed to stay in the target
+	else if (arguments[0] == "trainF") {
+		trainF = !trainF;
+
+
 	}
 
 	//  Valves Command: set voltage channels directly 
@@ -278,10 +303,10 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 		else {
 			sscanf(arguments[1].c_str(), "%f", &arg[0]);
 			if (arg[0] > 0) {
-				gs.showLines = true;
+				gs.showTgLines = 1;
 			}
 			else {
-				gs.showLines = false;
+				gs.showTgLines = 0;
 			}
 		}
 	}
@@ -403,50 +428,52 @@ void MyBlock::start() {
 /// giveFeedback and put it to the graphic state 
 ///////////////////////////////////////////////////////////////
 void MyBlock::giveFeedback() {
-	gs.showLines = 0;
+	gs.showTgLines = 0;
+	gs.showBsLines = 0;
+	gs.showForces = 0;
 	int i, j, n = 0;
 	MyTrial* tpnr;
 	double medianRT;
 	double vecRT[2000];
 	blockFeedbackFlag = 1;
 
-	// putting RT values in an array
-	for (i = 0; i < 2000; i++) {
-		vecRT[i] = 0;
-	}
-	for (i = 0; i < trialNum; i++) { //check each trial
-		tpnr = (MyTrial*)trialVec.at(i);
-		if (tpnr->trialCorr == 1) { //if trial was correct
-			vecRT[i] = tpnr->RT - 600;
-			n++;	//count correct trials
-		}
-	}
+	//// putting RT values in an array
+	//for (i = 0; i < 2000; i++) {
+	//	vecRT[i] = 0;
+	//}
+	//for (i = 0; i < trialNum; i++) { //check each trial
+	//	tpnr = (MyTrial*)trialVec.at(i);
+	//	if (tpnr->trialCorr == 1) { //if trial was correct
+	//		vecRT[i] = tpnr->RT - 600;
+	//		n++;	//count correct trials
+	//	}
+	//}
 
-	// calculating the median RT
-	if (n > 2) {
-		double dummy;
-		for (i = 0; i < n - 1; i++) {
-			for (j = i + 1; j < n; j++) {
-				if (vecRT[i] > vecRT[j]) {
-					dummy = vecRT[i];
-					vecRT[i] = vecRT[j];
-					vecRT[j] = dummy;
-				}
-			}
-		}
-		if (n % 2 == 0) {
-			i = n / 2;
-			medianRT = ((vecRT[i - 1] + vecRT[i]) / 2);
-		}
-		else {
-			i = (n - 1) / 2;
-			medianRT = (vecRT[i]);
-		}
-	}
+	//// calculating the median RT
+	//if (n > 2) {
+	//	double dummy;
+	//	for (i = 0; i < n - 1; i++) {
+	//		for (j = i + 1; j < n; j++) {
+	//			if (vecRT[i] > vecRT[j]) {
+	//				dummy = vecRT[i];
+	//				vecRT[i] = vecRT[j];
+	//				vecRT[j] = dummy;
+	//			}
+	//		}
+	//	}
+	//	if (n % 2 == 0) {
+	//		i = n / 2;
+	//		medianRT = ((vecRT[i - 1] + vecRT[i]) / 2);
+	//	}
+	//	else {
+	//		i = (n - 1) / 2;
+	//		medianRT = (vecRT[i]);
+	//	}
+	//}
 
 	// number of correct and wrong trials
-	gNumCorr = n;
-	gNumWrong = trialNum - n;
+	/*gNumCorr = n;
+	gNumWrong = trialNum - n;*/
 
 	////gScreen.setColor(Screen::white);
 	//sprintf(buffer, "End of Block");
@@ -474,9 +501,9 @@ MyTrial::MyTrial() {
 	int i, j;
 	state = WAIT_TRIAL;
 	///< INIT TRIAL VARIABLE
-	trialCorr = 0;		// flag for tiral being correct or incorrect -> 0: trial error , 1: trial correct
-	trialErrorType = 0;	// flag for the type of trial error -> 0: no error , 1: planning error , 2: execution error
-	RT = 0;
+	//trialCorr = 0;		// flag for tiral being correct or incorrect -> 0: trial error , 1: trial correct
+	//trialErrorType = 0;	// flag for the type of trial error -> 0: no error , 1: planning error , 2: execution error
+	//RT = 0;
 }
 
 ///////////////////////////////////////////////////////////////
@@ -604,7 +631,12 @@ void MyTrial::updateTextDisplay() {
 	sprintf(buffer, "State : %d   Trial: %d", state, gExp->theBlock->trialNum);
 	tDisp.setText(buffer, 4, 0);
 
+	tDisp.setText("Fingers in task: " + fingerTask[0] + " " + fingerTask[1], 4, 1);
+
 	tDisp.setText("Condition: " + trialLabel, 5, 0);
+
+	/*sprintf(buffer, "Av Resp: %2.2f   %2.2f   %d", Favf[0], Favf[1], Fcount);
+	tDisp.setText(buffer, 5, 1);*/
 
 	// display forces
 	tDisp.setText("Forces", 7, 0);
@@ -625,8 +657,8 @@ void MyTrial::updateTextDisplay() {
 	tDisp.setText(buffer, 14, 0);
 
 	// display maxF
-	sprintf(buffer, "maxF: %d", maxF);
-	tDisp.setText(buffer, 13, 1);
+	sprintf(buffer, "maxF: %d   trainF: %d", maxF, trainF);
+	tDisp.setText(buffer, 10, 1);
 
 	// force gains
 	sprintf(buffer, "GlobalGain = %1.1f     forceGain = %1.1f %1.1f %1.1f %1.1f %1.1f", forceGain, fGain[0], fGain[1], fGain[2], fGain[3], fGain[4]);
@@ -636,8 +668,6 @@ void MyTrial::updateTextDisplay() {
 ///////////////////////////////////////////////////////////////
 /// updateGraphics: Call from ScreenHD 
 ///////////////////////////////////////////////////////////////
-
-
 void MyTrial::updateGraphics(int what) {
 	int i;
 	char tmpChord;
@@ -649,7 +679,7 @@ void MyTrial::updateGraphics(int what) {
 		gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));
 	}
 
-	if (maxF == 0) {
+	if (maxF == 0 || trainF == 1) {
 
 
 		if (gs.showTarget == 1) { // show target squares
@@ -716,7 +746,7 @@ void MyTrial::updateGraphics(int what) {
 			}
 		}
 
-		if (gs.showLines == 1) { // show lines
+		if (gs.showBsLines == 1) { // show lines
 			// Baseline box
 			gScreen.setColor(myColor[gs.boxColor]);
 			gScreen.drawBox(BASELINE_X2 - BASELINE_X1, (baseTHhi) * 2, 0, VERT_SHIFT);
@@ -726,29 +756,32 @@ void MyTrial::updateGraphics(int what) {
 			gScreen.drawLine(BASELINE_X1, VERT_SHIFT + baseTHhi, BASELINE_X2, VERT_SHIFT + baseTHhi);
 			gScreen.drawLine(BASELINE_X1, VERT_SHIFT - baseTHhi, BASELINE_X2, VERT_SHIFT - baseTHhi);
 
+		}
+
+		if (gs.showTgLines == 1) {
 			// Ext Bottom threshold
 			gScreen.setColor(Screen::grey);
 			gScreen.drawLine(BASELINE_X1, VERT_SHIFT + FLX_BOT_Y1, BASELINE_X2, VERT_SHIFT + FLX_BOT_Y2);
 			// Ext Top threshold
 			gScreen.setColor(Screen::grey);
 			gScreen.drawLine(BASELINE_X1, VERT_SHIFT + FLX_TOP_Y1, BASELINE_X2, VERT_SHIFT + FLX_TOP_Y2);
-
-		}
+		}			
+		
 
 		if (gs.showForces == 1) {
 			for (i = 0; i < 5; i++) {
-				diffForce[i] = fGain[i] * gBox.getForce(i) + baselineCorrection;
+				diffForce[i] = fGain[i] * gBox.getForce(i);
 			}
 			// Finger forces (difference -> force = f_ext - f_flex)
 			gScreen.setColor(Screen::red);
 			gScreen.drawLine(- X_CURSOR_DEV - FINGWIDTH / 2,
-				VERT_SHIFT + forceGain * diffForce[1], 
+				VERT_SHIFT + forceGain * diffForce[1] + baselineCorrection,
 				- X_CURSOR_DEV + FINGWIDTH / 2,
-				VERT_SHIFT + forceGain * diffForce[1]);
+				VERT_SHIFT + forceGain * diffForce[1] + baselineCorrection);
 			gScreen.drawLine(X_CURSOR_DEV - FINGWIDTH / 2,
-				VERT_SHIFT + forceGain * diffForce[3],
+				VERT_SHIFT + forceGain * diffForce[3] + baselineCorrection,
 				X_CURSOR_DEV + FINGWIDTH / 2,
-				VERT_SHIFT + forceGain * diffForce[3]);
+				VERT_SHIFT + forceGain * diffForce[3] + baselineCorrection);
 			//gScreen.drawLine(((3 * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) + FINGER_SPACING, VERT_SHIFT + forceGain * diffForce[3], (((3 + 1)* FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) - FINGER_SPACING, VERT_SHIFT + forceGain * diffForce[3]);
 
 			
@@ -771,62 +804,95 @@ void MyTrial::updateGraphics(int what) {
 		//}
 
 		if (gs.showFeedback) { // show feedback
-			gScreen.setColor(Screen::white);
-			if (gs.rewardTrial == 1)
-				gScreen.print("Point: +1", 0, 7, 4);
-			else if (gs.rewardTrial == 0)
-				gScreen.print("Point: 0", 0, 7, 4);
-			else if (gs.rewardTrial == -1)
-				gScreen.print("Point: -1", 0, 7, 4);
-			//if (gs.planError)
-				//gScreen.print("-Moved during planning-", 0, 3, 7);
-			//if (gs.chordError)
-				//gScreen.print("-Chord too short-", 0, 3, 7);
+			gScreen.setColor(Screen::red);
+			gScreen.drawLine(-X_CURSOR_DEV - FINGWIDTH / 2,
+				Favf[0] / 1250,
+				-X_CURSOR_DEV + FINGWIDTH / 2,
+				Favf[0] / 1250);
+			gScreen.drawLine(X_CURSOR_DEV - FINGWIDTH / 2,
+				Favf[1] / 1250,
+				X_CURSOR_DEV + FINGWIDTH / 2,
+				Favf[1] / 1250);
 		}
 
 		if (gs.showDiagnostics) {
 			string stateString;
-			switch (state)
-			{
-			case WAIT_TRIAL:
-				stateString = "Wait Trial";
-				break;
-			case START_TRIAL:
-				stateString = "Start Trial";
-				break;
-			case WAIT_PLAN:
-				stateString = "Wait Plan";
-				break;
-			case WAIT_EXEC:
-				stateString = "Wait Exec";
-				break;
-			case GIVE_FEEDBACK:
-				stateString = "Give Feedback";
-				break;
-			case WAIT_ITI:
-				stateString = "Wait ITI";
-				break;
-			case END_TRIAL:
-				stateString = "End Trial";
-				break;
-			case MAX_FORCE:
-				stateString = "Max Force";
-				break;
+
+			if (trainF == 0) {
+				switch (state)
+				{
+				case WAIT_TRIAL:
+					stateString = "Wait Trial";
+					break;
+				case START_TRIAL:
+					stateString = "Start Trial";
+					break;
+				case WAIT_PLAN:
+					stateString = "Wait Plan";
+					break;
+				case WAIT_EXEC:
+					stateString = "Wait Exec";
+					break;
+				case GIVE_FEEDBACK:
+					stateString = "Give Feedback";
+					break;
+				case WAIT_ITI:
+					stateString = "Wait ITI";
+					break;
+				case END_TRIAL:
+					stateString = "End Trial";
+					break;
+				}
 			}
+
+			else {
+				stateString = "Train Force";
+			}
+
 			gScreen.setColor(Screen::white);
 			gScreen.print(stateString, -21, 12, 5);
 		}
 	}
 
-	else {
+	else if (maxF == 1 && trainF == 0) {
 
-		forceFinger = finger;
+		//forceFinger = finger;
+		string stateString;
+		stateString = "Max Force";
+		gScreen.setColor(Screen::white);
+		gScreen.print(stateString, -21, 12, 5);
+		//gScreen.print(to_string(maxForce[forceFinger]), 6, 3, 4);
 
-		currentForce = gBox.getForce(forceFinger);
-		if (currentForce > maxForce[forceFinger]) {
-			maxForce[forceFinger] = currentForce;
-		}
-		gScreen.print(to_string(maxForce[forceFinger]), 6, 3, 4);
+		xPos = xPosBox[0];//(x1 + x2) * 0.5;
+		yPos = (0 + 0.5 * gBox.getForce(1)) * 0.5  - 8;
+		xSize = FINGWIDTH;
+		ySize =  0.5 * gBox.getForce(1) - 0;
+
+		gScreen.setColor(Screen::green);
+		gScreen.drawBox(xSize, ySize, xPos, yPos);
+
+		xPos = xPosBox[1];//(x1 + x2) * 0.5;
+		yPos = (0  + 0.5 * gBox.getForce(3)) * 0.5  - 8;
+		xSize = FINGWIDTH;
+		ySize =  0.5 * gBox.getForce(3) - 0;
+
+		gScreen.setColor(Screen::green);
+		gScreen.drawBox(xSize, ySize, xPos, yPos);
+		gScreen.setColor(Screen::grey);
+		gScreen.drawLine(BASELINE_X1, -8, BASELINE_X2, -8);
+
+
+		gScreen.setColor(Screen::red);
+		forceFinger = finger[0];
+		gScreen.drawLine(-X_CURSOR_DEV - FINGWIDTH / 2,
+			0.5 * maxForce[forceFinger] + baselineCorrection - 5,
+			-X_CURSOR_DEV + FINGWIDTH / 2,
+			0.5 * maxForce[forceFinger] + baselineCorrection - 5);
+		forceFinger = finger[1];
+		gScreen.drawLine(X_CURSOR_DEV - FINGWIDTH / 2,
+			0.5 * maxForce[forceFinger] + baselineCorrection - 5,
+			X_CURSOR_DEV + FINGWIDTH / 2,
+			0.5 * maxForce[forceFinger] + baselineCorrection - 5);
 
 	}
 }
@@ -848,7 +914,7 @@ void MyTrial::updateHaptics() {
 
 	/// record the data at record frequency 
 	if (dataman.isRecording()) {
-		bool x = dataman.record(DataRecord(state));
+		bool x = dataman.record(DataRecord(state, gExp->theBlock->trialNum));
 		if (!x) {
 			dataman.stopRecording();
 		}
@@ -867,15 +933,19 @@ void MyTrial::control() {
 	double fingerForceTmp;
 	char tmpChord;
 	bool check_baseline_hold = 0;
-	int fi[2] = { 1, 3 };
+	int fi[2] = { finger[0], finger[1] };
 
 	gs.showDiagnostics = 1;
 
-	if (maxF == 0) {
+	/*Favf[0] = 0;
+	Favf[1] = 0;*/
+
+	if (maxF == 0 && trainF == 0) {
 
 		switch (state) {
 		case WAIT_TRIAL: //0
-			gs.showLines = 1;	// set screen lines/force bars to show
+			gs.showTgLines = 0;	// set screen lines/force bars to show
+			gs.showBsLines = 1;
 			gs.showForces = 1;
 			gs.showFeedback = 0;
 			gs.showTarget = 0;
@@ -901,7 +971,8 @@ void MyTrial::control() {
 
 			break;
 		case START_TRIAL: //1	e
-			gs.showLines = 1;	// set screen lines/force bars to show
+			gs.showTgLines = 1;	// set screen lines/force bars to show
+			gs.showBsLines = 1;
 			gs.showFeedback = 0;
 			gs.showForces = 1;
 			gs.showTimer5 = 0;
@@ -951,7 +1022,7 @@ void MyTrial::control() {
 
 			/// Because of this wait time, total trial duration in .mov is 500 ms longer 
 			/// than in the .tgt file and stim occurs 500 ms after planTime
-			if (gTimer[3] > 500) {	// turn on visual target after 500ms of holding the baseline
+			if (gTimer[3] > 5) {	// turn on visual target after 500ms of holding the baseline
 				gs.showTarget = 1;	// show visual target	
 			}
 
@@ -983,7 +1054,7 @@ void MyTrial::control() {
 			for (i = 0; i < 5; i++) {
 				if (stimFinger[i] == '1')
 				{
-					gVolts[i] = 5;
+					gVolts[i] = 5; // set the volts to be sent to the Pneumatic Box
 				}
 
 			}
@@ -994,11 +1065,19 @@ void MyTrial::control() {
 				gVolts[3],
 				0);
 
-			gs.showLines = 1;		// show force bars and thresholds
+			gs.showTgLines = 1;	// set screen lines/force bars to show
+			gs.showBsLines = 1;
 			gs.showForces = 0;
 			gs.showTarget = 0;		// show the targets on the screen (grey bars)
 			gs.showTimer5 = 0;		// show timer 4 value on screen (duration of holding a chord)
 			gs.boxColor = 5;		// grey baseline box color
+
+			if (gTimer[3]>500) {
+				for (i = 0; i < 2; i++) {	// check fingers' states -> fingers should stay in the baseline during planning
+					fingerForceTmp = VERT_SHIFT + forceGain * fGain[fi[i]] * gBox.getForce(fi[i]) + baselineCorrection;
+					Favf[i] = (Favf[i] + fingerForceTmp);
+				}
+			}
 
 			// If subject runs out of time:
 			if (gTimer[3] >= execMaxTime) {
@@ -1020,11 +1099,12 @@ void MyTrial::control() {
 			gVolts[3] = 0;
 			gBox.setVolts(0, 0, 0, 0, 0);
 
-			gs.showLines = 1;			// no force lines/thresholds
-			gs.showForces = 1;
+			gs.showTgLines = 1;	// set screen lines/force bars to show
+			gs.showBsLines = 1;
+			gs.showForces = 0;
 			gs.showTarget = 0;			// no visual targets
 			gs.showTimer5 = 0;
-			gs.showFeedback = 0;		// showing feedback (refer to MyTrial::updateGraphics() for details)
+			gs.showFeedback = 1;		// showing feedback (refer to MyTrial::updateGraphics() for details)
 
 			if (gTimer[2] >= feedbackTime) {
 				state = WAIT_ITI;
@@ -1033,7 +1113,8 @@ void MyTrial::control() {
 			break;
 
 		case WAIT_ITI:
-			gs.showLines = 1;
+			gs.showTgLines = 1;	// set screen lines/force bars to show
+			gs.showBsLines = 1;
 			gs.showForces = 0;
 			gs.showTarget = 0;
 			gs.showFeedback = 0;
@@ -1049,19 +1130,40 @@ void MyTrial::control() {
 		}
 	}
 
-	else {
+	else if (maxF == 1) {
 
-		forceFinger = finger;
-		fGain[forceFinger] = abs(baselineCorrection) / (0.05 * maxForce[forceFinger]);
+		forceFinger = finger[0];
+		currentForce = gBox.getForce(forceFinger);
+		if (currentForce > maxForce[forceFinger]) {
+			maxForce[forceFinger] = currentForce;
+		}
+		fGain[forceFinger] = abs(baselineCorrection) / (bsForce * maxForce[forceFinger]);
+
+		forceFinger = finger[1];
+		currentForce = gBox.getForce(forceFinger);
+		if (currentForce > maxForce[forceFinger]) {
+			maxForce[forceFinger] = currentForce;
+		}
+		fGain[forceFinger] = abs(baselineCorrection) / (bsForce * maxForce[forceFinger]);
+	}
+
+	else if (trainF == 1) {
+
+		gs.showTgLines = 1;	// set screen lines/force bars to show
+		gs.showBsLines = 1;
+		gs.showForces = 1;
+
 	}
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
 /// Data Record: creator records the current data from the device 
 /////////////////////////////////////////////////////////////////////////////////////
-DataRecord::DataRecord(int s) {
+DataRecord::DataRecord(int s, int t) {
 	int i;
+	int fi[2] = { finger[0], finger[1] };
 	state = s;
+	trialNum = t;
 	time = gTimer[1];
 	timeReal = gTimer.getRealtime();
 
@@ -1070,9 +1172,8 @@ DataRecord::DataRecord(int s) {
 		fforce[i] = gBox.getForce(i);
 	}
 
-	for (i = 0; i < 5; i++) {
-		//diffForceMov[i] = (gBox[0].getForce(i) - gBox[1].getForce(i));	// diffForceMov = f_ext - f_flex
-		visualizedForce[i] = VERT_SHIFT + forceGain * gBox.getForce(i);	// The position of the force bars that are shown on the screen
+	for (i = 0; i < 2; i++) {
+		visualizedForce[i] = VERT_SHIFT + forceGain * fGain[fi[i]] * gBox.getForce(fi[i]) + baselineCorrection;	// The position of the force bars that are shown on the screen
 	}
 }
 
@@ -1080,8 +1181,10 @@ DataRecord::DataRecord(int s) {
 // Writes out the data to the *.mov file 
 /////////////////////////////////////////////////////////////////////////////////////
 void DataRecord::write(ostream& out) {
-	int i, j;
-	out << state << "\t"
+	int i;
+
+	out << trialNum << "\t"
+		<< state << "\t"
 		<< timeReal << "\t"
 		<< time << "\t";
 	
@@ -1089,7 +1192,7 @@ void DataRecord::write(ostream& out) {
 		out << fforce[i] << "\t";
 	}
 	
-	for (i = 0; i < 5; i++) {	// Position of visualized force bars
+	for (i = 0; i < 2; i++) {	// Position of visualized force bars
 		out << visualizedForce[i] << "\t";
 	}
 	out << endl;
@@ -1121,7 +1224,8 @@ GraphicState::GraphicState() {
 	lineColor[2] = 1;			// white 
 	size[2] = 5;
 
-	showLines = true;
+	showTgLines = true;
+	showBsLines = true;
 	showBoxes = 0;
 	boxColor = 5;
 }

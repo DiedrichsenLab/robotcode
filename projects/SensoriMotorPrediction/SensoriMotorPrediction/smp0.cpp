@@ -259,6 +259,17 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 
 	//}
 
+	// Baseline correction
+	else if (arguments[0] == "baselineC") {
+		if (numArgs != 2) {
+			tDisp.print("USAGE: baselineC <value>");
+		}
+
+		else {
+			baselineCorrection = std::stoi(arguments[1]);
+		}
+	}
+
 	//  Valves Command: set voltage channels directly 
 	else if (arguments[0] == "push") {
 		if (numArgs != 6) {
@@ -542,11 +553,10 @@ void MyTrial::writeDat(ostream& out) {
 		<< fGain[4] << "\t"
 		<< forceGain << "\t"					// Global force gain for all fingers
 		<< VERT_SHIFT << "\t"					// vertical shift applied to the screen
+		<< VERT_SHIFT - baseTHhi << "\t"		// baseline bottom thresh
 		<< VERT_SHIFT + baseTHhi << "\t"		// baseline top thresh
-		<< VERT_SHIFT + FLX_TOP_Y1 << "\t"		// ext top threshold
-		<< VERT_SHIFT + FLX_BOT_Y1 << "\t"		// ext bottom threshold
-		<< VERT_SHIFT - (FLX_TOP_Y1) << "\t"	// flex top threshold
-		<< VERT_SHIFT - FLX_BOT_Y1 << "\t"		// flex bot threshold
+		<< VERT_SHIFT + FLX_BOT_Y1 << "\t"		// min response force
+		<< baselineCorrection << "\t"
 		<< endl;
 }
 
@@ -570,11 +580,10 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "fGain5" << "\t"
 		<< "forceGain" << "\t"
 		<< "verticalShift" << '\t'
+		<< "baselineBottomThresh" << '\t'
 		<< "baselineTopThresh" << '\t'
-		<< "extTopThresh" << '\t'
-		<< "extBotThresh" << '\t'
-		<< "flexTopThresh" << '\t'
-		<< "flexBotThresh" << '\t'
+		<< "minResponseForce" << '\t'
+		<< "baselineCorrection" << '\t'
 		<< endl;
 }
 

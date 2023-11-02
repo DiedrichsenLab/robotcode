@@ -146,6 +146,9 @@ public:
 	//				forceFinger = finger;
 	//			}
 	//		}
+public:
+	string chordID;							///< Chord identifier. 0: neutral , 1: flexion , 2: extension
+
 
 private:
 	int forceFinger;								///< finger for max force calculation
@@ -158,7 +161,6 @@ private:
 	int iti;								///< inter trial interval
 	//double Random;							///< random number
 	string trialLabel;						///< Condition label
-	string chordID;							///< Chord identifier. 0: neutral , 1: flexion , 2: extension
 	string stimFinger;						///< Stimulated finger 
 	bool trialCorr;							///< 1: trial is correct , 2: trial is not correct
 	int trialErrorType;						///< 0: no error , 1: movement during planning , 2: could not execute

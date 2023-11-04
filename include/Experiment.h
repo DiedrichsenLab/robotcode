@@ -55,10 +55,10 @@ public:
 	virtual bool isFinished() = 0;						///< Trial Finished ? 
 	virtual bool isValid(){return true;}			    ///< Has trial been valid?
 	virtual Trial *copy() {return this;}			    ///< get a copy of the trial
-	virtual void updateTextDisplay(){}			///< Update the text display (call from Text display)
-	virtual void copyHaptics(){}				///< Copy haptic state for thread safe copying 
-	virtual void record(){}						///< recording of data frame 
-	//virtual void Myforce(int finger) = 0;							/// record force of individual fingers (e.g. max force) added by Marco
+	virtual void updateTextDisplay(){}			        ///< Update the text display (call from Text display)
+	virtual void copyHaptics(){}				        ///< Copy haptic state for thread safe copying 
+	virtual void record(){}						        ///< recording of data frame 
+	//virtual void force(int finger) = 0;				    /// record force of individual fingers (e.g. max force) added by Marco
 };
 
 

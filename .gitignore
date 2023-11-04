@@ -1,6 +1,7 @@
 
 data/
 *.tgt
+!projects/SensoriMotorPrediction/SensoriMotorPrediction/target/*.tgt
 *.xlsx
 *.csv
 projects/ExtFlexChord/efc1/target/targetExcel/.DS_Store

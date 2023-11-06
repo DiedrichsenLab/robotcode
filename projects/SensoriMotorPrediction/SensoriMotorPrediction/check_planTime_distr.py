@@ -4,7 +4,7 @@ import os
 import numpy as np
 
 # Parameters
-nBlock = 5  # number of blocks in experiment
+nBlock = 10  # number of blocks in experiment
 cues = [39, 93, 12, 21, 44]  # probability cues
 directory = 'target/'
 
@@ -31,6 +31,7 @@ for block in range(nBlock):
 
 # Define the limits for x-axis
 xlims = (global_min_planTime, global_max_planTime)
+ylims = (0, 6)
 
 # Read the data and plot
 for i, cue in enumerate(cues):
@@ -54,6 +55,7 @@ for i, cue in enumerate(cues):
     axes[i].set_ylabel('Frequency')
     axes[i].set_xlabel('planTime (ms)')
     axes[i].set_xlim(xlims)
+    axes[i].set_ylim(ylims)
 
     # Draw a red vertical line indicating the mean planTime
     mean_planTime = np.mean(plan_times)

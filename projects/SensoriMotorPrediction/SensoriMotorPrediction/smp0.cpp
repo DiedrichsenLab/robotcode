@@ -343,17 +343,17 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 		}
 	}
 
-	/// play sound
-	//add to target whether sound on or off?
-	else if (arguments[0] == "playsound") {
-		if (numArgs != 2) {
-			tDisp.print("USAGE: sound on->1 off->0");
-		}
-		else {
-			sscanf(arguments[1].c_str(), "%f", &arg[0]);
-			gSound = arg[0];
-		}
-	}
+	///// play sound
+	////add to target whether sound on or off?
+	//else if (arguments[0] == "playsound") {
+	//	if (numArgs != 2) {
+	//		tDisp.print("USAGE: sound on->1 off->0");
+	//	}
+	//	else {
+	//		sscanf(arguments[1].c_str(), "%f", &arg[0]);
+	//		gSound = arg[0];
+	//	}
+	//}
 
 	/// diagnostics on or off
 	// set whether diagnostics are on or off - refer to gs.showDiagnostis in MyTrial::updateGraphics

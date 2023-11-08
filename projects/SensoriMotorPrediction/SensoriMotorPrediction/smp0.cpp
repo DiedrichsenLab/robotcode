@@ -68,7 +68,7 @@ bool wait_baseline_zone = 1;				// if 1, waits until the subject's fingers are a
 //#define LINEWIDTH 1.5
 
 double xPosBox[2] = { -X_CURSOR_DEV, X_CURSOR_DEV};
-#define FLX_ZONE_WIDTH 10
+#define FLX_ZONE_WIDTH 5
 #define FLX_BOT_Y1 6.5 - abs(baselineCorrection)  //fGain[1]*maxForce[1]*tgForce - FLX_ZONE_WIDTH / 2 + baselineCorrection
 #define FLX_TOP_Y1 FLX_BOT_Y1+FLX_ZONE_WIDTH 
 #define FLX_BOT_Y2 FLX_BOT_Y1
@@ -725,7 +725,7 @@ void MyTrial::updateGraphics(int what) {
 			}
 			// 25% probability
 			else if (tmpChord == '1') {
-				ySize = 0.25 * FINGWIDTH;
+				ySize = 0.25 * FLX_ZONE_WIDTH;
 				yPos = FLX_BOT_Y1 + ySize * 0.5 + VERT_SHIFT;
 				gScreen.setColor(Screen::white);
 				gScreen.drawBox(xSize, ySize, xPos, yPos);
@@ -733,7 +733,7 @@ void MyTrial::updateGraphics(int what) {
 			}
 			// 75% probability
 			else if (tmpChord == '2') {
-				ySize = 0.75 * FINGWIDTH;
+				ySize = 0.75 * FLX_ZONE_WIDTH;
 				yPos = FLX_BOT_Y1 + ySize * 0.5 + VERT_SHIFT;
 				gScreen.setColor(Screen::white);
 				gScreen.drawBox(xSize, ySize, xPos, yPos);
@@ -741,7 +741,7 @@ void MyTrial::updateGraphics(int what) {
 			}
 			// 100% probability
 			else if (tmpChord == '3') {
-				ySize = 1 * FINGWIDTH;
+				ySize = 1 * FLX_ZONE_WIDTH;
 				yPos = FLX_BOT_Y1 + ySize * 0.5 + VERT_SHIFT;
 				gScreen.setColor(Screen::white);
 				gScreen.drawBox(xSize, ySize, xPos, yPos);
@@ -750,7 +750,7 @@ void MyTrial::updateGraphics(int what) {
 
 			// 50% probability
 			else if (tmpChord == '4') {
-				ySize = 0.5 * FINGWIDTH;
+				ySize = 0.5 * FLX_ZONE_WIDTH;
 				yPos = FLX_BOT_Y1 + ySize * 0.5 + VERT_SHIFT;
 				gScreen.setColor(Screen::white);
 				gScreen.drawBox(xSize, ySize, xPos, yPos);
@@ -775,6 +775,15 @@ void MyTrial::updateGraphics(int what) {
 		// Ext Bottom threshold
 		gScreen.setColor(Screen::grey);
 		gScreen.drawLine(BASELINE_X1, VERT_SHIFT + FLX_BOT_Y1, BASELINE_X2, VERT_SHIFT + FLX_BOT_Y2);
+
+		gScreen.setColor(myColor[7]);
+		gScreen.drawLine(BASELINE_X1, VERT_SHIFT + FLX_BOT_Y1 + 0.25 * FLX_ZONE_WIDTH, BASELINE_X2, VERT_SHIFT + FLX_BOT_Y2 + 0.25 * FLX_ZONE_WIDTH);
+		gScreen.drawLine(BASELINE_X1, VERT_SHIFT + FLX_BOT_Y1 + 0.5 * FLX_ZONE_WIDTH, BASELINE_X2, VERT_SHIFT + FLX_BOT_Y2 + 0.5 * FLX_ZONE_WIDTH);
+		gScreen.drawLine(BASELINE_X1, VERT_SHIFT + FLX_BOT_Y1 + 0.75 * FLX_ZONE_WIDTH, BASELINE_X2, VERT_SHIFT + FLX_BOT_Y2 + 0.75 * FLX_ZONE_WIDTH);
+		gScreen.drawLine(BASELINE_X1, VERT_SHIFT + FLX_BOT_Y1 + FLX_ZONE_WIDTH, BASELINE_X2, VERT_SHIFT + FLX_BOT_Y2 + FLX_ZONE_WIDTH);
+
+		gScreen.print("100%", BASELINE_X2 + 1, VERT_SHIFT + FLX_BOT_Y1 + FLX_ZONE_WIDTH, 2.5);
+
 		//// Ext Top threshold
 		//gScreen.setColor(Screen::grey);
 		//gScreen.drawLine(BASELINE_X1, VERT_SHIFT + FLX_TOP_Y1, BASELINE_X2, VERT_SHIFT + FLX_TOP_Y2);

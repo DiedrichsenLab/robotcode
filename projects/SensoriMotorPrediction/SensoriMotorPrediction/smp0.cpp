@@ -196,8 +196,7 @@ void MyExperiment::control(void) {
 bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 	int b, i;
 	float arg[4];
-	int tmpChord;
-	double x1, x2, xPos, yPos, xSize, ySize;
+	//int tmpChord;
 	MSG msg;
 
 
@@ -227,7 +226,7 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 	}
 
 	/// Zero the force of the two fingerBox
-	if (arguments[0] == "showCue") {
+	else if (arguments[0] == "showCue") {
 		if (numArgs != 2) {
 			tDisp.print("USAGE: showCue <probability1probability2)>");
 		}

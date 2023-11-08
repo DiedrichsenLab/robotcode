@@ -88,7 +88,7 @@ void parseCommand(string line) {
 	} else if (arguments[0].length()>0) { 
 		correctCommand=gExp->parseCommand(arguments,numArgs);
 		if (!correctCommand){ 
-			tDisp.print("Unknow command"); 
+			tDisp.print("Unknown command"); 
 		} 
 	} 
 } 

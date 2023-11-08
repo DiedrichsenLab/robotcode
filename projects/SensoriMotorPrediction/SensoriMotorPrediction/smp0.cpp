@@ -782,7 +782,11 @@ void MyTrial::updateGraphics(int what) {
 		gScreen.drawLine(BASELINE_X1, VERT_SHIFT + FLX_BOT_Y1 + 0.75 * FLX_ZONE_WIDTH, BASELINE_X2, VERT_SHIFT + FLX_BOT_Y2 + 0.75 * FLX_ZONE_WIDTH);
 		gScreen.drawLine(BASELINE_X1, VERT_SHIFT + FLX_BOT_Y1 + FLX_ZONE_WIDTH, BASELINE_X2, VERT_SHIFT + FLX_BOT_Y2 + FLX_ZONE_WIDTH);
 
-		gScreen.print("100%", BASELINE_X2 + 1, VERT_SHIFT + FLX_BOT_Y1 + FLX_ZONE_WIDTH, 2.5);
+		gScreen.print("100%", BASELINE_X2 + 0.5, VERT_SHIFT + FLX_BOT_Y1 + FLX_ZONE_WIDTH, 2.5);
+		gScreen.print("50%", BASELINE_X2 + 0.5, VERT_SHIFT + FLX_BOT_Y1 + 0.5 * FLX_ZONE_WIDTH, 2.5);
+		gScreen.print("25%", BASELINE_X2 + 0.5, VERT_SHIFT + FLX_BOT_Y1 + 0.25 * FLX_ZONE_WIDTH, 2.5);
+		gScreen.print("75%", BASELINE_X2 + 0.5, VERT_SHIFT + FLX_BOT_Y1 + 0.75 * FLX_ZONE_WIDTH, 2.5);
+		gScreen.print("0%", BASELINE_X2 + 0.5, VERT_SHIFT + FLX_BOT_Y1, 2.5);
 
 		//// Ext Top threshold
 		//gScreen.setColor(Screen::grey);

@@ -1054,7 +1054,7 @@ void MyTrial::control() {
 
 		/// Because of this wait time, total trial duration in .mov is 500 ms longer 
 		/// than in the .tgt file and stim occurs 500 ms after planTime
-		if (gTimer[3] > 5) {	// turn on visual target after 500ms of holding the baseline
+		if (gTimer[3] > 500) {	// turn on visual target after 500ms of holding the baseline
 			gs.showTarget = 1;	// show visual target	
 		}
 
@@ -1070,7 +1070,7 @@ void MyTrial::control() {
 		}
 
 		// if subjects holds the baseline zone for plan time after visual cue was shown go to execution state:
-		if (gTimer[3] > 500 + planTime) {
+		if (gTimer[3] > planTime) {
 			state = WAIT_EXEC;
 			gTimer.reset(2);	// resetting timer 2 to use in next state
 			gTimer.reset(3);	// resetting timer 3 to use in next state

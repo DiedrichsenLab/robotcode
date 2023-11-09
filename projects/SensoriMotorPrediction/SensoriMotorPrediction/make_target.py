@@ -43,7 +43,7 @@ def gen_targets(cues, column_names, nRep, subNum, pt1, pt2, execMaxTime, feedbac
     # np.random.shuffle(cues)
 
     # Generate random planTime values within the range [pt1, pt2]
-    planTime = np.random.uniform(pt1, pt2, len(cueID))
+    planTime = np.random.uniform(pt1, pt2, len(cueID)).round().astype(int)
 
     # Generate the columns
     col_subNum = subNum * np.ones(len(cueID), dtype=int)

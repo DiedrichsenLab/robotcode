@@ -86,9 +86,9 @@ subNum = 100  # subject number
 
 pt1 = 1500  # minimum time for planning (ms)
 pt2 = 2500  # maximum time for planning (ms)
-execMaxTime = 1000  # maximum time for execution
-feedbackTime = 1000  # time to present feedback
-iti = 500  # inter-trial interval
+execMaxTime = 3000  # maximum time for execution
+feedbackTime = 2000  # time to present feedback
+iti = 1000  # inter-trial interval
 
 # column names:
 column_names = ['subNum', 'cueID', 'stimFinger', 'planTime', 'execMaxTime', 'feedbackTime', 'iti', 'trialLabel']

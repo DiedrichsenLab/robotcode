@@ -82,7 +82,7 @@ nRep = 4  # number of repetitions of each cue
 directory = 'target/'
 
 experiment = 'smp0'  # experiment id
-subNum = 100  # subject number
+subNum = 101  # subject number
 
 pt1 = 1500  # minimum time for planning (ms)
 pt2 = 2500  # maximum time for planning (ms)

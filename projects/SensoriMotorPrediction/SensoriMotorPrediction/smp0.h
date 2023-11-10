@@ -67,6 +67,7 @@ public:
 	GLfloat size[NUMDISPLAYLINES];
 	bool showBoxes;
 	bool showTgLines;
+	bool showPrLines;
 	bool showBsLines;
 	bool showForces;
 	bool showMaxForces;

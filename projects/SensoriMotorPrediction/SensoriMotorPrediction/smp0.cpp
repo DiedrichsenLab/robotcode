@@ -292,7 +292,7 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 		}
 	}
 
-	/// Show the force lines 
+	/*/// Show the force lines 
 	else if (arguments[0] == "showlines") {
 		if (numArgs != 2) {
 			tDisp.print("USAGE: showlines 0/1");
@@ -304,9 +304,10 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 			}
 			else {
 				gs.showTgLines = 0;
+
 			}
 		}
-	}
+	}*/
 
 	/// diagnostics on or off
 	// set whether diagnostics are on or off - refer to gs.showDiagnostis in MyTrial::updateGraphics
@@ -667,6 +668,12 @@ void MyTrial::updateGraphics(int what) {
 		gScreen.setColor(Screen::grey);
 		gScreen.drawLine(BASELINE_X1, VERT_SHIFT + FLX_BOT_Y1, BASELINE_X2, VERT_SHIFT + FLX_BOT_Y2);
 
+		
+
+	}
+
+	if (gs.showPrLines == 1) {
+
 		gScreen.setColor(myColor[7]);
 		gScreen.drawLine(BASELINE_X1, VERT_SHIFT + FLX_BOT_Y1 + 0.25 * FLX_ZONE_WIDTH, BASELINE_X2, VERT_SHIFT + FLX_BOT_Y2 + 0.25 * FLX_ZONE_WIDTH);
 		gScreen.drawLine(BASELINE_X1, VERT_SHIFT + FLX_BOT_Y1 + 0.5 * FLX_ZONE_WIDTH, BASELINE_X2, VERT_SHIFT + FLX_BOT_Y2 + 0.5 * FLX_ZONE_WIDTH);
@@ -679,7 +686,7 @@ void MyTrial::updateGraphics(int what) {
 		gScreen.print("75%", BASELINE_X2 + 0.5, VERT_SHIFT + FLX_BOT_Y1 + 0.75 * FLX_ZONE_WIDTH, 2.5);
 		gScreen.print("0%", BASELINE_X2 + 0.5, VERT_SHIFT + FLX_BOT_Y1, 2.5);
 
-	}			
+	}
 		
 
 	if (gs.showForces == 1) {
@@ -790,13 +797,16 @@ void MyTrial::control() {
 	case WAIT_TRIAL: //0
 		gs.showTgLines = 1;	// set screen lines/force bars to show
 		gs.showBsLines = 1;
+		gs.showPrLines = 0;
 		gs.showForces = 1;
 		gs.showFeedback = 0;
 		if (showCue == 0) {
 			gs.showTarget = 0;
+			gs.showPrLines = 0;
 		}
 		else {
 			gs.showTarget = 1;
+			gs.showPrLines = 1;
 			chordID = probCue;
 		}
 		gs.showMaxForces = 0;
@@ -873,10 +883,12 @@ void MyTrial::control() {
 		/// than in the .tgt file and stim occurs 500 ms after planTime
 		if (gTimer[3] > baseline_wait_time) {	// turn on visual target after 500ms of holding the baseline
 			gs.showTarget = 1;	// show visual target	
+			gs.showPrLines = 1;
 		}
 
 		else {
 			gs.showTarget = 0;
+			gs.showPrLines = 0;
 		}
 
 		if (check_baseline_hold == 0) {
@@ -915,6 +927,7 @@ void MyTrial::control() {
 			0);
 
 		gs.showTgLines = 1;	// set screen lines/force bars to show
+		gs.showPrLines = 0;
 		gs.showBsLines = 1;
 		gs.showForces = 0;
 		gs.showTarget = 0;		// show the targets on the screen (grey bars)
@@ -949,6 +962,7 @@ void MyTrial::control() {
 		gBox.setVolts(0, 0, 0, 0, 0);
 
 		gs.showTgLines = 1;	// set screen lines/force bars to show
+		gs.showPrLines = 0;
 		gs.showBsLines = 1;
 		gs.showForces = 0;
 		gs.showTarget = 0;			// no visual targets
@@ -1068,6 +1082,7 @@ GraphicState::GraphicState() {
 
 	showTgLines = true;
 	showBsLines = true;
+	showPrLines = true;
 	showBoxes = 0;
 	boxColor = 5;
 }

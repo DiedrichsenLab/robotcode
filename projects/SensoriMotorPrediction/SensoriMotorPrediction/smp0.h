@@ -168,7 +168,7 @@ private:
 	double Favf[2] = { 0, 0 };							///< Average force during response (for feedback)
 	int trialPoint;							///< point received in each trial
 
-	DataManager<DataRecord, 30000 / 2> dataman;///< For data recording for MOV file 
+	DataManager<DataRecord, 30000 / 2> dataman;///< For data recording for MOV file //up to 30 s of data are recorded per trial
 };
 
 

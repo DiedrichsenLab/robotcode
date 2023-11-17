@@ -253,3 +253,7 @@ paket-files/
 *.db
 projects/ExtFlexChord/.vs/ExtFlexChord/v17/.suo
 .DS_Store
+include/.DS_Store
+include/.DS_Store
+projects/SensoriMotorPrediction/.DS_Store
+source/.DS_Store

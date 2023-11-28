@@ -85,6 +85,7 @@ Color_t myColor[9] = {
 char gKey;
 bool gKeyPressed;      
 double gVolts[5] = { 0,0,0,0,0 };   // volts sent to the valves (Marco)
+int fingerVolt = 3;
 
 
 ///////////
@@ -332,6 +333,17 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 		}
 	}
 
+	/// set voltage for finger stimulation
+	else if (arguments[0] == "fingerVolt") {
+		if (numArgs != 2) {
+			tDisp.print("USAGE: fingerVolt <Volt>");
+		}
+		else {
+			sscanf(arguments[1].c_str(), "%f", &arg[0]);
+			fingerVolt = arg[0];
+		}
+	}
+
 	/// set individual finger force gain. You can set any arbitrary force gain for every participant if they cant do the chord.
 	else if (arguments[0] == "setFingerGain") {
 		if (numArgs != 6) {
@@ -474,6 +486,7 @@ void MyTrial::writeDat(ostream& out) {
 		<< VERT_SHIFT + baseTHhi << "\t"		// baseline top thresh
 		<< VERT_SHIFT + FLX_BOT_Y1 << "\t"		// min response force
 		<< baselineCorrection << "\t"
+		<< fingerVolt << "\t"					// 
 		<< endl;
 }
 
@@ -502,6 +515,7 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "baselineTopThresh" << '\t'
 		<< "minResponseForce" << '\t'
 		<< "baselineCorrection" << '\t'
+		<< "fingerVolt" << '\t'
 		<< endl;
 }
 
@@ -561,6 +575,9 @@ void MyTrial::updateTextDisplay() {
 	tDisp.setText("Fingers in task: " + fingerTask[0] + " " + fingerTask[1], 4, 1);
 
 	tDisp.setText("Condition: " + trialLabel, 5, 0);
+
+	sprintf(buffer, "fingerVolt : %d", fingerVolt);
+	tDisp.setText(buffer, 5, 1);
 
 	// display forces
 	tDisp.setText("Forces", 7, 0);
@@ -911,16 +928,17 @@ void MyTrial::control() {
 
 	case WAIT_EXEC: //3
 
+
 		// deliver finger perturbation
 		for (i = 0; i < 5; i++) {
 			if (stimFinger[i] == '1')
 			{
-				gVolts[i] = 5; // set the volts to be sent to the Pneumatic Box
+				gVolts[i] = fingerVolt; // set the volts to be sent to the Pneumatic Box
 			}
 
 		}
 
-		gBox.setVolts(0,
+		gBox.setVolts(5,
 			gVolts[1],
 			0,
 			gVolts[3],

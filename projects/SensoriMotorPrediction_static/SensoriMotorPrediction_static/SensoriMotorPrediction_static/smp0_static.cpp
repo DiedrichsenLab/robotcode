@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////
 /// SensoriMotorPrediction - Marco Emanuele , Sept 2023
 ///////////////////////////////////////////////////////////////
-#include "smp0.h" 
+#include "smp0_static.h" 
 #include "Vector2d.h"
 #include <algorithm> 
 #include <iostream>
@@ -31,6 +31,7 @@ int finger[2] = { 1, 3 };					///< Finger from which Max Voluntary Force is meas
 double currentForce = 0;			// max force recorded from <finger>
 double maxForce[5] = { 0, 0, 0 ,0, 0 };  // max force recorded from each finger
 bool showCue = 0;
+bool holdCompleted = 0;
 string probCue;
 
 string fingers[5] = { "thumb", "index", "middle", "ring", "pinkie" };
@@ -60,7 +61,7 @@ int baseline_wait_time = 500;
 #define BASELINE_X1 -3//-(FINGWIDTH*N_FINGERS/2)
 #define BASELINE_X2 3//+(FINGWIDTH*N_FINGERS/2)
 
-double xPosBox[2] = { -X_CURSOR_DEV, X_CURSOR_DEV};
+double xPosBox[2] = { -X_CURSOR_DEV, X_CURSOR_DEV };
 #define FLX_ZONE_WIDTH 5
 #define FLX_BOT_Y1 6.5 - abs(baselineCorrection)  //fGain[1]*maxForce[1]*tgForce - FLX_ZONE_WIDTH / 2 + baselineCorrection
 #define FLX_TOP_Y1 FLX_BOT_Y1+FLX_ZONE_WIDTH 
@@ -70,22 +71,22 @@ double xPosBox[2] = { -X_CURSOR_DEV, X_CURSOR_DEV};
 #define VERT_SHIFT 0 //-2.5	// vertical shift of the screen graphics
 
 ///< Visualization colors
-Color_t myColor[9] = {
+Color_t myColor[10] = {
 {0,0,0},			// Black 1 - 0%
 {255,255,255},		// White 2 - 100%
-{0,200,0},			// Green 3
+{0,200,100},			// Green 3
 {150,0,0},			// Red 4
 {127,127,127}, 		// mid gray 5 - 50%
 {64, 64, 64},		// dark grey 6 - 75%
 {191, 191, 191},	// light grey 7 - 25%
 {100,100,100},		// baseline gray 8
-{249,215,28} };		// yellow 9
+{249,215,28},       // yellow 9
+{100,215,28}
+};		
 
 ///< Task specific parameters
 char gKey;
-bool gKeyPressed;      
-double gVolts[5] = { 0,0,0,0,0 };   // volts sent to the valves (Marco)
-int fingerVolt = 3;
+bool gKeyPressed;
 
 
 ///////////
@@ -97,7 +98,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 {
 	// 1. initialization window, text display and screen
 	gThisInst = hThisInst;
-	gExp = new MyExperiment("smp0", "smp0", "C:/data/SensoriMotorPrediction/smp0/");
+	gExp = new MyExperiment("smp0", "smp0", "C:/data/SensoriMotorPrediction/smp0/static/");
 	//gExp->redirectIOToConsole();
 
 	// gExp->redirectIOToConsole();		// I uncommented this!!!
@@ -119,7 +120,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	// 3. stimulation box initialization and calibration
 	gBox.init(BOX_RIGHT, "c:/robotcode/calib/right_lowforce_pneumatic.txt");
 
-	gExp->control(); 
+	gExp->control();
 
 	return 0;
 }
@@ -140,7 +141,7 @@ MyExperiment::MyExperiment(string name, string code, string dDir) : Experiment(n
 ////////////////////////////////////////////////////////////////////////
 // MyExperiment: control 
 ////////////////////////////////////////////////////////////////////////
-void MyExperiment::control(void) { 
+void MyExperiment::control(void) {
 	MSG msg;
 	float emgTrigVolt = 0;	// Ali EMG
 
@@ -151,7 +152,7 @@ void MyExperiment::control(void) {
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
-		
+
 		theBlock->control();
 		currentTrial->copyHaptics();		// Thread save copy 
 		if (gTimer[4] > UPDATE_TEXTDISP) { // Update text display every UPDATE_TEXTDISP ms
@@ -202,8 +203,8 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 
 	/// Zero the force of the two fingerBox
 	else if (arguments[0] == "showCue") {
-		if (numArgs != 2) {
-			tDisp.print("USAGE: showCue <probability1probability2)>");
+		if (numArgs != 3) {
+			tDisp.print("USAGE: showCue <probability1probability2> <color: 2->w, 3->g>");
 		}
 
 		else if (arguments[1] == "-1") {
@@ -213,7 +214,8 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 		else {
 			showCue = 1;
 			probCue = arguments[1];
-			
+			gs.targetColor = std::stoi(arguments[2]);
+
 		}
 	}
 
@@ -257,25 +259,6 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 		}
 	}
 
-	//  Valves Command: set voltage channels directly 
-	else if (arguments[0] == "push") {
-		if (numArgs != 6) {
-			tDisp.print("USAGE: push v1 v2 v3 v4 v5");
-		}
-		else {
-			sscanf(arguments[1].c_str(), "%f", &arg[0]);
-			sscanf(arguments[2].c_str(), "%f", &arg[1]);
-			sscanf(arguments[3].c_str(), "%f", &arg[2]);
-			sscanf(arguments[4].c_str(), "%f", &arg[3]);
-			//sscanf(arguments[5].c_str(), "%f", &arg[4]);
-			gVolts[0] = arg[0];
-			gVolts[1] = arg[1];
-			gVolts[2] = arg[2];
-			gVolts[3] = arg[3];
-			//gVolts[4] = arg[4];
-			gBox.setVolts(gVolts[0], gVolts[1], gVolts[2], gVolts[3], gVolts[4]);
-		}
-	}
 
 	/// Set TR Counter to simulated or non-simulated (default is given by TRTIME in ms)
 	else if (arguments[0] == "TR") {
@@ -293,22 +276,6 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 		}
 	}
 
-	/*/// Show the force lines 
-	else if (arguments[0] == "showlines") {
-		if (numArgs != 2) {
-			tDisp.print("USAGE: showlines 0/1");
-		}
-		else {
-			sscanf(arguments[1].c_str(), "%f", &arg[0]);
-			if (arg[0] > 0) {
-				gs.showTgLines = 1;
-			}
-			else {
-				gs.showTgLines = 0;
-
-			}
-		}
-	}*/
 
 	/// diagnostics on or off
 	// set whether diagnostics are on or off - refer to gs.showDiagnostis in MyTrial::updateGraphics
@@ -330,17 +297,6 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 		else {
 			sscanf(arguments[1].c_str(), "%f", &arg[0]);
 			forceGain = arg[0];
-		}
-	}
-
-	/// set voltage for finger stimulation
-	else if (arguments[0] == "fingerVolt") {
-		if (numArgs != 2) {
-			tDisp.print("USAGE: fingerVolt <Volt>");
-		}
-		else {
-			sscanf(arguments[1].c_str(), "%f", &arg[0]);
-			fingerVolt = arg[0];
 		}
 	}
 
@@ -429,8 +385,8 @@ void MyBlock::giveFeedback() {
 	gs.showForces = 0;
 	int i, j, n = 0;
 	MyTrial* tpnr;
-	//double medianRT;
-	//double vecRT[2000];
+	double medianRT;
+	double vecRT[2000];
 	blockFeedbackFlag = 1;
 
 	////gScreen.setColor(Screen::white);
@@ -457,8 +413,8 @@ void MyTrial::read(istream& in) {
 	// read from .tgt file
 	in >> subNum
 		>> chordID
-		>> stimFinger
 		>> planTime
+		>> execAccTime
 		>> execMaxTime
 		>> feedbackTime
 		>> iti
@@ -473,7 +429,6 @@ void MyTrial::writeDat(ostream& out) {
 	// name of file is: smp0_<name of subject>_<session number>.dat
 	out << subNum << "\t"
 		<< chordID << "\t"
-		<< stimFinger << "\t"
 		<< planTime << "\t"
 		<< execMaxTime << "\t"
 		<< feedbackTime << "\t"
@@ -491,7 +446,6 @@ void MyTrial::writeDat(ostream& out) {
 		<< VERT_SHIFT + baseTHhi << "\t"		// baseline top thresh
 		<< VERT_SHIFT + FLX_BOT_Y1 << "\t"		// min response force
 		<< baselineCorrection << "\t"
-		<< fingerVolt << "\t"					// 
 		<< endl;
 }
 
@@ -502,7 +456,6 @@ void MyTrial::writeHeader(ostream& out) {
 	char header[200];
 	out << "subNum" << "\t"
 		<< "chordID" << "\t"
-		<< "stimFinger" << "\t"
 		<< "planTime" << "\t"
 		<< "execMaxTime" << "\t"
 		<< "feedbackTime" << "\t"
@@ -520,7 +473,6 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "baselineTopThresh" << '\t'
 		<< "minResponseForce" << '\t'
 		<< "baselineCorrection" << '\t'
-		<< "fingerVolt" << '\t'
 		<< endl;
 }
 
@@ -581,9 +533,6 @@ void MyTrial::updateTextDisplay() {
 
 	tDisp.setText("Condition: " + trialLabel, 5, 0);
 
-	sprintf(buffer, "fingerVolt : %d", fingerVolt);
-	tDisp.setText(buffer, 5, 1);
-
 	// display forces
 	tDisp.setText("Forces", 7, 0);
 	sprintf(buffer, "F1: %2.2f   F2: %2.2f   F3: %2.2f   F4: %2.2f   F5: %2.2f", gBox.getForce(0), gBox.getForce(1), gBox.getForce(2),
@@ -623,9 +572,6 @@ void MyTrial::updateGraphics(int what) {
 	if (blockFeedbackFlag) {
 		gScreen.setCenter(Vector2D(0, 0));    // In cm //0,2
 		gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));
-
-		//gScreen.setColor(Screen::white);
-		//gScreen.print("End of Block", 0, 0, 5);
 	}
 
 	// Other letters
@@ -649,39 +595,39 @@ void MyTrial::updateGraphics(int what) {
 			if (tmpChord == '0') {
 
 			}
-			// 25% probability
-			else if (tmpChord == '1') {
-				ySize = 0.25 * FLX_ZONE_WIDTH;
-				yPos = FLX_BOT_Y1 + ySize * 0.5 + VERT_SHIFT;
-				gScreen.setColor(Screen::white);
-				gScreen.drawBox(xSize, ySize, xPos, yPos);
+			//// 25% probability
+			//else if (tmpChord == '1') {
+			//	ySize = 0.25 * FLX_ZONE_WIDTH;
+			//	yPos = FLX_BOT_Y1 + ySize * 0.5 + VERT_SHIFT;
+			//	gScreen.setColor(Screen::white);
+			//	gScreen.drawBox(xSize, ySize, xPos, yPos);
 
-			}
-			// 75% probability
-			else if (tmpChord == '2') {
-				ySize = 0.75 * FLX_ZONE_WIDTH;
-				yPos = FLX_BOT_Y1 + ySize * 0.5 + VERT_SHIFT;
-				gScreen.setColor(Screen::white);
-				gScreen.drawBox(xSize, ySize, xPos, yPos);
+			
+			//// 75% probability
+			//else if (tmpChord == '2') {
+			//	ySize = 0.75 * FLX_ZONE_WIDTH;
+			//	yPos = FLX_BOT_Y1 + ySize * 0.5 + VERT_SHIFT;
+			//	gScreen.setColor(Screen::white);
+			//	gScreen.drawBox(xSize, ySize, xPos, yPos);
 
-			}
+			
 			// 100% probability
 			else if (tmpChord == '3') {
 				ySize = 1 * FLX_ZONE_WIDTH;
 				yPos = FLX_BOT_Y1 + ySize * 0.5 + VERT_SHIFT;
-				gScreen.setColor(Screen::white);
+				gScreen.setColor(myColor[gs.targetColor]);
 				gScreen.drawBox(xSize, ySize, xPos, yPos);
 
 			}
 
-			// 50% probability
-			else if (tmpChord == '4') {
-				ySize = 0.5 * FLX_ZONE_WIDTH;
-				yPos = FLX_BOT_Y1 + ySize * 0.5 + VERT_SHIFT;
-				gScreen.setColor(Screen::white);
-				gScreen.drawBox(xSize, ySize, xPos, yPos);
+			//// 50% probability
+			//else if (tmpChord == '4') {
+			//	ySize = 0.5 * FLX_ZONE_WIDTH;
+			//	yPos = FLX_BOT_Y1 + ySize * 0.5 + VERT_SHIFT;
+			//	gScreen.setColor(Screen::white);
+			//	gScreen.drawBox(xSize, ySize, xPos, yPos);
 
-			}
+			
 		}
 	}
 
@@ -702,28 +648,8 @@ void MyTrial::updateGraphics(int what) {
 		gScreen.setColor(Screen::grey);
 		gScreen.drawLine(BASELINE_X1, VERT_SHIFT + FLX_BOT_Y1, BASELINE_X2, VERT_SHIFT + FLX_BOT_Y2);
 		gScreen.drawLine(BASELINE_X1, VERT_SHIFT + FLX_TOP_Y1, BASELINE_X2, VERT_SHIFT + FLX_TOP_Y2);
-		
 
 	}
-
-	if (gs.showPrLines == 1) {
-
-		gScreen.setColor(Screen::grey);
-		gScreen.drawLine(BASELINE_X1, VERT_SHIFT + FLX_BOT_Y1 + FLX_ZONE_WIDTH, BASELINE_X2, VERT_SHIFT + FLX_BOT_Y2 + FLX_ZONE_WIDTH);
-
-		gScreen.setColor(myColor[7]);
-		gScreen.drawLine(BASELINE_X1, VERT_SHIFT + FLX_BOT_Y1 + 0.25 * FLX_ZONE_WIDTH, BASELINE_X2, VERT_SHIFT + FLX_BOT_Y2 + 0.25 * FLX_ZONE_WIDTH);
-		gScreen.drawLine(BASELINE_X1, VERT_SHIFT + FLX_BOT_Y1 + 0.5 * FLX_ZONE_WIDTH, BASELINE_X2, VERT_SHIFT + FLX_BOT_Y2 + 0.5 * FLX_ZONE_WIDTH);
-		gScreen.drawLine(BASELINE_X1, VERT_SHIFT + FLX_BOT_Y1 + 0.75 * FLX_ZONE_WIDTH, BASELINE_X2, VERT_SHIFT + FLX_BOT_Y2 + 0.75 * FLX_ZONE_WIDTH);
-
-		gScreen.print("100%", BASELINE_X2 + 0.5, VERT_SHIFT + FLX_BOT_Y1 + FLX_ZONE_WIDTH, 2.5);
-		gScreen.print("50%", BASELINE_X2 + 0.5, VERT_SHIFT + FLX_BOT_Y1 + 0.5 * FLX_ZONE_WIDTH, 2.5);
-		gScreen.print("25%", BASELINE_X2 + 0.5, VERT_SHIFT + FLX_BOT_Y1 + 0.25 * FLX_ZONE_WIDTH, 2.5);
-		gScreen.print("75%", BASELINE_X2 + 0.5, VERT_SHIFT + FLX_BOT_Y1 + 0.75 * FLX_ZONE_WIDTH, 2.5);
-		gScreen.print("0%", BASELINE_X2 + 0.5, VERT_SHIFT + FLX_BOT_Y1, 2.5);
-
-	}
-		
 
 	if (gs.showForces == 1) {
 		for (i = 0; i < 5; i++) {
@@ -731,27 +657,33 @@ void MyTrial::updateGraphics(int what) {
 		}
 		// Finger forces (difference -> force = f_ext - f_flex)
 		gScreen.setColor(Screen::red);
-		gScreen.drawLine(- X_CURSOR_DEV - FINGWIDTH / 2,
+		gScreen.drawLine(-X_CURSOR_DEV - FINGWIDTH / 2,
 			VERT_SHIFT + forceGain * diffForce[1] + baselineCorrection,
-			- X_CURSOR_DEV + FINGWIDTH / 2,
+			-X_CURSOR_DEV + FINGWIDTH / 2,
 			VERT_SHIFT + forceGain * diffForce[1] + baselineCorrection);
 		gScreen.drawLine(X_CURSOR_DEV - FINGWIDTH / 2,
 			VERT_SHIFT + forceGain * diffForce[3] + baselineCorrection,
 			X_CURSOR_DEV + FINGWIDTH / 2,
 			VERT_SHIFT + forceGain * diffForce[3] + baselineCorrection);
-		
+
 	}
 
-	if (gs.showFeedback) { // show feedback
-		gScreen.setColor(Screen::red);
-		gScreen.drawLine(-X_CURSOR_DEV - FINGWIDTH / 2,
-			Favf[0] / 1250,
-			-X_CURSOR_DEV + FINGWIDTH / 2,
-			Favf[0] / 1250);
-		gScreen.drawLine(X_CURSOR_DEV - FINGWIDTH / 2,
-			Favf[1] / 1250,
-			X_CURSOR_DEV + FINGWIDTH / 2,
-			Favf[1] / 1250);
+	//if (gs.showFeedback) { // show feedback
+	//	gScreen.setColor(Screen::red);
+	//	gScreen.drawLine(-X_CURSOR_DEV - FINGWIDTH / 2,
+	//		Favf[0] / 1250,
+	//		-X_CURSOR_DEV + FINGWIDTH / 2,
+	//		Favf[0] / 1250);
+	//	gScreen.drawLine(X_CURSOR_DEV - FINGWIDTH / 2,
+	//		Favf[1] / 1250,
+	//		X_CURSOR_DEV + FINGWIDTH / 2,
+	//		Favf[1] / 1250);
+	//}
+
+	if (gs.showTimer5) {
+		gScreen.setColor(Screen::white);
+		gScreen.print("Hold Time: ", 6, 3, 4);
+		gScreen.print(to_string(gTimer[5]), 10, 3, 4);
 	}
 
 	if (gs.showDiagnostics) {
@@ -866,6 +798,7 @@ void MyTrial::control() {
 		break;
 
 		break;
+
 	case START_TRIAL: //1	e
 		gs.showTgLines = 1;	// set screen lines/force bars to show
 		gs.showBsLines = 1;
@@ -903,6 +836,8 @@ void MyTrial::control() {
 	case WAIT_PLAN: //2
 		gs.showTimer5 = 0;
 		gs.showForces = 1;
+		gs.targetColor = 5;
+		holdCompleted = 0;
 
 		for (i = 0; i < 2; i++) {	// check fingers' states -> fingers should stay in the baseline during planning
 			fingerForceTmp = VERT_SHIFT + forceGain * fGain[fi[i]] * gBox.getForce(fi[i]) + baselineCorrection;
@@ -947,40 +882,62 @@ void MyTrial::control() {
 
 	case WAIT_EXEC: //3
 
-
-		// deliver finger perturbation
-		for (i = 0; i < 5; i++) {
-			if (stimFinger[i] == '1')
-			{
-				gVolts[i] = fingerVolt; // set the volts to be sent to the Pneumatic Box
-			}
-
-		}
-
-		gBox.setVolts(5,
-			gVolts[1],
-			0,
-			gVolts[3],
-			0);
-
 		gs.showTgLines = 1;	// set screen lines/force bars to show
 		gs.showPrLines = 0;
 		gs.showBsLines = 1;
-		gs.showForces = 0;
-		gs.showTarget = 0;		// show the targets on the screen (grey bars)
-		gs.showTimer5 = 0;		// show timer 4 value on screen (duration of holding a chord)
+		gs.showForces = 1;
+		gs.showTarget = 1;		// show the targets on the screen (grey bars)
+		gs.showTimer5 = 1;		// show timer 4 value on screen (duration of holding a chord)
 		gs.boxColor = 5;		// grey baseline box color
+		gs.targetColor = 8;
 
-		if (gTimer[3]>500) {
-			for (i = 0; i < 2; i++) {	// check fingers' states -> fingers should stay in the baseline during planning
-				fingerForceTmp = VERT_SHIFT + forceGain * fGain[fi[i]] * gBox.getForce(fi[i]) + baselineCorrection;
-				Favf[i] = (Favf[i] + fingerForceTmp);
+
+		// checking state of each finger
+		for (i = 0; i < 2; i++) {
+			tmpChord = chordID[i];	// required state of finger i -> 0:relaxed , 1:extended , 2:flexed -- chordID comes from the target file
+			fingerForceTmp = VERT_SHIFT + forceGain * fGain[fi[i]] * gBox.getForce(fi[i]) + baselineCorrection;
+			switch (tmpChord) {
+			case '9':	// finger i should be in the baseline zone (relaxed)
+				fingerCorrect[i] = ((fingerForceTmp <= VERT_SHIFT + baseTHhi) && (fingerForceTmp >= VERT_SHIFT - baseTHhi));
+				break;
+			case '3':	// finger i should be in the top zone (extended)
+				fingerCorrect[i] = ((fingerForceTmp <= VERT_SHIFT + FLX_TOP_Y1) && (fingerForceTmp >= VERT_SHIFT + FLX_BOT_Y1));
+				break;
 			}
+			gs.fingerCorrectGraphic[i] = 1;
+		}
+
+		// Checking if the whole chord is correct
+		chordCorrect = fingerCorrect[0];
+		for (i = 1; i < 2; i++) {
+			chordCorrect = chordCorrect && fingerCorrect[i];
+		}
+
+		// resetting timer 5 every time the whole chord is wrong
+		if (chordCorrect == 0) {
+			gTimer.reset(5);
+		}
+		else {
+			gs.targetColor = 9;
+			gTimer.reset(3);
+		}
+
+		// if subject held the chord for execAccTime (accepting hold time), trial is correct -> go to feedback state:
+		if (gTimer[5] >= execAccTime) {
+			// chord was executed successfully so error = 0:
+			chordErrorFlag = 0;
+
+			// go to the give_feedback state:
+			state = GIVE_FEEDBACK;
+
+			gTimer.reset(2);
+			gTimer.reset(3);
+
 		}
 
 		// If subject runs out of time:
 		if (gTimer[3] >= execMaxTime) {
-			//chordErrorFlag = 1;
+			chordErrorFlag = 1;
 			//RT = 10000;
 			state = GIVE_FEEDBACK;
 			gTimer.reset(2);
@@ -993,18 +950,25 @@ void MyTrial::control() {
 		//SetDacVoltage(0, 0); // Ali EMG
 		SetDIOState(0, 0xFFFF);
 
-		// end finger perturbation
-		gVolts[1] = 0;
-		gVolts[3] = 0;
-		gBox.setVolts(0, 0, 0, 0, 0);
+		//// end finger perturbation
+		//gVolts[1] = 0;
+		//gVolts[3] = 0;
+		//gBox.setVolts(0, 0, 0, 0, 0);
 
 		gs.showTgLines = 1;	// set screen lines/force bars to show
 		gs.showPrLines = 0;
 		gs.showBsLines = 1;
 		gs.showForces = 0;
-		gs.showTarget = 0;			// no visual targets
+		gs.showTarget = 1;			// no visual targets
 		gs.showTimer5 = 0;
-		gs.showFeedback = 1;		// showing feedback (refer to MyTrial::updateGraphics() for details)
+
+
+		if (chordErrorFlag == 0) {
+			gs.targetColor = 2;
+		}
+		else {
+			gs.targetColor = 3;
+		}
 
 		if (gTimer[2] >= feedbackTime) {
 			state = WAIT_ITI;
@@ -1015,7 +979,7 @@ void MyTrial::control() {
 	case WAIT_ITI:
 		gs.showTgLines = 1;	// set screen lines/force bars to show
 		gs.showBsLines = 1;
-		gs.showForces = 0;
+		gs.showForces = 1;
 		gs.showTarget = 0;
 		gs.showFeedback = 0;
 		if (gTimer[2] >= iti) {
@@ -1061,7 +1025,7 @@ DataRecord::DataRecord(int s, int t) {
 	timeReal = gTimer.getRealtime();
 
 
-	for (i = 0; i < 5;i++) {
+	for (i = 0; i < 5; i++) {
 		fforce[i] = gBox.getForce(i);
 	}
 
@@ -1080,11 +1044,11 @@ void DataRecord::write(ostream& out) {
 		<< state << "\t"
 		<< timeReal << "\t"
 		<< time << "\t";
-	
+
 	for (i = 0; i < 5; i++) {
 		out << fforce[i] << "\t";
 	}
-	
+
 	for (i = 0; i < 2; i++) {	// Position of visualized force bars
 		out << visualizedForce[i] << "\t";
 	}
@@ -1102,7 +1066,7 @@ GraphicState::GraphicState() {
 	// points in block 
 	lineXpos[0] = 0;
 	lineYpos[0] = 0;			// feedback 	
-	lineColor[0] = 2;			// white 
+	lineColor[0] = 1;			// white 
 	size[0] = 5;
 
 	//// RT 
@@ -1122,6 +1086,7 @@ GraphicState::GraphicState() {
 	showPrLines = true;
 	showBoxes = 0;
 	boxColor = 5;
+	targetColor = 2;
 }
 
 void GraphicState::reset(void) {

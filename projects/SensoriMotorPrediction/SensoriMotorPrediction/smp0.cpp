@@ -462,7 +462,8 @@ void MyTrial::read(istream& in) {
 		>> execMaxTime
 		>> feedbackTime
 		>> iti
-		>> trialLabel;
+		>> trialLabel
+		>> startTime; 
 }
 
 ///////////////////////////////////////////////////////////////
@@ -866,6 +867,63 @@ void MyTrial::control() {
 		break;
 
 		break;
+
+	case WAIT_TR:
+		/*
+			if (startSlice<1){	// training mode
+					state = WAIT_CENTER_HOLD;
+			}
+			else {		// start slice is 1 or higher, mri mode
+				if (gCounter.readSlice() <= startSlice){
+					state = WAIT_TR;
+				}
+				else {
+					state = WAIT_CENTER_HOLD;
+					startSlicereal = gCounter.readSlice();
+					cout<<"startSlice(>1)="<<startSlice<<endl;
+					cout<<"gCounter.readSlice="<<gCounter.readSlice()<<endl;
+				}
+			}
+		*/
+		if (gCounter.readTR() > 0 && gCounter.readTotTime() >= startTime) {
+			startTimeReal = gCounter.readTotTime();
+			startTRReal = gCounter.readTR();
+
+			//dataman.startRecording(); // see around line #660
+			gTimer.reset(1);					//time for whole trial
+			gTimer.reset(2);					//time for events in the trial			
+
+			state = case WAIT_TR:
+		/*
+			if (startSlice<1){	// training mode
+					state = WAIT_CENTER_HOLD;
+			}
+			else {		// start slice is 1 or higher, mri mode
+				if (gCounter.readSlice() <= startSlice){
+					state = WAIT_TR;
+				}
+				else {
+					state = WAIT_CENTER_HOLD;
+					startSlicereal = gCounter.readSlice();
+					cout<<"startSlice(>1)="<<startSlice<<endl;
+					cout<<"gCounter.readSlice="<<gCounter.readSlice()<<endl;
+				}
+			}
+		*/
+		if (gCounter.readTR() > 0 && gCounter.readTotTime() >= startTime) {
+			startTimeReal = gCounter.readTotTime();
+			startTRReal = gCounter.readTR();
+
+			//dataman.startRecording(); // see around line #660
+			gTimer.reset(1);					//time for whole trial
+			gTimer.reset(2);					//time for events in the trial			
+
+			state = START_TRIAL;
+		}
+		break;;
+		}
+		break;
+
 	case START_TRIAL: //1	e
 		gs.showTgLines = 1;	// set screen lines/force bars to show
 		gs.showBsLines = 1;
@@ -1027,6 +1085,7 @@ void MyTrial::control() {
 
 	case END_TRIAL:
 		break;
+
 	}
 	//}
 

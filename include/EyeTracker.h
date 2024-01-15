@@ -25,7 +25,6 @@
 #include <iostream>
 #include <fstream>
 #include <string> 
-#include <sdl_expt.h>
 
 extern Screen gScreen;
 using namespace std; 

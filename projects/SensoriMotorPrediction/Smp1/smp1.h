@@ -1,3 +1,4 @@
+#pragma once
 #include <windows.h>
 #include <conio.h>
 #include <stdio.h>
@@ -160,7 +161,11 @@ private:
 	int planTime;							///< Duration between cue onset (visual stimulus) and go onset
 	int execMaxTime;						///< Maximum duration for execution of the chord
 	int feedbackTime;						///< The duration between giveFeedback and giveScore
+	int startTimeReal;
+	int startTRReal;
 	int iti;								///< inter trial interval
+	int startTime;
+	int GoNogo;
 	//double Random;							///< random number
 	string trialLabel;						///< Condition label
 	string stimFinger;						///< Stimulated finger 

@@ -30,6 +30,9 @@ public:
 	void update();									///< Read forces from Button box 
 	void zeroForce(double volts[NUMFINGERS]);				///< set baseline to the last 100 readings 
 	inline double getForce(int i) {return force[i];}///< 
+
+	// Handle the error or return a default value
+
 	inline double getForceFilt(int i) {return forcefilt[i];}///< 
 	inline double getVolts(int i) {return volts[i];}///< 
 	double vibrVolts;								///< Vibration volts to 

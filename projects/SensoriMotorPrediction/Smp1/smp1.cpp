@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////
 /// SensoriMotorPrediction - Marco Emanuele , Sept 2023
 ///////////////////////////////////////////////////////////////
-#include "smp0.h" 
+#include "smp1.h" 
 #include "Vector2d.h"
 #include <algorithm> 
 #include <iostream>
@@ -60,7 +60,7 @@ int baseline_wait_time = 500;
 #define BASELINE_X1 -3//-(FINGWIDTH*N_FINGERS/2)
 #define BASELINE_X2 3//+(FINGWIDTH*N_FINGERS/2)
 
-double xPosBox[2] = { -X_CURSOR_DEV, X_CURSOR_DEV};
+double xPosBox[2] = { -X_CURSOR_DEV, X_CURSOR_DEV };
 #define FLX_ZONE_WIDTH 5
 #define FLX_BOT_Y1 6.5 - abs(baselineCorrection)  //fGain[1]*maxForce[1]*tgForce - FLX_ZONE_WIDTH / 2 + baselineCorrection
 #define FLX_TOP_Y1 FLX_BOT_Y1+FLX_ZONE_WIDTH 
@@ -83,7 +83,7 @@ Color_t myColor[9] = {
 
 ///< Task specific parameters
 char gKey;
-bool gKeyPressed;      
+bool gKeyPressed;
 double gVolts[5] = { 0,0,0,0,0 };   // volts sent to the valves (Marco)
 int fingerVolt = 3;
 
@@ -97,7 +97,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 {
 	// 1. initialization window, text display and screen
 	gThisInst = hThisInst;
-	gExp = new MyExperiment("smp0", "smp0", "C:/data/SensoriMotorPrediction/smp0/");
+	gExp = new MyExperiment("smp1", "smp1", "C:/data/SensoriMotorPrediction/smp1/");
 	//gExp->redirectIOToConsole();
 
 	// gExp->redirectIOToConsole();		// I uncommented this!!!
@@ -119,7 +119,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	// 3. stimulation box initialization and calibration
 	gBox.init(BOX_RIGHT, "c:/robotcode/calib/right_lowforce_pneumatic.txt");
 
-	gExp->control(); 
+	gExp->control();
 
 	return 0;
 }
@@ -140,7 +140,7 @@ MyExperiment::MyExperiment(string name, string code, string dDir) : Experiment(n
 ////////////////////////////////////////////////////////////////////////
 // MyExperiment: control 
 ////////////////////////////////////////////////////////////////////////
-void MyExperiment::control(void) { 
+void MyExperiment::control(void) {
 	MSG msg;
 	float emgTrigVolt = 0;	// Ali EMG
 
@@ -151,7 +151,7 @@ void MyExperiment::control(void) {
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
-		
+
 		theBlock->control();
 		currentTrial->copyHaptics();		// Thread save copy 
 		if (gTimer[4] > UPDATE_TEXTDISP) { // Update text display every UPDATE_TEXTDISP ms
@@ -213,7 +213,7 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 		else {
 			showCue = 1;
 			probCue = arguments[1];
-			
+
 		}
 	}
 
@@ -293,7 +293,7 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 		}
 	}
 
-	/*/// Show the force lines 
+	/*/// Show the force lines
 	else if (arguments[0] == "showlines") {
 		if (numArgs != 2) {
 			tDisp.print("USAGE: showlines 0/1");
@@ -462,7 +462,8 @@ void MyTrial::read(istream& in) {
 		>> execMaxTime
 		>> feedbackTime
 		>> iti
-		>> trialLabel;
+		>> trialLabel
+		>> startTime;
 }
 
 ///////////////////////////////////////////////////////////////
@@ -477,6 +478,8 @@ void MyTrial::writeDat(ostream& out) {
 		<< planTime << "\t"
 		<< execMaxTime << "\t"
 		<< feedbackTime << "\t"
+		<< startTimeReal << "\t"
+		<< startTRReal << "\t"
 		<< iti << "\t"
 		<< baseline_wait_time << "\t"
 		<< trialLabel << "\t"
@@ -506,6 +509,8 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "planTime" << "\t"
 		<< "execMaxTime" << "\t"
 		<< "feedbackTime" << "\t"
+		<< "startTimeReal" << "\t"
+		<< "startTRReal" << "\t"
 		<< "iti" << "\t"
 		<< "baselineWait" << "\t"
 		<< "trialLabel" << "\t"
@@ -573,7 +578,7 @@ void MyTrial::updateTextDisplay() {
 	tDisp.setText(buffer, 2, 0);
 	sprintf(buffer, "Time : %2.2f", gTimer[1]);
 	tDisp.setText(buffer, 3, 0);
-	tDisp.setText("Experiment: Smp0", 2, 1);
+	tDisp.setText("Experiment: Smp1", 2, 1);
 
 	sprintf(buffer, "State : %d   Trial: %d", state, gExp->theBlock->trialNum);
 	tDisp.setText(buffer, 4, 0);
@@ -703,7 +708,7 @@ void MyTrial::updateGraphics(int what) {
 		gScreen.setColor(Screen::grey);
 		gScreen.drawLine(BASELINE_X1, VERT_SHIFT + FLX_BOT_Y1, BASELINE_X2, VERT_SHIFT + FLX_BOT_Y2);
 		gScreen.drawLine(BASELINE_X1, VERT_SHIFT + FLX_TOP_Y1, BASELINE_X2, VERT_SHIFT + FLX_TOP_Y2);
-		
+
 
 	}
 
@@ -724,7 +729,7 @@ void MyTrial::updateGraphics(int what) {
 		gScreen.print("0%", BASELINE_X2 + 0.5, VERT_SHIFT + FLX_BOT_Y1, 2.5);
 
 	}
-		
+
 
 	if (gs.showForces == 1) {
 		for (i = 0; i < 5; i++) {
@@ -732,15 +737,15 @@ void MyTrial::updateGraphics(int what) {
 		}
 		// Finger forces (difference -> force = f_ext - f_flex)
 		gScreen.setColor(Screen::red);
-		gScreen.drawLine(- X_CURSOR_DEV - FINGWIDTH / 2,
+		gScreen.drawLine(-X_CURSOR_DEV - FINGWIDTH / 2,
 			VERT_SHIFT + forceGain * diffForce[1] + baselineCorrection,
-			- X_CURSOR_DEV + FINGWIDTH / 2,
+			-X_CURSOR_DEV + FINGWIDTH / 2,
 			VERT_SHIFT + forceGain * diffForce[1] + baselineCorrection);
 		gScreen.drawLine(X_CURSOR_DEV - FINGWIDTH / 2,
 			VERT_SHIFT + forceGain * diffForce[3] + baselineCorrection,
 			X_CURSOR_DEV + FINGWIDTH / 2,
 			VERT_SHIFT + forceGain * diffForce[3] + baselineCorrection);
-		
+
 	}
 
 	if (gs.showFeedback) { // show feedback
@@ -766,6 +771,9 @@ void MyTrial::updateGraphics(int what) {
 			break;
 		case START_TRIAL:
 			stateString = "Start Trial";
+			break;
+		case WAIT_TR:
+			stateString = "Wait TR";
 			break;
 		case WAIT_PLAN:
 			stateString = "Wait Plan";
@@ -899,10 +907,26 @@ void MyTrial::control() {
 		gTimer.reset(5);
 		gTimer.reset(6);
 
-		state = WAIT_PLAN;
+		state = WAIT_TR;
 		break;
 
-	
+	case WAIT_TR:
+
+		if (gCounter.readTR() > 0 && gCounter.readTotTime() >= startTime) {
+			startTimeReal = gCounter.readTotTime();
+			startTRReal = gCounter.readTR();
+
+			//dataman.startRecording(); // see around line #660
+			gTimer.reset(1);					//time for whole trial
+			gTimer.reset(2);					//time for events in the trial			
+
+			state = WAIT_PLAN;
+		}
+		break;;
+
+
+
+
 	case WAIT_PLAN: //2
 		gs.showTimer5 = 0;
 		gs.showForces = 1;
@@ -974,7 +998,7 @@ void MyTrial::control() {
 		gs.showTimer5 = 0;		// show timer 4 value on screen (duration of holding a chord)
 		gs.boxColor = 5;		// grey baseline box color
 
-		if (gTimer[3]>500) {
+		if (gTimer[3] > 500) {
 			for (i = 0; i < 2; i++) {	// check fingers' states -> fingers should stay in the baseline during planning
 				fingerForceTmp = VERT_SHIFT + forceGain * fGain[fi[i]] * gBox.getForce(fi[i]) + baselineCorrection;
 				Favf[i] = (Favf[i] + fingerForceTmp);
@@ -1065,7 +1089,7 @@ DataRecord::DataRecord(int s, int t) {
 	timeReal = gTimer.getRealtime();
 
 
-	for (i = 0; i < 5;i++) {
+	for (i = 0; i < 5; i++) {
 		fforce[i] = gBox.getForce(i);
 	}
 
@@ -1084,11 +1108,11 @@ void DataRecord::write(ostream& out) {
 		<< state << "\t"
 		<< timeReal << "\t"
 		<< time << "\t";
-	
+
 	for (i = 0; i < 5; i++) {
 		out << fforce[i] << "\t";
 	}
-	
+
 	for (i = 0; i < 2; i++) {	// Position of visualized force bars
 		out << visualizedForce[i] << "\t";
 	}

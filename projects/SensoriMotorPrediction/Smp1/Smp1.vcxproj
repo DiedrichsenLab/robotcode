@@ -21,10 +21,9 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{17cd54d8-73c4-4210-a2b9-3295731d905b}</ProjectGuid>
-    <RootNamespace>SensoriMotorPrediction</RootNamespace>
+    <ProjectGuid>{e4666a36-ef9b-41cc-881a-931f7fb2fc04}</ProjectGuid>
+    <RootNamespace>Smp1</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>Smp0</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -136,6 +135,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\include\DataManager.h" />
+    <ClInclude Include="..\..\..\include\Experiment.h" />
+    <ClInclude Include="..\..\..\include\PneumaticBox.h" />
+    <ClInclude Include="..\..\..\include\S626sManager.h" />
+    <ClInclude Include="..\..\..\include\Screen.h" />
+    <ClInclude Include="..\..\..\include\TextDisplay.h" />
+    <ClInclude Include="..\..\..\include\Timer626.h" />
+    <ClInclude Include="..\..\..\include\TRCounter626.h" />
+    <ClInclude Include="..\..\..\include\Win626.h" />
+    <ClInclude Include="smp1.h" />
+  </ItemGroup>
+  <ItemGroup>
     <ClCompile Include="..\..\..\source\Experiment.cpp" />
     <ClCompile Include="..\..\..\source\PneumaticBox4F.cpp" />
     <ClCompile Include="..\..\..\source\S626sManager.cpp" />
@@ -146,20 +157,7 @@
     <ClCompile Include="..\..\..\source\Timer626.cpp" />
     <ClCompile Include="..\..\..\source\TRCounter626.cpp" />
     <ClCompile Include="..\..\..\source\WIN626.C" />
-    <ClCompile Include="smp0.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\..\include\DataManager.h" />
-    <ClInclude Include="..\..\..\include\Experiment.h" />
-    <ClInclude Include="..\..\..\include\PneumaticBox.h" />
-    <ClInclude Include="..\..\..\include\S626sManager.h" />
-    <ClInclude Include="..\..\..\include\Screen.h" />
-    <ClInclude Include="..\..\..\include\Serial.h" />
-    <ClInclude Include="..\..\..\include\TextDisplay.h" />
-    <ClInclude Include="..\..\..\include\Timer626.h" />
-    <ClInclude Include="..\..\..\include\TRCounter626.h" />
-    <ClInclude Include="..\..\..\include\Win626.h" />
-    <ClInclude Include="smp0.h" />
+    <ClCompile Include="smp1.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

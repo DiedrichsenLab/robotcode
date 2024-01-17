@@ -463,7 +463,8 @@ void MyTrial::read(istream& in) {
 		>> feedbackTime
 		>> iti
 		>> trialLabel
-		>> startTime;
+		>> startTime
+		>> GoNogo;
 }
 
 ///////////////////////////////////////////////////////////////
@@ -984,19 +985,24 @@ void MyTrial::control() {
 
 		}
 
-		gBox.setVolts(5,
-			gVolts[1],
-			0,
-			gVolts[3],
-			0);
+		if (GoNogo == "go") {
 
-		gs.showTgLines = 1;	// set screen lines/force bars to show
-		gs.showPrLines = 0;
-		gs.showBsLines = 1;
-		gs.showForces = 0;
-		gs.showTarget = 0;		// show the targets on the screen (grey bars)
-		gs.showTimer5 = 0;		// show timer 4 value on screen (duration of holding a chord)
-		gs.boxColor = 5;		// grey baseline box color
+			gBox.setVolts(5,
+				gVolts[1],
+				0,
+				gVolts[3],
+				0);
+
+			gs.showTgLines = 1;	// set screen lines/force bars to show
+			gs.showPrLines = 0;
+			gs.showBsLines = 1;
+			gs.showForces = 0;
+			gs.showTarget = 0;		// show the targets on the screen (grey bars)
+			gs.showTimer5 = 0;		// show timer 4 value on screen (duration of holding a chord)
+			gs.boxColor = 5;		// grey baseline box color
+
+		}
+		
 
 		if (gTimer[3] > 500) {
 			for (i = 0; i < 2; i++) {	// check fingers' states -> fingers should stay in the baseline during planning
@@ -1034,10 +1040,25 @@ void MyTrial::control() {
 		gs.showFeedback = 1;		// showing feedback (refer to MyTrial::updateGraphics() for details)
 
 		if (gTimer[2] >= feedbackTime) {
-			state = WAIT_ITI;
+			state = ACQUIRE_HRF;
 			gTimer.reset(2);
 		}
 		break;
+
+	case ACQUIRE_HRF:
+
+		if (gExp->theBlock->trialNum + 1 != gExp->theBlock->numTrials)
+		{
+			state = WAIT_ITI;
+		}
+		else
+		{
+			if (gTimer[2] > 10000) {
+				state = END_TRIAL;
+				gTimer.reset(2);
+				cout << "HRF acquired for 10 seconds after trial" << endl;
+			}
+		}
 
 	case WAIT_ITI:
 		gs.showTgLines = 1;	// set screen lines/force bars to show

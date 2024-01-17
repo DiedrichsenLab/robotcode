@@ -39,6 +39,7 @@ enum TrialState {
 	WAIT_PLAN,			// 2
 	WAIT_EXEC,			// 3
 	GIVE_FEEDBACK,		// 4
+	ACQUIRE_HRF,
 	WAIT_ITI,			// 5
 	END_TRIAL,			// 6
 	MAX_FORCE           // 7
@@ -165,7 +166,7 @@ private:
 	int startTRReal;
 	int iti;								///< inter trial interval
 	int startTime;
-	int GoNogo;
+	string GoNogo;
 	//double Random;							///< random number
 	string trialLabel;						///< Condition label
 	string stimFinger;						///< Stimulated finger 

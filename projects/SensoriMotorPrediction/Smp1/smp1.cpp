@@ -481,6 +481,7 @@ void MyTrial::writeDat(ostream& out) {
 		<< feedbackTime << "\t"
 		<< startTimeReal << "\t"
 		<< startTRReal << "\t"
+		<< GoNogo << "\t"
 		<< iti << "\t"
 		<< baseline_wait_time << "\t"
 		<< trialLabel << "\t"
@@ -512,6 +513,7 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "feedbackTime" << "\t"
 		<< "startTimeReal" << "\t"
 		<< "startTRReal" << "\t"
+		<< "GoNogo" << "\t"
 		<< "iti" << "\t"
 		<< "baselineWait" << "\t"
 		<< "trialLabel" << "\t"
@@ -911,7 +913,7 @@ void MyTrial::control() {
 		state = WAIT_TR;
 		break;
 
-	case WAIT_TR:
+	case WAIT_TR: //2
 
 		if (gCounter.readTR() > 0 && gCounter.readTotTime() >= startTime) {
 			startTimeReal = gCounter.readTotTime();
@@ -920,7 +922,7 @@ void MyTrial::control() {
 			//dataman.startRecording(); // see around line #660
 			gTimer.reset(1);					//time for whole trial
 			gTimer.reset(2);					//time for events in the trial			
-
+			gTimer.reset(3);
 			state = WAIT_PLAN;
 		}
 		break;;
@@ -928,7 +930,7 @@ void MyTrial::control() {
 
 
 
-	case WAIT_PLAN: //2
+	case WAIT_PLAN: //3
 		gs.showTimer5 = 0;
 		gs.showForces = 1;
 

@@ -34,7 +34,6 @@ using namespace std;
 enum TrialState {
 	WAIT_TRIAL,			// 0
 	START_TRIAL,		// 1
-	WAIT_TR,
 	WAIT_PLAN,			// 2
 	WAIT_EXEC,			// 3
 	GIVE_FEEDBACK,		// 4

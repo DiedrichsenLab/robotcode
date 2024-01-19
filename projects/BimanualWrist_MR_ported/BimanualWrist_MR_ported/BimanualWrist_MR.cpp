@@ -108,12 +108,13 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst, LPSTR kposzArgs, in
 	gThisInst = hThisInst;
 	gExp = new MyExperiment("BimanualWrist_MR", "BimanualWrist_MR", "C:/data/BimanualWrist_MR/");  // Set experiment name and code for data files 
 	gExp->redirectIOToConsole();
-	tDisp.init(gThisInst, 0, 0, 800, 20, 5, 4, &(::parseCommand));
+	tDisp.init(gThisInst, 0, 0, 400, 20, 5, 4, &(::parseCommand));
 	tDisp.setText("Subj:", 0, 0);
 
 	for (int targetn = 0; targetn < N_TARGETS; targetn++) { targetspreview[targetn] = targetn * 360 / N_TARGETS; }
 
-	gScreen.init(gThisInst, 1920, 0, 1920, 1080, &(::updateGraphics)); ///< Display for subject
+	//gScreen.init(gThisInst, 1920, 0, 1920, 1080, &(::updateGraphics)); ///< Display for subject
+	gScreen.init(gThisInst, 640, 0, 640, 1024, &(::updateGraphics)); ///< Display for subject
 	gScreen.setCenter(Vector2D(0, 0));
 	gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));
 

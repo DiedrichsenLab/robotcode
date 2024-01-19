@@ -33,6 +33,8 @@ double maxForce[5] = { 0, 0, 0 ,0, 0 };  // max force recorded from each finger
 bool showCue = 0;
 string probCue;
 
+int sliceNumber = 32;			///< How many slices do we have
+
 string fingers[5] = { "thumb", "index", "middle", "ring", "pinkie" };
 string fingerTask[2] = { fingers[finger[0]], fingers[finger[1]] };
 
@@ -101,9 +103,10 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	//gExp->redirectIOToConsole();
 
 	// gExp->redirectIOToConsole();		// I uncommented this!!!
-	tDisp.init(gThisInst, 0, 0, 600, 30, 9, 2, &(::parseCommand));		// Default setting for the Windows 10 PC
+	tDisp.init(gThisInst, 0, 0, 400, 30, 9, 2, &(::parseCommand));		// Default setting for the Windows 10 PC
 	tDisp.setText("Subj", 0, 0);
-	gScreen.init(gThisInst, 1920, 0, 1920, 1080, &(::updateGraphics));	// Default setting for the Windows 10 PC
+	//gScreen.init(gThisInst, 1920, 0, 1920, 1080, &(::updateGraphics));	// Default setting for the Windows 10 PC
+	gScreen.init(gThisInst, 640, 0, 640, 1024, &(::updateGraphics));
 	gScreen.setCenter(Vector2D(0, 0)); // This set the center of the screen where forces are calibrated with zero force // In cm //0,2
 	gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));					// cm/pixel
 
@@ -118,6 +121,9 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 
 	// 3. stimulation box initialization and calibration
 	gBox.init(BOX_RIGHT, "c:/robotcode/calib/right_lowforce_pneumatic.txt");
+
+	gCounter.init3(3, 0, sliceNumber); // TTL pulse for counting TR
+	gCounter.simulate(TRTIME);
 
 	gExp->control();
 
@@ -577,7 +583,7 @@ void MyTrial::copyHaptics() {
 void MyTrial::updateTextDisplay() {
 	int i;
 	double diffForce[5] = { 0,0,0,0,0 };
-	sprintf(buffer, "TR : %d time: %2.2f slice:%d", gCounter.readTR(), gCounter.readTime(), gCounter.readSlice());
+	sprintf(buffer, "TR : %d time: %2.2f Tot time: %2.2f slice:%d", gCounter.readTR(), gCounter.readTime(), gCounter.readTotTime(), gCounter.readSlice());
 	tDisp.setText(buffer, 2, 0);
 	sprintf(buffer, "Time : %2.2f", gTimer[1]);
 	tDisp.setText(buffer, 3, 0);

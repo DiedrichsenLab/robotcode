@@ -69,6 +69,9 @@ double xPosBox[2] = { -X_CURSOR_DEV, X_CURSOR_DEV };
 #define FLX_BOT_Y2 FLX_BOT_Y1
 #define FLX_TOP_Y2 FLX_TOP_Y1
 
+#define CROSSW 0.6 // adjust to visual angle based on the distance in the scanner
+#define CROSSP (FLX_BOT_Y1 + FLX_TOP_Y1) / 2
+
 #define VERT_SHIFT 0 //-2.5	// vertical shift of the screen graphics
 
 ///< Visualization colors
@@ -715,9 +718,9 @@ void MyTrial::updateGraphics(int what) {
 	if (gs.showFxCross == 1) { // show lines
 
 		// Baseline lines
-		gScreen.setColor(Screen::grey);
-		gScreen.drawLine(-1, VERT_SHIFT + baseTHhi, +1, VERT_SHIFT + baseTHhi);
-		gScreen.drawLine(0, VERT_SHIFT - baseTHhi - 1, 0, VERT_SHIFT - baseTHhi + 1);
+		gScreen.setColor(Screen::red);
+		gScreen.drawLine(-CROSSW / 2, VERT_SHIFT + CROSSP, CROSSW / 2, VERT_SHIFT + CROSSP);
+		gScreen.drawLine(0, VERT_SHIFT + CROSSP - CROSSW /2 , 0, VERT_SHIFT + CROSSP + CROSSW/2);
 
 	}
 
@@ -854,7 +857,7 @@ void MyTrial::control() {
 	bool check_baseline_hold = 0;
 	int fi[2] = { finger[0], finger[1] };
 
-	gs.showDiagnostics = 1;
+	gs.showDiagnostics = 0;
 
 	switch (state) {
 	case WAIT_TRIAL: //0
@@ -930,6 +933,13 @@ void MyTrial::control() {
 
 	case WAIT_TR: //2
 
+		gs.showTgLines = 1;	// set screen lines/force bars to show
+		gs.showBsLines = 1;
+		gs.showFxCross = 1;
+		gs.showForces = 0;
+		gs.showTarget = 0;
+		gs.showFeedback = 0;
+
 		if (gCounter.readTR() > 0 && gCounter.readTotTime() >= startTime) {
 			startTimeReal = gCounter.readTotTime();
 			startTRReal = gCounter.readTR();
@@ -948,7 +958,7 @@ void MyTrial::control() {
 	case WAIT_PLAN: //3
 		gs.showTimer5 = 0;
 		gs.showForces = 1;
-		gs.showFxCross = 0;
+		gs.showFxCross = 1;
 
 		for (i = 0; i < 2; i++) {	// check fingers' states -> fingers should stay in the baseline during planning
 			fingerForceTmp = VERT_SHIFT + forceGain * fGain[fi[i]] * gBox.getForce(fi[i]) + baselineCorrection;
@@ -964,6 +974,7 @@ void MyTrial::control() {
 		/// Because of this wait time, total trial duration in .mov is 500 ms longer 
 		/// than in the .tgt file and stim occurs 500 ms after planTime
 		if (gTimer[3] > baseline_wait_time) {	// turn on visual target after 500ms of holding the baseline
+			gs.showFxCross = 0;
 			gs.showTarget = 1;	// show visual target	
 			gs.showPrLines = 1;
 		}
@@ -1015,15 +1026,15 @@ void MyTrial::control() {
 			gs.showPrLines = 0;
 			gs.showBsLines = 1;
 			gs.showForces = 0;
+			gs.showFxCross = 1;
 			gs.showTarget = 0;		// show the targets on the screen (grey bars)
-			gs.showTimer5 = 0;		// show timer 4 value on screen (duration of holding a chord)
 			gs.boxColor = 5;		// grey baseline box color
 
 		}
 		
 
 		if (gTimer[3] > 500) {
-			for (i = 0; i < 2; i++) {	// check fingers' states -> fingers should stay in the baseline during planning
+			for (i = 0; i < 2; i++) {	
 				fingerForceTmp = VERT_SHIFT + forceGain * fGain[fi[i]] * gBox.getForce(fi[i]) + baselineCorrection;
 				Favf[i] = (Favf[i] + fingerForceTmp);
 			}
@@ -1053,6 +1064,7 @@ void MyTrial::control() {
 		gs.showPrLines = 0;
 		gs.showBsLines = 1;
 		gs.showForces = 0;
+		gs.showFxCross = 0;
 		gs.showTarget = 0;			// no visual targets
 		gs.showTimer5 = 0;
 		gs.showFeedback = 1;		// showing feedback (refer to MyTrial::updateGraphics() for details)
@@ -1071,7 +1083,13 @@ void MyTrial::control() {
 		}
 		else
 		{
-			if (gTimer[2] > 10000) {
+			gs.showTgLines = 1;	// set screen lines/force bars to show
+			gs.showBsLines = 1;
+			gs.showFxCross = 1;
+			gs.showForces = 0;
+			gs.showTarget = 0;
+			gs.showFeedback = 0;
+			if (gTimer[2] > 12000) {  // wait 12 s at the end of the run
 				state = END_TRIAL;
 				gTimer.reset(2);
 				cout << "HRF acquired for 10 seconds after trial" << endl;

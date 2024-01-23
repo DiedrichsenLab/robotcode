@@ -103,10 +103,10 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	//gExp->redirectIOToConsole();
 
 	// gExp->redirectIOToConsole();		// I uncommented this!!!
-	tDisp.init(gThisInst, 0, 0, 400, 30, 9, 2, &(::parseCommand));		// Default setting for the Windows 10 PC
+	tDisp.init(gThisInst, 0, 0, 600, 30, 9, 2, &(::parseCommand));		// Default setting for the Windows 10 PC
 	tDisp.setText("Subj", 0, 0);
-	//gScreen.init(gThisInst, 1920, 0, 1920, 1080, &(::updateGraphics));	// Default setting for the Windows 10 PC
-	gScreen.init(gThisInst, 640, 0, 640, 1024, &(::updateGraphics));
+	gScreen.init(gThisInst, 1920, 0, 1920, 1080, &(::updateGraphics));	// Default setting for the Windows 10 PC
+	//gScreen.init(gThisInst, 640, 0, 640, 1024, &(::updateGraphics));
 	gScreen.setCenter(Vector2D(0, 0)); // This set the center of the screen where forces are calibrated with zero force // In cm //0,2
 	gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));					// cm/pixel
 
@@ -712,6 +712,15 @@ void MyTrial::updateGraphics(int what) {
 
 	}
 
+	if (gs.showFxCross == 1) { // show lines
+
+		// Baseline lines
+		gScreen.setColor(Screen::grey);
+		gScreen.drawLine(-1, VERT_SHIFT + baseTHhi, +1, VERT_SHIFT + baseTHhi);
+		gScreen.drawLine(0, VERT_SHIFT - baseTHhi - 1, 0, VERT_SHIFT - baseTHhi + 1);
+
+	}
+
 	if (gs.showTgLines == 1) {
 		// Ext Bottom threshold
 		gScreen.setColor(Screen::grey);
@@ -939,6 +948,7 @@ void MyTrial::control() {
 	case WAIT_PLAN: //3
 		gs.showTimer5 = 0;
 		gs.showForces = 1;
+		gs.showFxCross = 0;
 
 		for (i = 0; i < 2; i++) {	// check fingers' states -> fingers should stay in the baseline during planning
 			fingerForceTmp = VERT_SHIFT + forceGain * fGain[fi[i]] * gBox.getForce(fi[i]) + baselineCorrection;
@@ -1071,6 +1081,7 @@ void MyTrial::control() {
 	case WAIT_ITI:
 		gs.showTgLines = 1;	// set screen lines/force bars to show
 		gs.showBsLines = 1;
+		gs.showFxCross = 1;
 		gs.showForces = 0;
 		gs.showTarget = 0;
 		gs.showFeedback = 0;
@@ -1117,6 +1128,11 @@ DataRecord::DataRecord(int s, int t) {
 	time = gTimer[1];
 	timeReal = gTimer.getRealtime();
 
+	TotTime = gCounter.readTotTime(); //internally generated time initiated at first TTL pulse
+	TR = gCounter.readTR(); //counted TR pulse
+	TRtime = gCounter.readTime(); //time since last TR
+	currentSlice = 0;//gCounter.readSlice();
+
 
 	for (i = 0; i < 5; i++) {
 		fforce[i] = gBox.getForce(i);
@@ -1136,7 +1152,10 @@ void DataRecord::write(ostream& out) {
 	out << trialNum + 1 << "\t"
 		<< state << "\t"
 		<< timeReal << "\t"
-		<< time << "\t";
+		<< time << "\t"
+		<< TotTime << "\t"
+		<< TR << "\t"
+		<< currentSlice << "\t";
 
 	for (i = 0; i < 5; i++) {
 		out << fforce[i] << "\t";

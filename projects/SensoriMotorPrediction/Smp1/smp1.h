@@ -71,6 +71,7 @@ public:
 	bool showTgLines;
 	bool showPrLines;
 	bool showBsLines;
+	bool showFxCross;
 	bool showForces;
 	bool showMaxForces;
 	bool showTarget;
@@ -102,6 +103,11 @@ public:
 	double time;
 	double fforce[5];
 	double visualizedForce[5];
+
+	double	TotTime;
+	int		TR;
+	int		currentSlice;
+	double	TRtime;
 };
 
 ///////////////////////////////////////////////////////////////

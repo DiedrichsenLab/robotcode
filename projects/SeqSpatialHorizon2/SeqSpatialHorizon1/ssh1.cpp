@@ -3,6 +3,8 @@
 /// Sequence Learning and Eye Tracking
 ///////////////////////////////////////////////////////////////
 
+// Ali
+
 #include "ssh1.h" 
 #include "StimulatorBox.h" 
 #include <ctime>

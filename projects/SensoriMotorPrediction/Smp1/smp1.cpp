@@ -465,15 +465,15 @@ MyTrial::MyTrial() {
 void MyTrial::read(istream& in) {
 	// read from .tgt file
 	in >> subNum
-		>> chordID
+		>> cueID
 		>> stimFinger
 		>> planTime
 		>> execMaxTime
 		>> feedbackTime
 		>> iti
 		>> trialLabel
-		>> startTime
-		>> GoNogo;
+		>> GoNogo
+		>> startTime;
 }
 
 ///////////////////////////////////////////////////////////////
@@ -483,7 +483,7 @@ void MyTrial::writeDat(ostream& out) {
 	// write to .dat file
 	// name of file is: smp0_<name of subject>_<session number>.dat
 	out << subNum << "\t"
-		<< chordID << "\t"
+		<< cueID << "\t"
 		<< stimFinger << "\t"
 		<< planTime << "\t"
 		<< execMaxTime << "\t"
@@ -657,7 +657,7 @@ void MyTrial::updateGraphics(int what) {
 
 	if (gs.showTarget == 1) { // show target squares
 		for (i = 0; i < 2; i++) {
-			tmpChord = chordID[i];
+			tmpChord = cueID[i];
 			xPos = xPosBox[i];//(x1 + x2) * 0.5;
 			yPos = (FLX_BOT_Y1 + 3); // *0.5 + VERT_SHIFT;
 			xSize = FINGWIDTH;
@@ -873,7 +873,7 @@ void MyTrial::control() {
 		else {
 			gs.showTarget = 1;
 			gs.showPrLines = 1;
-			chordID = probCue;
+			cueID = probCue;
 		}
 		gs.showMaxForces = 0;
 		gs.showTimer5 = 0;
@@ -965,7 +965,7 @@ void MyTrial::control() {
 			check_baseline_hold = 1;
 			if (fingerForceTmp >= (VERT_SHIFT + baseTHhi) || fingerForceTmp <= (VERT_SHIFT - (baseTHhi))) {
 				// if even one finger was out of baseline zone, reset timer(1):
-				gTimer.reset(3);
+				//gTimer.reset(3); // do not reset timer here or imaging runs will have different length
 				check_baseline_hold = 0;
 				break;
 			}
@@ -1030,6 +1030,17 @@ void MyTrial::control() {
 			gs.showTarget = 0;		// show the targets on the screen (grey bars)
 			gs.boxColor = 5;		// grey baseline box color
 
+		}
+
+		else if (GoNogo == "nogo") {
+			gs.showTgLines = 1;	// set screen lines/force bars to show
+			gs.showPrLines = 0;
+			gs.showBsLines = 1;
+			gs.showForces = 0;
+			gs.showFxCross = 1;
+			gs.showTarget = 0;		// show the targets on the screen (grey bars)
+			gs.boxColor = 5;		// grey baseline box color
+			state = ACQUIRE_HRF;
 		}
 		
 
@@ -1149,7 +1160,7 @@ DataRecord::DataRecord(int s, int t) {
 	TotTime = gCounter.readTotTime(); //internally generated time initiated at first TTL pulse
 	TR = gCounter.readTR(); //counted TR pulse
 	TRtime = gCounter.readTime(); //time since last TR
-	currentSlice = 0;//gCounter.readSlice();
+	currentSlice = gCounter.readSlice();
 
 
 	for (i = 0; i < 5; i++) {
@@ -1173,6 +1184,7 @@ void DataRecord::write(ostream& out) {
 		<< time << "\t"
 		<< TotTime << "\t"
 		<< TR << "\t"
+		<< TRtime << "\t"
 		<< currentSlice << "\t";
 
 	for (i = 0; i < 5; i++) {

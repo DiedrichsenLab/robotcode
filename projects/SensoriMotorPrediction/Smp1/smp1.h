@@ -156,7 +156,7 @@ public:
 	//			}
 	//		}
 public:
-	string chordID;							///< Chord identifier. 0: neutral , 1: flexion , 2: extension
+	string cueID;							///< Chord identifier. 0: neutral , 1: flexion , 2: extension
 
 
 private:

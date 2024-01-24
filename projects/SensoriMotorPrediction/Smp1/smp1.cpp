@@ -31,6 +31,7 @@ int finger[2] = { 1, 3 };					///< Finger from which Max Voluntary Force is meas
 double currentForce = 0;			// max force recorded from <finger>
 double maxForce[5] = { 0, 0, 0 ,0, 0 };  // max force recorded from each finger
 bool showCue = 0;
+int hrfTime = 120000;
 string probCue;
 
 int sliceNumber = 32;			///< How many slices do we have
@@ -331,6 +332,10 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 		}
 	}
 
+	else if (arguments[0] == "resetTR" || arguments[0] == "resettr") {
+		gCounter.reset();
+	}
+
 	/// set force gain. You can set any arbitrary force gain for every participant if they cant do the chord.
 	else if (arguments[0] == "setGlobalGain") {
 		if (numArgs != 2) {
@@ -588,7 +593,7 @@ void MyTrial::updateTextDisplay() {
 	double diffForce[5] = { 0,0,0,0,0 };
 	sprintf(buffer, "TR : %d time: %2.2f Tot time: %2.2f", gCounter.readTR(), gCounter.readTime(), gCounter.readTotTime());
 	tDisp.setText(buffer, 2, 0);
-	sprintf(buffer, "Time : %2.2f", gTimer[1]);
+	sprintf(buffer, "Time : %2.2f", gTimer[2]);
 	tDisp.setText(buffer, 3, 0);
 	tDisp.setText("Experiment: Smp1", 2, 1);
 
@@ -805,6 +810,9 @@ void MyTrial::updateGraphics(int what) {
 		case GIVE_FEEDBACK:
 			stateString = "Give Feedback";
 			break;
+		case ACQUIRE_HRF:
+			stateString = "Acquire HRF";
+			break;
 		case WAIT_ITI:
 			stateString = "Wait ITI";
 			break;
@@ -815,6 +823,8 @@ void MyTrial::updateGraphics(int what) {
 
 		gScreen.setColor(Screen::white);
 		gScreen.print(stateString, -21, 12, 5);
+		gScreen.print(std::to_string(gExp->theBlock->trialNum + 1), -21, 6, 5);
+		gScreen.print(std::to_string(gExp->theBlock->numTrials), -21, 3, 5);
 	}
 }
 
@@ -857,7 +867,7 @@ void MyTrial::control() {
 	bool check_baseline_hold = 0;
 	int fi[2] = { finger[0], finger[1] };
 
-	gs.showDiagnostics = 0;
+	gs.showDiagnostics = 1;
 
 	switch (state) {
 	case WAIT_TRIAL: //0
@@ -895,7 +905,7 @@ void MyTrial::control() {
 		}
 		break;
 
-		break;
+		//break;
 
 	case START_TRIAL: //1	e
 		gs.showTgLines = 1;	// set screen lines/force bars to show
@@ -1086,7 +1096,7 @@ void MyTrial::control() {
 		}
 		break;
 
-	case ACQUIRE_HRF:
+	case ACQUIRE_HRF: //6
 
 		if (gExp->theBlock->trialNum + 1 != gExp->theBlock->numTrials)
 		{
@@ -1100,12 +1110,14 @@ void MyTrial::control() {
 			gs.showForces = 0;
 			gs.showTarget = 0;
 			gs.showFeedback = 0;
-			if (gTimer[2] > 12000) {  // wait 12 s at the end of the run
+			if (gTimer[2] > hrfTime) {  // wait 12 s at the end of the run
 				state = END_TRIAL;
+				dataman.stopRecording();
 				gTimer.reset(2);
-				cout << "HRF acquired for 10 seconds after trial" << endl;
+			//	//cout << "HRF acquired for 12 seconds after trial" << endl;
 			}
 		}
+		break;
 
 	case WAIT_ITI:
 		gs.showTgLines = 1;	// set screen lines/force bars to show
@@ -1122,6 +1134,7 @@ void MyTrial::control() {
 		break;
 
 	case END_TRIAL:
+		gTimer.reset(1);
 		break;
 
 	}

@@ -18,6 +18,6 @@ for block in range(nblocks):
 
     filename = f"{experiment}_{subj}_{block + 1:02}.tgt"
 
-    tgt.to_csv('target/' + filename)
+    tgt.to_csv('target/' + filename, index=False)
 
     print(filename)

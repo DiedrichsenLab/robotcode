@@ -130,7 +130,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 
 	///__________________________________________Neda - End
 	gThisInst = hThisInst;
-	// gExp = new MyExperiment("SeqSpatialVis", "ssh_vis", "C:/data/SepSpatialVis/ssh_vis");
+	// gExp = new MyExperiment("SeqSpatialVis", "ssh_vis", "C:/data/SeqSpatial/ssh_vis");
 	gExp = new MyExperiment("SeqSpatialHorizon1", "ssh1", "C:/data/SeqSpatialHorizon/ssh1");
 
 	//gExp->redirectIOToConsole();
@@ -417,7 +417,7 @@ void MyBlock::giveFeedback() {
 		else if (tpnr->seqLength == 4) {
 			j = 2;
 		}
-		else if (tpnr->seqLength == 9) {  // edited by SKim
+		else if (tpnr->seqLength == 14) {  // edited by SKim
 			j = 3;
 
 		}
@@ -507,12 +507,12 @@ MyTrial::MyTrial() {
 ///////////////////////////////////////////////////////////////
 void MyTrial::read(istream& in) {
 	// read from .tgt file
-	(in) >> seqType >> feedback;
+	(in) >> subNum >> seqType >> feedback;
 	for (int i = 0; i < MAX_PRESS; i++) {   // MAX_PRESS = 14--> read presses
 		(in) >> press[i];
 	}
 	// (in) >> hand >> cueS >> cueC >> cueP >> iti >> sounds >> Horizon >> StimTimeLim;
-	(in) >> cueP >> iti >> Horizon >> StimTimeLim;
+	(in) >> cueP >> iti >> Horizon >> StimTimeLim >> PrepTime;
 
 	// do other job
 	string zero("0");
@@ -528,7 +528,8 @@ void MyTrial::read(istream& in) {
 // Write  // Neda - Eye data to be added
 ///////////////////////////////////////////////////////////////
 void MyTrial::writeDat(ostream& out) {
-	out << seqType << "\t"
+	out << subNum << "\t"
+		<< seqType << "\t"
 		<< feedback << "\t";
 	for (int i = 0; i < MAX_PRESS; i++) {
 		out << press[i] << "\t";

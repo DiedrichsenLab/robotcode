@@ -106,7 +106,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	//gExp->redirectIOToConsole();
 
 	// gExp->redirectIOToConsole();		// I uncommented this!!!
-	tDisp.init(gThisInst, 0, 0, 600, 30, 9, 2, &(::parseCommand));		// Default setting for the Windows 10 PC
+	tDisp.init(gThisInst, 0, 0, 1000, 30, 9, 2, &(::parseCommand));		// Default setting for the Windows 10 PC
 	tDisp.setText("Subj", 0, 0);
 	gScreen.init(gThisInst, 1920, 0, 1920, 1080, &(::updateGraphics));	// Default setting for the Windows 10 PC
 	//gScreen.init(gThisInst, 640, 0, 640, 1024, &(::updateGraphics));
@@ -586,7 +586,7 @@ void MyTrial::copyHaptics() {
 void MyTrial::updateTextDisplay() {
 	int i;
 	double diffForce[5] = { 0,0,0,0,0 };
-	sprintf(buffer, "TR : %d time: %2.2f Tot time: %2.2f slice:%d", gCounter.readTR(), gCounter.readTime(), gCounter.readTotTime(), gCounter.readSlice());
+	sprintf(buffer, "TR : %d time: %2.2f Tot time: %2.2f", gCounter.readTR(), gCounter.readTime(), gCounter.readTotTime());
 	tDisp.setText(buffer, 2, 0);
 	sprintf(buffer, "Time : %2.2f", gTimer[1]);
 	tDisp.setText(buffer, 3, 0);
@@ -1160,7 +1160,7 @@ DataRecord::DataRecord(int s, int t) {
 	TotTime = gCounter.readTotTime(); //internally generated time initiated at first TTL pulse
 	TR = gCounter.readTR(); //counted TR pulse
 	TRtime = gCounter.readTime(); //time since last TR
-	currentSlice = gCounter.readSlice();
+	currentSlice = 0; //gCounter.readSlice();
 
 
 	for (i = 0; i < 5; i++) {

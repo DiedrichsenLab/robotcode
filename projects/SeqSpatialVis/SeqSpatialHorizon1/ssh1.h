@@ -158,7 +158,7 @@ private:
 	int cTrial; 							///< Trial number
 	int Horizon;                            ///< How mnay digits ahead can you see
 	int StimTimeLim;							///< For how long is the seq/chunk displayed
-	int subNum;
+	//int subNum;
 	int PrepTime; 
 	int seqType;							///< Which sequence of finger movments has to be done? 
 	int press[MAX_PRESS];					///< Which digit to press 

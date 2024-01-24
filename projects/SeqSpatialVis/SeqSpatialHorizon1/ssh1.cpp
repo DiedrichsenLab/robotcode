@@ -507,7 +507,7 @@ MyTrial::MyTrial() {
 ///////////////////////////////////////////////////////////////
 void MyTrial::read(istream& in) {
 	// read from .tgt file
-	(in) >> subNum >> seqType >> feedback;
+	(in) >> seqType >> feedback;
 	for (int i = 0; i < MAX_PRESS; i++) {   // MAX_PRESS = 14--> read presses
 		(in) >> press[i];
 	}
@@ -528,8 +528,7 @@ void MyTrial::read(istream& in) {
 // Write  // Neda - Eye data to be added
 ///////////////////////////////////////////////////////////////
 void MyTrial::writeDat(ostream& out) {
-	out << subNum << "\t"
-		<< seqType << "\t"
+	out << seqType << "\t"
 		<< feedback << "\t";
 	for (int i = 0; i < MAX_PRESS; i++) {
 		out << press[i] << "\t";

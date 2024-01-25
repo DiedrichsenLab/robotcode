@@ -597,7 +597,7 @@ void MyTrial::updateTextDisplay() {
 	tDisp.setText(buffer, 3, 0);
 	tDisp.setText("Experiment: Smp1", 2, 1);
 
-	sprintf(buffer, "State : %d   Trial: %d", state, gExp->theBlock->trialNum);
+	sprintf(buffer, "State : %d   Trial: %d   Block state: %d", state, gExp->theBlock->trialNum, gExp->theBlock->state);
 	tDisp.setText(buffer, 4, 0);
 
 	tDisp.setText("Fingers in task: " + fingerTask[0] + " " + fingerTask[1], 4, 1);
@@ -1091,31 +1091,8 @@ void MyTrial::control() {
 		gs.showFeedback = 1;		// showing feedback (refer to MyTrial::updateGraphics() for details)
 
 		if (gTimer[2] >= feedbackTime) {
-			state = ACQUIRE_HRF;
-			gTimer.reset(2);
-		}
-		break;
-
-	case ACQUIRE_HRF: //6
-
-		if (gExp->theBlock->trialNum + 1 != gExp->theBlock->numTrials)
-		{
 			state = WAIT_ITI;
-		}
-		else
-		{
-			gs.showTgLines = 1;	// set screen lines/force bars to show
-			gs.showBsLines = 1;
-			gs.showFxCross = 1;
-			gs.showForces = 0;
-			gs.showTarget = 0;
-			gs.showFeedback = 0;
-			if (gTimer[2] > hrfTime) {  // wait 12 s at the end of the run
-				state = END_TRIAL;
-				dataman.stopRecording();
-				gTimer.reset(2);
-			//	//cout << "HRF acquired for 12 seconds after trial" << endl;
-			}
+			gTimer.reset(2);
 		}
 		break;
 
@@ -1127,14 +1104,38 @@ void MyTrial::control() {
 		gs.showTarget = 0;
 		gs.showFeedback = 0;
 		if (gTimer[2] >= iti) {
-			state = END_TRIAL;
-			dataman.stopRecording();
+			state = ACQUIRE_HRF;
 			gTimer.reset(2);
 		}
 		break;
 
+	case ACQUIRE_HRF: //6
+
+		if (gExp->theBlock->trialNum + 1 != gExp->theBlock->numTrials)
+		{
+			state = END_TRIAL;
+		}
+		else
+		{
+			gs.showTgLines = 1;	// set screen lines/force bars to show
+			gs.showBsLines = 1;
+			gs.showFxCross = 1;
+			gs.showForces = 0;
+			gs.showTarget = 0;
+			gs.showFeedback = 0;
+			if (gTimer[2] > hrfTime) {  // wait 12 s at the end of the run
+				state = END_TRIAL;
+				gTimer.reset(2);
+			//	//cout << "HRF acquired for 12 seconds after trial" << endl;
+			}
+		}
+		//break;
+
+
+
 	case END_TRIAL:
 		gTimer.reset(1);
+		dataman.stopRecording();
 		break;
 
 	}

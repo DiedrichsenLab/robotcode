@@ -586,6 +586,7 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "iti" << "\t"
 		// << "sounds" << "\t"
 		<< "MT" << "\t"
+		<< "RT" << "\t"   // added by SKim
 		<< "isError" << "\t";
 	for (int i = 0; i < MAX_PRESS; i++) {
 		sprintf(header, "response%d", i);

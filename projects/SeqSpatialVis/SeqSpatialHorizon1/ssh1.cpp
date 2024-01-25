@@ -16,7 +16,8 @@ S626sManager s626; ///< Hardware Manager
 TextDisplay tDisp; ///< Text Display
 Screen gScreen; ///< Screen
 StimulatorBox gBox[2]; ///< Stimulator Box
-Target gTarget(SHAPE_BOX, 1); // Draw a white box for visual target, SKim
+Target gTarget(SHAPE_DISC, 1); // Draw a white box for visual target, SKim
+//Target gTarget(SHAPE_BOX, 1); // Draw a white box for visual target, SKim
 
 
 Timer gTimer(UPDATERATE); ///< Timer from S626 board experiments
@@ -489,7 +490,8 @@ MyTrial::MyTrial() {
 	seqCounter = 0; // init the sequence index variable
 	numNewpress = 0;
 	DigPressed = 0;
-	MT = 0; // init total reaction time
+	MT = 0; // init total movement time, SKim edited
+	RT = 0; // Added by SKim, reaction time
 	points = 0;
 	int released = 0;
 	for (int i = 0; i < MAX_PRESS; i++) {    // MAX_PRESS = 14 defined in header
@@ -541,6 +543,7 @@ void MyTrial::writeDat(ostream& out) {
 		<< iti << "\t"
 		// << sounds << "\t"
 		<< MT << "\t"
+		<< RT << "\t"  // added by SKim
 		<< isError << "\t";
 	for (int i = 0; i < MAX_PRESS; i++) {
 		out << response[i] << "\t";
@@ -708,60 +711,73 @@ void MyTrial::updateGraphics(int what) {
 		gScreen.drawLine(-5, BASELINE, 5, BASELINE); // the lower line
 		gScreen.drawLine(-5, preTH * FORCESCALE + BASELINE, 5, preTH * FORCESCALE + BASELINE);
 		gScreen.drawLine(-5, relTH * FORCESCALE + BASELINE, 5, relTH * FORCESCALE + BASELINE); // changed by SKim
-		gScreen.drawLine(-5, -3, -5, 10);
-		gScreen.drawLine(-3, -3, -3, 10);
-		gScreen.drawLine(-1, -3, -1, 10);
-		gScreen.drawLine(1, -3, 1, 10);
-		gScreen.drawLine(3, -3, 3, 10);
-		gScreen.drawLine(5, -3, 5, 10);
-
-
+		if (seqType < 3) {  // spatial visual task
+			gScreen.drawLine(-5, -5, -5, 12);
+			gScreen.drawLine(-3, -5, -3, 12);
+			gScreen.drawLine(-1, -5, -1, 12);
+			gScreen.drawLine(1, -5, 1, 12);
+			gScreen.drawLine(3, -5, 3, 12);
+			gScreen.drawLine(5, -5, 5, 12);
+		}
 		// The upper line set at force threshold
-
 	}
 
-	// Other letters
-	gScreen.setColor(Screen::white);
-	for (i = 0; i < NUMDISPLAYLINES; i++) {
-		if (!gs.line[i].empty()) {
-			gScreen.setColor(gs.lineColor[i]);
-			gScreen.print(gs.line[i].c_str(), gs.lineXpos[i], gs.lineYpos[i], gs.size[i] * 1);
-		}
+	if (state == WAIT_ALLRELEASE) {
+		gScreen.setColor(2);
+		gScreen.printChar('+', 0, -6, 2*SIZE_CUE);
+
 	}
+	else if (state==WAIT_PRESS || state==WAIT_END_RELEASE) {
+		gScreen.setColor(3);
+		gScreen.printChar('+', 0, -6, 2*SIZE_CUE);
 
-	// Press Cue
-	if (Horizon < seqLength - 1) {
-
-		// for (i = 0; i < DigPressed + Horizon; i++) { //
-		for (i = 0; i < min(Horizon, seqLength - seqCounter); i++) {
-			if (gs.cuePress[i] > 0) {
-				gScreen.setColor(1);
-				// gScreen.printChar(gs.cuePress[i], (i - 4) * WIDTH_CHAR_CUE, CUE_PRESS, SIZE_CUE); // SKim edited
-				// gScreen.drawBox(WIDTH_REC_CUE, HEIGHT_REC_CUE, (gs.cuePress[i] - '1')* WIDTH_REC_CUE, 5);
-				// double xPos = gs.cuePress[i + DigPressed]-'1';
-				double xPos = gs.cuePress[i + seqCounter] - '1';
-
-				gTarget.position = Vector2D(-4.0 + 2.0 * xPos, -2.1 + i * 2);
-				gTarget.size = Vector2D(2.0, 0.4);
-
-				gTarget.draw();
-
-				// the number 6.5 is usually the seqLength/2 so that the sequence in centered
+		if (seqType > 2) {
+			// Other letters
+			gScreen.setColor(Screen::white);
+			for (i = 0; i < NUMDISPLAYLINES; i++) {
+				if (!gs.line[i].empty()) {
+					gScreen.setColor(gs.lineColor[i]);
+					gScreen.print(gs.line[i].c_str(), gs.lineXpos[i], gs.lineYpos[i], gs.size[i] * 1);
+				}
 			}
 		}
+		else {
+			// Press Cue
+		//	if (Horizon < seqLength - 1) {
 
+				// for (i = 0; i < DigPressed + Horizon; i++) { //
+			for (i = 0; i < min(Horizon, seqLength - seqCounter); i++) {
+				if (gs.cuePress[i] > 0) {
+					gScreen.setColor(1);
+					// gScreen.printChar(gs.cuePress[i], (i - 4) * WIDTH_CHAR_CUE, CUE_PRESS, SIZE_CUE); // SKim edited
+					// gScreen.drawBox(WIDTH_REC_CUE, HEIGHT_REC_CUE, (gs.cuePress[i] - '1')* WIDTH_REC_CUE, 5);
+					// double xPos = gs.cuePress[i + DigPressed]-'1';
+					double xPos = gs.cuePress[i + seqCounter] - '1';
 
+					gTarget.position = Vector2D(-4.0 + 2.0 * xPos, -2.1 + i * 2);
+					gTarget.size = Vector2D(2.0, 2.0);
 
-	}
-	else {
-		for (i = 0; i < seqLength; i++) {  // Edited by SKim
-			if (gs.cuePress[i] > 0) {
-				gScreen.setColor(1);
-				gScreen.printChar(gs.cuePress[i], (i - 4) * WIDTH_CHAR_CUE, CUE_PRESS, SIZE_CUE);
-				// the number 6.5 is usually the seqLength/2 so that the sequence in centered
+					gTarget.draw();
+
+					// the number 6.5 is usually the seqLength/2 so that the sequence in centered
+				}
 			}
+
 		}
+
+
+
+
 	}
+	//else {
+	//	for (i = 0; i < seqLength; i++) {  // Edited by SKim
+	//		if (gs.cuePress[i] > 0) {
+	//			gScreen.setColor(1);
+	//			gScreen.printChar(gs.cuePress[i], (i - 4) * WIDTH_CHAR_CUE, CUE_PRESS, SIZE_CUE);
+	//			// the number 6.5 is usually the seqLength/2 so that the sequence in centered
+	//		}
+	//	}
+	//}
 
 
 }
@@ -906,7 +922,7 @@ void MyTrial::control() {
 			state = WAIT_FEEDBACK;
 		}
 
-		if (released == 5 && gTimer[2] > 1500) { //gTimer[2] > 3000 makes sure that the cross is being shown for 3 secs
+		if (released == 5 && gTimer[2] > 2000) { //gTimer[2] > 2000 makes sure that the cross is being shown for 3 secs
 			gTimer.reset(2);
 
 			gs.clearCues();
@@ -978,13 +994,14 @@ void MyTrial::control() {
 
 			if (response[seqCounter] == press[seqCounter]) { // if press is correct
 				// PLAY SOUND
-				//channel = Mix_PlayChannel(-1, wavTask[0], 0); // SDL
-
+//				channel = Mix_PlayChannel(-1, wavTask[0], 0); // SDL
+				PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
 			}
 			else if (response[seqCounter] != press[seqCounter]) {   // press is wrong
 				isError = 1;
 				// PLAY SOUND
-				//channel = Mix_PlayChannel(-1, wavTask[1], 0); // SDL
+				PlaySound(TASKSOUNDS[1].c_str(), NULL, SND_ASYNC);
+//				channel = Mix_PlayChannel(-1, wavTask[1], 0); // SDL
 			}
 
 			seqCounter++;
@@ -1047,7 +1064,7 @@ void MyTrial::control() {
 					points = 3;
 					gNumPointsBlock += 3;
 					// PLAY SOUNDS
-					//channel = Mix_PlayChannel(-1, wavTask[2], 0); // SDL
+	//				channel = Mix_PlayChannel(-1, wavTask[2], 0); // SDL
 				}
 				else if (critTime < timeThreshold[j]) {
 					points = 2;  // SKim
@@ -1058,7 +1075,8 @@ void MyTrial::control() {
 				else {
 					points = 1;
 					gNumPointsBlock += 1;
-
+					// PLAY SOUND
+					// channel = Mix_PlayChannel(-1, wavTask[1], 0); // SDL
 				}
 
 			}

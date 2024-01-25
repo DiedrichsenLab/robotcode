@@ -183,7 +183,9 @@ private:
 	double releaseTime[MAX_PRESS];			///< Time when each finger was release
 
 	double MT;								///< Overall MT 
-	string cueS, cueC, cueP; 					///< Visual cues for sequence, chunk, and press
+	double RT;								// Reaction Time, added by SKim
+	string cueP;							// edited by SKim, using only press cue	
+//	string cueS, cueC, cueP; 					///< Visual cues for sequence, chunk, and press
 	DataManager<DataRecord, 30000 / 2> dataman;	///< For data recording for MOV file 
 };
 

@@ -40,9 +40,9 @@ enum TargetShape
 //////////////////////////////////////////////////////////////
 class Target{
 public: 
-//	Target();				///< constructor 
+	Target();				///< constructor 
 	Target(TargetShape s);	///< constructor with shape given
-	Target(TargetShape s, int c);
+	Target(TargetShape s, int c);  // added by SKim
 	void draw();			///< draw on screen 
 	void setColor(int c);	///< sets color from table 	
 	int color;				///< Color (numtable entry)
@@ -63,11 +63,11 @@ public:
 /// Constructor doesn't do much, but sets the Target to 
 /// be invisible 
 //////////////////////////////////////////////////////////////
-//Target::Target(){ 
-//	isExplode=false; 
-//	color=0; // invisible 
-//	shape=SHAPE_RECT; // default shape is rectangle
-//} 
+Target::Target(){ 
+	isExplode=false; 
+	color=0; // invisible 
+	shape=SHAPE_RECT; // default shape is rectangle
+} 
 
 //////////////////////////////////////////////////////////////
 /// Constructor doesn't do much, but sets the Target to 
@@ -80,7 +80,7 @@ Target::Target(TargetShape s){
 	shape=s; // set the desired shape
 }
 
-Target::Target(TargetShape s, int c) {
+Target::Target(TargetShape s, int c) {   // added by SKim
 	isExplode = false;
 	color = c; // invisible 
 	shape = s; // set the desired shape

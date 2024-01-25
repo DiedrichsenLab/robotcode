@@ -825,8 +825,6 @@ void MyTrial::updateGraphics(int what) {
 
 		gScreen.setColor(Screen::white);
 		gScreen.print(stateString, -21, 12, 5);
-		gScreen.print(std::to_string(gExp->theBlock->trialNum + 1), -21, 6, 5);
-		gScreen.print(std::to_string(gExp->theBlock->numTrials), -21, 3, 5);
 	}
 }
 
@@ -869,7 +867,7 @@ void MyTrial::control() {
 	bool check_baseline_hold = 0;
 	int fi[2] = { finger[0], finger[1] };
 
-	gs.showDiagnostics = 1;
+	gs.showDiagnostics = 0;
 
 	switch (state) {
 	case WAIT_TRIAL: //0
@@ -1131,7 +1129,7 @@ void MyTrial::control() {
 			//	//cout << "HRF acquired for 12 seconds after trial" << endl;
 			}
 		}
-		//break;
+		break;
 
 
 

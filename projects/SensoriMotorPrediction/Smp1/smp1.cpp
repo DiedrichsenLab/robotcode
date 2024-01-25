@@ -31,7 +31,7 @@ int finger[2] = { 1, 3 };					///< Finger from which Max Voluntary Force is meas
 double currentForce = 0;			// max force recorded from <finger>
 double maxForce[5] = { 0, 0, 0 ,0, 0 };  // max force recorded from each finger
 bool showCue = 0;
-int hrfTime = 120000;
+int hrfTime = 12000;
 string probCue;
 
 int sliceNumber = 32;			///< How many slices do we have
@@ -593,8 +593,10 @@ void MyTrial::updateTextDisplay() {
 	double diffForce[5] = { 0,0,0,0,0 };
 	sprintf(buffer, "TR : %d time: %2.2f Tot time: %2.2f", gCounter.readTR(), gCounter.readTime(), gCounter.readTotTime());
 	tDisp.setText(buffer, 2, 0);
+
 	sprintf(buffer, "Time : %2.2f", gTimer[2]);
 	tDisp.setText(buffer, 3, 0);
+
 	tDisp.setText("Experiment: Smp1", 2, 1);
 
 	sprintf(buffer, "State : %d   Trial: %d   Block state: %d", state, gExp->theBlock->trialNum, gExp->theBlock->state);

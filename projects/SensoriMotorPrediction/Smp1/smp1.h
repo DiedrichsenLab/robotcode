@@ -39,8 +39,8 @@ enum TrialState {
 	WAIT_PLAN,			// 3
 	WAIT_EXEC,			// 4
 	GIVE_FEEDBACK,		// 5
-	ACQUIRE_HRF,		// 6
-	WAIT_ITI,			// 7
+	WAIT_ITI,			// 6
+	ACQUIRE_HRF,		// 7
 	END_TRIAL,			// 8
 };
 

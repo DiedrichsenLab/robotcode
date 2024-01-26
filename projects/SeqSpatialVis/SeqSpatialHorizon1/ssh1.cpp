@@ -755,14 +755,15 @@ void MyTrial::updateGraphics(int what) {
 				gScreen.printChar('+', 0, -7, 2 * SIZE_CUE);
 			}
 
-			if (seqType > 2) {
+			if (seqType == 3) {
 				gScreen.setColor(1);
 				gHorizon.position = Vector2D(0, 4.0 + Horizon);
 				gHorizon.size = Vector2D(10, 13 - 2 * Horizon);
 				gHorizon.draw();
 				for (i = 0; i < min(Horizon, seqLength - seqCounter); i++) {  // Edited by SKim
 					if (gs.cuePress[i] > 0) {
-						gScreen.printChar(gs.cuePress[i], (i - 4) * WIDTH_CHAR_CUE, CUE_PRESS, SIZE_CUE);
+//						gScreen.printChar(gs.cuePress[i], (i - 4) * WIDTH_CHAR_CUE, CUE_PRESS, SIZE_CUE);
+						gScreen.printChar(gs.cuePress[i + seqCounter], 0, -2.0 + i * 2, SIZE_CUE);
 						// the number 6.5 is usually the seqLength/2 so that the sequence in centered
 					}
 				}
@@ -950,7 +951,7 @@ void MyTrial::control() {
 			state = WAIT_FEEDBACK;
 		}
 
-		if (released == 5 && gTimer[2] > 2000) { //gTimer[2] > 2000 makes sure that the cross is being shown for 3 secs
+		if (released == 5 && gTimer[2] > 1500) { //gTimer[2] > 1500 makes sure that the cross is being shown for 3 secs
 			gTimer.reset(2);
 
 			gs.clearCues();

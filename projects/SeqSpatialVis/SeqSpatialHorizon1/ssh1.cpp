@@ -17,7 +17,7 @@ TextDisplay tDisp; ///< Text Display
 Screen gScreen; ///< Screen
 StimulatorBox gBox[2]; ///< Stimulator Box
 Target gTarget(SHAPE_DISC, 1); // Draw a white box for visual target, SKim
-//Target gTarget(SHAPE_BOX, 1); // Draw a white box for visual target, SKim
+Target gHorizon(SHAPE_BOX, 1); // Draw a white box for visual target, SKim
 
 
 Timer gTimer(UPDATERATE); ///< Timer from S626 board experiments
@@ -737,50 +737,62 @@ void MyTrial::updateGraphics(int what) {
 	//}
 	if (state == WAIT_ALLRELEASE || state == WAIT_PRESS) {
 		if (state == WAIT_ALLRELEASE) {
-			gScreen.setColor(2);
+			gScreen.setColor(2);  // Red signal, wait for "GO" signal and all fingers are released
+			gScreen.printChar('+', 0, -7, 2 * SIZE_CUE);
 		}
 		else {
-			if (gTimer[2] < 300) {
+			if (gTimer[2] < PrepTime) {
+				gScreen.setColor(2); // Red signal, wait additional PrepTime for "GO" signal, preplanning, now targets are shown
+				gScreen.printChar('+', 0, -7, 2 * SIZE_CUE);
+			}
+			else if (gTimer[2] > PrepTime && gTimer[2] < PrepTime+1000) { // Show the green "GO" signal for 1 sec
 				gScreen.setColor(3);
+				gScreen.printChar('+', 0, -7, 2 * SIZE_CUE);
+
 			}
 			else { 
+				gScreen.setColor(0);
+				gScreen.printChar('+', 0, -7, 2 * SIZE_CUE);
+			}
+
+			if (seqType > 2) {
 				gScreen.setColor(1);
+				gHorizon.position = Vector2D(0, 4.0 + Horizon);
+				gHorizon.size = Vector2D(10, 13 - 2 * Horizon);
+				gHorizon.draw();
+				for (i = 0; i < min(Horizon, seqLength - seqCounter); i++) {  // Edited by SKim
+					if (gs.cuePress[i] > 0) {
+						gScreen.printChar(gs.cuePress[i], (i - 4) * WIDTH_CHAR_CUE, CUE_PRESS, SIZE_CUE);
+						// the number 6.5 is usually the seqLength/2 so that the sequence in centered
+					}
+				}
 			}
-		}
-		gScreen.printChar('+', 0, -7, 2 * SIZE_CUE);	
+			else {
+				// Press Cue
+			//	if (Horizon < seqLength - 1) {
+				gScreen.setColor(1);
+				gHorizon.position = Vector2D(0, 4.0 + Horizon);
+				gHorizon.size = Vector2D(10, 13 - 2 * Horizon);
+				gHorizon.draw();
+					// for (i = 0; i < DigPressed + Horizon; i++) { //
+				for (i = 0; i < min(Horizon, seqLength - seqCounter); i++) {
+					if (gs.cuePress[i] > 0) {
+						// gScreen.printChar(gs.cuePress[i], (i - 4) * WIDTH_CHAR_CUE, CUE_PRESS, SIZE_CUE); // SKim edited
+						// gScreen.drawBox(WIDTH_REC_CUE, HEIGHT_REC_CUE, (gs.cuePress[i] - '1')* WIDTH_REC_CUE, 5);
+						// double xPos = gs.cuePress[i + DigPressed]-'1';
+						double xPos = gs.cuePress[i + seqCounter] - '1';
 
-		if (seqType > 2) {
-			for (i = 0; i < min(Horizon, seqLength - seqCounter); i++) {  // Edited by SKim
-				if (gs.cuePress[i] > 0) {
-					gScreen.setColor(1);
-					gScreen.printChar(gs.cuePress[i], (i - 4) * WIDTH_CHAR_CUE, CUE_PRESS, SIZE_CUE);
-			// the number 6.5 is usually the seqLength/2 so that the sequence in centered
+						gTarget.position = Vector2D(-4.0 + 2.0 * xPos, -2.0 + i * 2);
+						gTarget.size = Vector2D(2.0, 2.0);
+
+						gTarget.draw();
+
+						// the number 6.5 is usually the seqLength/2 so that the sequence in centered
+					}
 				}
 			}
 		}
-		else {
-			// Press Cue
-		//	if (Horizon < seqLength - 1) {
 
-				// for (i = 0; i < DigPressed + Horizon; i++) { //
-			for (i = 0; i < min(Horizon, seqLength - seqCounter); i++) {
-				if (gs.cuePress[i] > 0) {
-					gScreen.setColor(1);
-					// gScreen.printChar(gs.cuePress[i], (i - 4) * WIDTH_CHAR_CUE, CUE_PRESS, SIZE_CUE); // SKim edited
-					// gScreen.drawBox(WIDTH_REC_CUE, HEIGHT_REC_CUE, (gs.cuePress[i] - '1')* WIDTH_REC_CUE, 5);
-					// double xPos = gs.cuePress[i + DigPressed]-'1';
-					double xPos = gs.cuePress[i + seqCounter] - '1';
-
-					gTarget.position = Vector2D(-4.0 + 2.0 * xPos, -2.1 + i * 2);
-					gTarget.size = Vector2D(2.0, 2.0);
-
-					gTarget.draw();
-
-					// the number 6.5 is usually the seqLength/2 so that the sequence in centered
-				}
-			}
-
-		}
 	}
 
 
@@ -983,8 +995,7 @@ void MyTrial::control() {
 			state = WAIT_PRESS;
 		}
 		break;
-	case WAIT_PRESS: //5 as appears in mov
-
+	case WAIT_PRESS: //5 as appears in mov, Targets are shown here for preplanning
 		// check for time out
 		if (gTimer[1] > 17000) {
 			gs.clearCues();

@@ -130,10 +130,10 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	//gExp->redirectIOToConsole();
 
 
-	tDisp.init(gThisInst, 1920, 0, 400, 20, 5, 2, &(::parseCommand));  // the white interactive window
+	tDisp.init(gThisInst, 0, 0, 400, 20, 5, 2, &(::parseCommand));  // the white interactive window
 	tDisp.setText("Subj:", 0, 0);
 
-	gScreen.init(gThisInst, 0, 0, 1280, 1024, &(::updateGraphics));	 // the black feedback window
+	gScreen.init(gThisInst, 1920, 0, 1920, 1080, &(::updateGraphics));	 // the black feedback window
 	gScreen.setCenter(Vector2D(0, 0));	 // In cm //0,2
 	gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE)); // cm/pixel 
 

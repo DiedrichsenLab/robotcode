@@ -26,7 +26,7 @@ using namespace std;
 #define RECORDRATE 2    // recording update rate
 #define UPDATE_TEXTDISP 60
 #define SCR_SCALE 1.84/72 //3/72 //2.54/72 // cm/pixel 
-#define MAX_PRESS 14 // edited by SKim
+#define MAX_PRESS 14
 ///////////////////////////////////////////////////////////////
 // Enumeration of Trial State 
 ///////////////////////////////////////////////////////////////
@@ -158,8 +158,6 @@ private:
 	int cTrial; 							///< Trial number
 	int Horizon;                            ///< How mnay digits ahead can you see
 	int StimTimeLim;							///< For how long is the seq/chunk displayed
-	//int subNum;
-	int PrepTime; 
 	int seqType;							///< Which sequence of finger movments has to be done? 
 	int press[MAX_PRESS];					///< Which digit to press 
 	int fGiven[MAX_PRESS];
@@ -183,9 +181,7 @@ private:
 	double releaseTime[MAX_PRESS];			///< Time when each finger was release
 
 	double MT;								///< Overall MT 
-	double RT;								// Reaction Time, added by SKim
-	string cueP;							// edited by SKim, using only press cue	
-//	string cueS, cueC, cueP; 					///< Visual cues for sequence, chunk, and press
+	string cueS, cueC, cueP; 					///< Visual cues for sequence, chunk, and press
 	DataManager<DataRecord, 30000 / 2> dataman;	///< For data recording for MOV file 
 };
 

@@ -98,11 +98,15 @@ double timeThresholdSuper[4] = { 320,560,740,5000 }; ///< Time threshold for sup
 #define FEEDBACKTIME 1500    // time for which the points of the trial is displayed at the end of a trial
 // Neda increased feedback time so that the subject has time to blink
 string FINGERSOUND[6] = { "A.wav", "C.wav", "D.wav", "E.wav", "G.wav" };
-string TASKSOUNDS[5] = { "../../util/wav/smb_kick.wav",
-"../../util/wav/smb_bump.wav",
-"../../util/wav/smb_1-up.wav",
-"../../util/wav/smb_coin.wav",
-"../../util/wav/perc2.wav" };
+//string TASKSOUNDS[5] = { "../../util/wav/smb_kick.wav",
+//"../../util/wav/smb_bump.wav",
+//"../../util/wav/smb_1-up.wav",
+//"../../util/wav/smb_coin.wav",
+//"../../util/wav/perc2.wav" };
+
+string TASKSOUNDS[2] = { "wav/chord.wav",
+"wav/smb_coin.wav"
+};
 
 char TEXT[5] = { '1','2','3','4','5' };
 #define CUE_SEQ 6
@@ -132,7 +136,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	///__________________________________________Neda - End
 	gThisInst = hThisInst;
 	// gExp = new MyExperiment("SeqSpatialVis", "ssh_vis", "C:/data/SeqSpatial/ssh_vis");
-	gExp = new MyExperiment("SeqSpatialHorizon1", "ssh1", "C:/data/SeqSpatialHorizon/ssh1");
+	gExp = new MyExperiment("SeqSpat", "_", "C:/data/SeqSpatialHorizon/ssh");
 
 	//gExp->redirectIOToConsole();
 
@@ -531,14 +535,14 @@ void MyTrial::read(istream& in) {
 ///////////////////////////////////////////////////////////////
 void MyTrial::writeDat(ostream& out) {
 	out << seqType << "\t"
-		<< feedback << "\t";
+		<< Horizon << "\t"
+		<< feedback << "\t"
+		<< PrepTime << "\t"
+		;
 	for (int i = 0; i < MAX_PRESS; i++) {
 		out << press[i] << "\t";
 	}
-	out << hand << "\t"
-		// << cueS << "\t"
-		// << cueC << "\t"
-		<< cueP << "\t"
+	out << cueP << "\t"
 		<< complete << "\t"
 		<< iti << "\t"
 		// << sounds << "\t"
@@ -562,7 +566,6 @@ void MyTrial::writeDat(ostream& out) {
 		<< fGain[2] << "\t"
 		<< fGain[3] << "\t"
 		<< fGain[4] << "\t"
-		<< Horizon << "\t"
 		<< StimTimeLim << "\t" << endl;
 
 }
@@ -572,16 +575,15 @@ void MyTrial::writeDat(ostream& out) {
 ///////////////////////////////////////////////////////////////
 void MyTrial::writeHeader(ostream& out) {
 	char header[200];
-	out << "seqNumb" << "\t"
-		<< "FT" << "\t";
+	out << "seqType" << "\t"
+		<< "Horizon" << "\t"
+		<< "FT" << "\t"
+		<< "PrepTime" << "\t";
 	for (int i = 0; i < MAX_PRESS; i++) {
 		sprintf(header, "press%d", i);
 		out << header << "\t";
 	}
-	out << "hand" << "\t"
-		// << "cueS" << "\t"
-		// << "cueC" << "\t"
-		<< "cueP" << "\t"
+	out << "cueP" << "\t"
 		<< "complete" << "\t"
 		<< "iti" << "\t"
 		// << "sounds" << "\t"
@@ -606,7 +608,6 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "Gain3" << "\t"
 		<< "Gain4" << "\t"
 		<< "Gain5" << "\t"
-		<< "Horizon" << "\t"
 		<< "StimTimeLim" << "\t" << endl;
 	//_____________________end
 
@@ -1007,12 +1008,12 @@ void MyTrial::control() {
 			if (response[seqCounter] == press[seqCounter]) { // if press is correct
 				// PLAY SOUND
 //				channel = Mix_PlayChannel(-1, wavTask[0], 0); // SDL
-				PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
+				PlaySound("wav/chord.wav", NULL, SND_ASYNC | SND_FILENAME);
 			}
 			else if (response[seqCounter] != press[seqCounter]) {   // press is wrong
 				isError = 1;
 				// PLAY SOUND
-				PlaySound(TASKSOUNDS[1].c_str(), NULL, SND_ASYNC);
+				PlaySound("wav/smb_coin.wav", NULL, SND_ASYNC | SND_FILENAME);
 //				channel = Mix_PlayChannel(-1, wavTask[1], 0); // SDL
 			}
 

@@ -712,14 +712,7 @@ void MyTrial::updateGraphics(int what) {
 		gScreen.drawLine(-5, BASELINE, 5, BASELINE); // the lower line
 		gScreen.drawLine(-5, preTH * FORCESCALE + BASELINE, 5, preTH * FORCESCALE + BASELINE);
 		gScreen.drawLine(-5, relTH * FORCESCALE + BASELINE, 5, relTH * FORCESCALE + BASELINE); // changed by SKim
-		if (seqType < 3) {  // spatial visual task
-			gScreen.drawLine(-5, -5, -5, 11);
-			gScreen.drawLine(-3, -5, -3, 11);
-			gScreen.drawLine(-1, -5, -1, 11);
-			gScreen.drawLine(1, -5, 1, 11);
-			gScreen.drawLine(3, -5, 3, 11);
-			gScreen.drawLine(5, -5, 5, 11);
-		}
+
 		// The upper line set at force threshold
 	}
 	// Other letters
@@ -751,8 +744,51 @@ void MyTrial::updateGraphics(int what) {
 		}
 
 		if (state == WAIT_GOCUE || state == WAIT_PRESS) {
-			if (seqType == 3) {
-				gScreen.setColor(1);
+			// Draw horizon SKim
+			gScreen.setColor(1);
+
+			if (seqType == 1) {  // Visual, vertical
+				gHorizon.position = Vector2D(0, 3.5 + Horizon);
+				gHorizon.size = Vector2D(10, 16 - 2 * Horizon);
+				gHorizon.draw();
+				gScreen.drawLine(-5, -5, -5, 11);
+				gScreen.drawLine(-3, -5, -3, 11);
+				gScreen.drawLine(-1, -5, -1, 11);
+				gScreen.drawLine(1, -5, 1, 11);
+				gScreen.drawLine(3, -5, 3, 11);
+				gScreen.drawLine(5, -5, 5, 11);
+
+				for (i = 0; i < min(Horizon, seqLength - seqCounter); i++) {
+					if (gs.cuePress[i] > 0) {
+						double xPos = gs.cuePress[i + seqCounter] - '1';
+						gTarget.position = Vector2D(-4.0 + 2.0 * xPos, -4.0 + i * 2);
+						gTarget.size = Vector2D(2.0, 2.0);
+						gTarget.draw();
+					}
+				}
+			}
+			else if (seqType == 2) { // Visual horizontal
+				gHorizon.position = Vector2D(Horizon, 3);
+				gHorizon.size = Vector2D(16 - 2 * Horizon, 10);
+				gHorizon.draw();
+				gScreen.drawLine(-8, -2, 8, -2);
+				gScreen.drawLine(-8, 0, 8, 0);
+				gScreen.drawLine(-8, 2, 8, 2);
+				gScreen.drawLine(-8, 4, 8, 4);
+				gScreen.drawLine(-8, 6, 8, 6);
+				gScreen.drawLine(-8, 8, 8, 8);
+
+				for (i = 0; i < min(Horizon, seqLength - seqCounter); i++) {
+					if (gs.cuePress[i] > 0) {
+						double yPos = gs.cuePress[i + seqCounter] - '1';
+						gTarget.position = Vector2D(-7.0 + i * 2, -1.0 + 2.0 * yPos);
+						gTarget.size = Vector2D(2.0, 2.0);
+						gTarget.draw();
+					}
+				}
+			}
+
+			else if (seqType == 3) { // Vertical, Numbers
 				gHorizon.position = Vector2D(0, 3.5 + Horizon);
 				gHorizon.size = Vector2D(10, 16 - 2 * Horizon);
 				gHorizon.draw();
@@ -764,30 +800,23 @@ void MyTrial::updateGraphics(int what) {
 					}
 				}
 			}
-			else {
-				// Press Cue
-			//	if (Horizon < seqLength - 1) {
-				gScreen.setColor(1);
-				gHorizon.position = Vector2D(0, 3.5 + Horizon);
-				gHorizon.size = Vector2D(10, 16 - 2 * Horizon);
+
+			else {  // seqType==4, Horizontal, Numbers
+				gHorizon.position = Vector2D(Horizon, 3);
+				gHorizon.size = Vector2D(16 - 2 * Horizon, 10);
 				gHorizon.draw();
-				// for (i = 0; i < DigPressed + Horizon; i++) { //
-				for (i = 0; i < min(Horizon, seqLength - seqCounter); i++) {
+				for (i = 0; i < min(Horizon, seqLength - seqCounter); i++) {  // Edited by SKim
 					if (gs.cuePress[i] > 0) {
-						// gScreen.printChar(gs.cuePress[i], (i - 4) * WIDTH_CHAR_CUE, CUE_PRESS, SIZE_CUE); // SKim edited
-						// gScreen.drawBox(WIDTH_REC_CUE, HEIGHT_REC_CUE, (gs.cuePress[i] - '1')* WIDTH_REC_CUE, 5);
-						// double xPos = gs.cuePress[i + DigPressed]-'1';
-						double xPos = gs.cuePress[i + seqCounter] - '1';
-
-						gTarget.position = Vector2D(-4.0 + 2.0 * xPos, -4.0 + i * 2);
-						gTarget.size = Vector2D(2.0, 2.0);
-
-						gTarget.draw();
-
+						//						gScreen.printChar(gs.cuePress[i], (i - 4) * WIDTH_CHAR_CUE, CUE_PRESS, SIZE_CUE);
+						gScreen.printChar(gs.cuePress[i + seqCounter], -7.0 + i * 2, 3.0, SIZE_CUE);
 						// the number 6.5 is usually the seqLength/2 so that the sequence in centered
 					}
 				}
+
+
 			}
+
+
 		}
 	}
 }

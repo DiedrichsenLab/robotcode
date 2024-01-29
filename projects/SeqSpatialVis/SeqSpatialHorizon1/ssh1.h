@@ -37,7 +37,7 @@ enum TrialState {
 	START_FIX,	    	// 3 wait for eye to fixate at the begining of the seq
 	//____________________end
 	WAIT_ALLRELEASE,	// 4
-	WAIT_ANNOUNCE,		// 5
+	WAIT_GOCUE,		// 5
 	WAIT_PRESS,			// 6
 	WAIT_END_RELEASE,		// 7
 	WAIT_FEEDBACK,		// 8

@@ -112,7 +112,7 @@ char TEXT[5] = { '1','2','3','4','5' };
 #define CUE_SEQ 6
 #define CUE_CHUNK 4.5
 #define CUE_PRESS 2.3 // the Y position of the presses on the screen
-#define SIZE_CUE 6    // the font size of presses
+#define SIZE_CUE 10    // the font size of presses
 #define WIDTH_CHAR_CUE 2 // the distance between letters
 #define WIDTH_REC_CUE 6 // SKim
 #define HEIGHT_REC_CUE 3 // SKim
@@ -215,6 +215,7 @@ void MyExperiment::control(void) {
 bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 	int x; float dummy1;
 	float arg[4];
+	int bn;
 	MSG msg;
 
 	/// Print continusly state of the encodeers
@@ -347,8 +348,21 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 
 		}
 	}
-
-
+	// Added by Skim
+	else if (arguments[0] == "krun" || arguments[0] == "KRUN") {
+		if (arguments[1][0] != arguments[2][8]) { //file name shold be "ssh_sx_by.tgt", x and y seqType, blocknumber
+			tDisp.print("Use the same block number shown in tgt file");
+		}
+		else if (numArgs != 3) {
+			tDisp.print("USAGE: run blocknumber targetfile");
+		}
+		else {
+			sscanf(arguments[1].c_str(), "%i", &bn);
+			if (gExp->theBlock->init(bn, arguments[2])) {
+				gExp->theBlock->state = START_BLOCK;
+			}
+		}
+	}
 
 	else {
 		return false; /// Command not recognized
@@ -732,7 +746,7 @@ void MyTrial::updateGraphics(int what) {
 	if (state == WAIT_ALLRELEASE || state == WAIT_GOCUE || state == WAIT_PRESS) {
 		if (state == WAIT_ALLRELEASE || state == WAIT_GOCUE) {
 			gScreen.setColor(2);  // Red signal, wait for "GO" signal and all fingers are released
-			gScreen.printChar('+', 0, -7, 2 * SIZE_CUE);
+			gScreen.printChar('+', 0, -7, SIZE_CUE);
 		}
 		else {
 			if (gTimer[2] < 1000) {
@@ -741,7 +755,7 @@ void MyTrial::updateGraphics(int what) {
 			else {
 				gScreen.setColor(0); // "GO" signal invisible
 			}
-			gScreen.printChar('+', 0, -7, 2 * SIZE_CUE);
+			gScreen.printChar('+', 0, -7, SIZE_CUE);
 		}
 
 		if (state == WAIT_GOCUE || state == WAIT_PRESS) {
@@ -768,7 +782,7 @@ void MyTrial::updateGraphics(int what) {
 					}
 				}
 			}
-			else if (seqType == 2) { // Visual horizontal
+			else if (seqType == 3) { // Visual horizontal
 				gHorizon.position = Vector2D(Horizon, 3);
 				gHorizon.size = Vector2D(16 - 2 * Horizon, 10);
 				gHorizon.draw();
@@ -789,7 +803,7 @@ void MyTrial::updateGraphics(int what) {
 				}
 			}
 
-			else if (seqType == 3) { // Vertical, Numbers
+			else if (seqType == 2) { // Vertical, Numbers
 				gHorizon.position = Vector2D(0, 3.5 + Horizon);
 				gHorizon.size = Vector2D(10, 16 - 2 * Horizon);
 				gHorizon.draw();
@@ -1008,12 +1022,12 @@ void MyTrial::control() {
 			if (response[seqCounter] == press[seqCounter]) { // if press is correct
 				// PLAY SOUND
 //				channel = Mix_PlayChannel(-1, wavTask[0], 0); // SDL
-				PlaySound("wav/chord.wav", NULL, SND_ASYNC | SND_FILENAME);
+				PlaySound("wav/chimes.wav", NULL, SND_ASYNC | SND_FILENAME);
 			}
 			else if (response[seqCounter] != press[seqCounter]) {   // press is wrong
 				isError = 1;
 				// PLAY SOUND
-				PlaySound("wav/smb_coin.wav", NULL, SND_ASYNC | SND_FILENAME);
+				PlaySound("wav/chord.wav", NULL, SND_ASYNC | SND_FILENAME);
 //				channel = Mix_PlayChannel(-1, wavTask[1], 0); // SDL
 			}
 
@@ -1122,7 +1136,7 @@ void MyTrial::control() {
 	case WAIT_FEEDBACK:  //7 as appears in mov
 
 		//do iti
-		if (gTimer[2] > 1500) {
+		if (gTimer[2] > 1000) { // after 1 sec, providing feedback 
 			dataman.stopRecording();
 			int w = seqLength - 1;
 			gs.clearCues();
@@ -1144,7 +1158,7 @@ void MyTrial::control() {
 		}
 		break;
 	case WAIT_ITI:  //9 as appears in mov
-		if (gTimer[2] > 2000) {
+		if (gTimer[2] > 2000) { // ITI fixed as 2 sec
 			state = END_TRIAL;
 
 		}

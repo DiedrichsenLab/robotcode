@@ -54,9 +54,14 @@ char counterSignal = '5';		///< What char is used to count the TR
 double fGain[5] = { 1.0 ,1.0,1.0,1.0,1.0 };	// finger specific force gains -> applied on each finger
 double forceGain = 1;						// universal force gain -> applied on all the fingers
 bool blockFeedbackFlag = 0;
+bool trialFeedbackFlag = 0;
 bool wait_baseline_zone = 1;				// if 1, waits until the subject's fingers are all in the baseline zone. 
 int baseline_wait_time = 500;
 
+double indexForceTmp;
+double ringForceTmp;
+double forceDiff;
+int n = 1;
 
 #define FINGWIDTH 2 //previously 1.3
 #define X_CURSOR_DEV 1.5
@@ -649,8 +654,17 @@ void MyTrial::updateGraphics(int what) {
 		gScreen.setCenter(Vector2D(0, 0));    // In cm //0,2
 		gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));
 
+
 		//gScreen.setColor(Screen::white);
-		//gScreen.print("End of Block", 0, 0, 5);
+		//gScreen.print(std::to_string(forceDiff), 0, 1, 5);
+	}
+
+	if (trialFeedbackFlag) {
+		gScreen.setCenter(Vector2D(0, 0));    // In cm //0,2
+		gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));
+
+		gScreen.setColor(Screen::white);
+		gScreen.print(std::to_string(forceDiff), 0, 1, 5);
 	}
 
 	// Other letters
@@ -959,6 +973,8 @@ void MyTrial::control() {
 			gTimer.reset(2);					//time for events in the trial			
 			gTimer.reset(3);
 			state = WAIT_PLAN;
+			n = 1;
+			forceDiff = 0;
 		}
 		break;;
 
@@ -987,6 +1003,10 @@ void MyTrial::control() {
 			gs.showFxCross = 0;
 			gs.showTarget = 1;	// show visual target	
 			gs.showPrLines = 1;
+			indexForceTmp = VERT_SHIFT + forceGain * fGain[fi[0]] * gBox.getForce(fi[0]) + baselineCorrection;
+			ringForceTmp = VERT_SHIFT + forceGain * fGain[fi[1]] * gBox.getForce(fi[1]) + baselineCorrection;
+			forceDiff = (forceDiff + abs(indexForceTmp - ringForceTmp)) / n;
+			n++;
 		}
 
 		else {
@@ -1081,8 +1101,11 @@ void MyTrial::control() {
 		gVolts[3] = 0;
 		gBox.setVolts(0, 0, 0, 0, 0);
 
+		trialFeedbackFlag = 1;
+
 		gs.showTgLines = 1;	// set screen lines/force bars to show
 		gs.showPrLines = 0;
+		
 		gs.showBsLines = 1;
 		gs.showForces = 0;
 		gs.showFxCross = 0;

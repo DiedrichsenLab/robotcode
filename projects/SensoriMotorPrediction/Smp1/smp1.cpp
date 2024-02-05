@@ -516,6 +516,7 @@ void MyTrial::writeDat(ostream& out) {
 		<< VERT_SHIFT + FLX_BOT_Y1 << "\t"		// min response force
 		<< baselineCorrection << "\t"
 		<< fingerVolt << "\t"					// 
+		<< forceDiff << "\t"
 		<< endl;
 }
 
@@ -548,6 +549,7 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "minResponseForce" << '\t'
 		<< "baselineCorrection" << '\t'
 		<< "fingerVolt" << '\t'
+		<< "forceDiff" << '\t'
 		<< endl;
 }
 
@@ -619,6 +621,10 @@ void MyTrial::updateTextDisplay() {
 	sprintf(buffer, "F1: %2.2f   F2: %2.2f   F3: %2.2f   F4: %2.2f   F5: %2.2f", gBox.getForce(0), gBox.getForce(1), gBox.getForce(2),
 		gBox.getForce(3), gBox.getForce(4));
 	tDisp.setText(buffer, 8, 0);
+
+	tDisp.setText("forceDiff", 7, 1);
+	sprintf(buffer, "Diff1: %2.2f, Diff2, %2.2f, n: %d", abs(gBox.getForce(1) - gBox.getForce(3)), forceDiff, n);
+	tDisp.setText(buffer, 8, 1);
 
 	//// display max forces
 	//tDisp.setText("Max forces", 10, 0);
@@ -933,6 +939,7 @@ void MyTrial::control() {
 		gs.chordError = 0;
 		planErrorFlag = 0;	// initialize planErrorFlag variable in the begining of each trial
 		chordErrorFlag = 1;	// initialize chordErrorFlag variable in the begining of each trial
+		trialFeedbackFlag = 0;
 		//startTriggerEMG = 1;	// Ali EMG: starts EMG trigger in the beginning of each trial
 
 		//SetDacVoltage(0, emgTrigVolt);	// Ali EMG - gets ~200us to change digital to analog. Does it interrupt the ADC?
@@ -963,6 +970,7 @@ void MyTrial::control() {
 		gs.showForces = 0;
 		gs.showTarget = 0;
 		gs.showFeedback = 0;
+		trialFeedbackFlag = 0;
 
 		if (gCounter.readTR() > 0 && gCounter.readTotTime() >= startTime) {
 			startTimeReal = gCounter.readTotTime();
@@ -985,6 +993,7 @@ void MyTrial::control() {
 		gs.showTimer5 = 0;
 		gs.showForces = 1;
 		gs.showFxCross = 1;
+		trialFeedbackFlag = 0;
 
 		for (i = 0; i < 2; i++) {	// check fingers' states -> fingers should stay in the baseline during planning
 			fingerForceTmp = VERT_SHIFT + forceGain * fGain[fi[i]] * gBox.getForce(fi[i]) + baselineCorrection;
@@ -1003,9 +1012,11 @@ void MyTrial::control() {
 			gs.showFxCross = 0;
 			gs.showTarget = 1;	// show visual target	
 			gs.showPrLines = 1;
-			indexForceTmp = VERT_SHIFT + forceGain * fGain[fi[0]] * gBox.getForce(fi[0]) + baselineCorrection;
-			ringForceTmp = VERT_SHIFT + forceGain * fGain[fi[1]] * gBox.getForce(fi[1]) + baselineCorrection;
-			forceDiff = (forceDiff + abs(indexForceTmp - ringForceTmp)) / n;
+	/*		indexForceTmp = VERT_SHIFT + forceGain * fGain[fi[0]] * gBox.getForce(fi[0]) + baselineCorrection;
+			ringForceTmp = VERT_SHIFT + forceGain * fGain[fi[1]] * gBox.getForce(fi[1]) + baselineCorrection;*/
+			indexForceTmp =  gBox.getForce(fi[0]);
+			ringForceTmp = gBox.getForce(fi[1]);
+			forceDiff = (forceDiff + abs(gBox.getForce(fi[1]) - gBox.getForce(fi[0])));
 			n++;
 		}
 
@@ -1222,7 +1233,8 @@ void DataRecord::write(ostream& out) {
 		<< TotTime << "\t"
 		<< TR << "\t"
 		<< TRtime << "\t"
-		<< currentSlice << "\t";
+		<< currentSlice << "\t"
+		<< forceDiff << "\t";
 
 	for (i = 0; i < 5; i++) {
 		out << fforce[i] << "\t";

@@ -495,8 +495,8 @@ void MyTrial::read(istream& in) {
 		>> iti
 		>> trialLabel
 		>> GoNogo
-		>> startTime
-		>> endTime;
+		>> endTime
+		>> startTime;
 }
 
 ///////////////////////////////////////////////////////////////
@@ -1104,7 +1104,7 @@ void MyTrial::control() {
 			gs.showFxCross = 1;
 			gs.showTarget = 0;		// show the targets on the screen (grey bars)
 			gs.boxColor = 5;		// grey baseline box color
-			state = ACQUIRE_HRF;
+			state = WAIT_ITI;
 		}
 		
 
@@ -1169,7 +1169,7 @@ void MyTrial::control() {
 
 	case ACQUIRE_HRF: //6
 
-		if (gCounter.readTotTime() >= startTime)
+		if (gCounter.readTotTime() >= endTime)
 		{
 			state = END_TRIAL;
 		}

@@ -158,7 +158,6 @@ public:
 public:
 	string cueID;							///< Chord identifier. 0: neutral , 1: flexion , 2: extension
 
-
 private:
 	int forceFinger;								///< finger for max force calculation
 	TrialState state;						///< State of the Trial 
@@ -171,6 +170,7 @@ private:
 	int startTRReal;
 	int iti;								///< inter trial interval
 	int startTime;
+	int endTime;
 	string GoNogo;
 	//double Random;							///< random number
 	string trialLabel;						///< Condition label
@@ -179,6 +179,7 @@ private:
 	int trialErrorType;						///< 0: no error , 1: movement during planning , 2: could not execute
 	double Favf[2] = { 0, 0 };							///< Average force during response (for feedback)
 	int trialPoint;							///< point received in each trial
+	double forceDiff;
 
 	DataManager<DataRecord, 30000 / 2> dataman;///< For data recording for MOV file //up to 30 s of data are recorded per trial
 };

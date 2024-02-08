@@ -1169,9 +1169,12 @@ void MyTrial::control() {
 
 	case ACQUIRE_HRF: //6
 
+		i = gCounter.readTotTime();
+
 		if (gCounter.readTotTime() >= endTime)
 		{
 			state = END_TRIAL;
+			gTimer.reset(2);
 		}
 		else
 		{
@@ -1181,11 +1184,11 @@ void MyTrial::control() {
 			gs.showForces = 0;
 			gs.showTarget = 0;
 			gs.showFeedback = 0;
-			if (gTimer[2] > hrfTime) {  // wait 12 s at the end of the run
-				state = END_TRIAL;
-				gTimer.reset(2);
+			//if (gTimer[2] > hrfTime) {  // wait 12 s at the end of the run
+			//	state = END_TRIAL;
+			//	
 			//	//cout << "HRF acquired for 12 seconds after trial" << endl;
-			}
+			
 		}
 		break;
 

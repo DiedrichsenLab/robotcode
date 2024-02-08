@@ -1080,7 +1080,7 @@ void MyTrial::control() {
 
 		if (GoNogo == "go") {
 
-			gBox.setVolts(5,
+			gBox.setVolts(0,
 				gVolts[1],
 				0,
 				gVolts[3],

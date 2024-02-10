@@ -81,6 +81,7 @@ Trial* currentTrial; ///< defined in Experiment.cpp Pointer to current Trial
 bool gKeyPressed; ///< Key pressed?
 char gKey; ///< Which key?
 int gNumErrors = 0; ///< How many erros did you make during a block
+int gNumFingerErrors = 0; // How many finger errors did you make during a block, SKim
 int finger[5]; ///< State of each finger
 int gNumPointsBlock = 0;
 int gNumPoints = 0;
@@ -88,7 +89,9 @@ int gTrial = 0;
 
 float timeThresPercent = 110; ///< 120% of current median MT (previous block)
 float superThresPercent = 95; ///< 95% of current median MT (previous block)
-float ERthreshold = 15; ///< Trheshold of 20% of error rate in order to lower MT thresholds
+//float ERthreshold = 15; ///< Trheshold of 20% of error rate in order to lower MT thresholds
+float ERthreshold = 3; ///< Trheshold of 3% of "finger tapping" error rate in order to lower MT thresholds, SKedited
+
 double medianMTarray[4][100]; ///< Initialise MT array across blocks (never more than 100 blocks)
 double ERarray[100]; ///< Initialise ER array across blocks
 int b = 0;
@@ -400,6 +403,7 @@ void MyBlock::start() {
 	for (int i = 0; i < NUMDISPLAYLINES; i++) { gs.line[i] = ""; }
 	gs.boxOn = true;
 	gNumErrors = 0;
+	gNumFingerErrors = 0; 
 	gNumPointsBlock = 0;
 	sprintf(buffer, "%d", gNumPointsBlock);
 	gs.line[2] = buffer;
@@ -447,19 +451,19 @@ void MyBlock::giveFeedback() {
 		}
 		nn[j]++;
 	}
-	ERarray[b] = 100 * ((double)gNumErrors) / (double)(trialNum); // error rate
-
+	//ERarray[b] = 100 * ((double)gNumErrors) / (double)(trialNum); // error rate
+	ERarray[b] = 100 * ((double)gNumFingerErrors) / (double)(trialNum * 14); // error rate, SKim
 	for (j = 0; j < 4; j++) {
 		if (n[j] > 0) { // if more than one correct trials for seqlength j
 			medianMTarray[j][b] = median(MTarray[j], n[j]);
 
-			if ((ERarray[b] < ERthreshold) && (ERarray[b - 1] > ERthreshold)) { // if ER on previous block > 15%
+			if ((ERarray[b] < ERthreshold) && (ERarray[b - 1] > ERthreshold)) { // if ER on previous block > 3% SKim
 				if (medianMTarray[j][b] < (timeThreshold[j] / (timeThresPercent / 100))) { // if MT faster than MT expected by threshold
 					timeThreshold[j] = medianMTarray[j][b] * (timeThresPercent / 100);
 					timeThresholdSuper[j] = medianMTarray[j][b] * (superThresPercent / 100);
 				}
 			}
-			else if ((ERarray[b] < ERthreshold) && (ERarray[b - 1] < ERthreshold)) { // if ER on previous block <15%
+			else if ((ERarray[b] < ERthreshold) && (ERarray[b - 1] < ERthreshold)) { // if ER on previous block <3% SKim
 				//if (medianMTarray[b]<medianMTarray[b-1]) { // adjust only if MT of current block faster
 				if (medianMTarray[j][b] < (timeThreshold[j] / (timeThresPercent / 100))) { // adjust only if MT of current block faster than MT expected by threshold
 					timeThreshold[j] = medianMTarray[j][b] * (timeThresPercent / 100);
@@ -482,7 +486,9 @@ void MyBlock::giveFeedback() {
 
 
 	//sprintf(buffer,"MTs: %2.0fs , %2.0fs , %2.0fs, %2.0fs , %2.0fs , %2.0fs",medianMTarray[0][b], medianMTarray[1][b], medianMTarray[2][b], medianMTarray[3][b], medianMTarray[4][b], medianMTarray[5][b]);
-	sprintf(buffer, "timeThresholdSuper: %2.0fs , %2.0fs , %2.0fs, %2.0fs", timeThresholdSuper[0], timeThresholdSuper[1], timeThresholdSuper[2], timeThresholdSuper[3]);
+	sprintf(buffer, "timeThresholdSuper: %2.0fs",timeThresholdSuper[3]);
+//	sprintf(buffer, "timeThresholdSuper: %2.0fs , %2.0fs , %2.0fs, %2.0fs", timeThresholdSuper[0], timeThresholdSuper[1], timeThresholdSuper[2], timeThresholdSuper[3]);
+
 	gs.line[1] = buffer;
 	gs.lineColor[1] = 1;
 
@@ -504,6 +510,7 @@ MyTrial::MyTrial() {
 	//INIT TRIAL VARIABLE
 	hand = 2; // Read right box
 	isError = 0; // init error flag
+	nFingerErrors = 0; // Number of tapping errors, SKim  
 	isComplete = 0; // init if seq was produced incomplete but correct so fare
 	seqCounter = 0; // init the sequence index variable
 	numNewpress = 0;
@@ -570,10 +577,8 @@ void MyTrial::writeDat(ostream& out) {
 		out << pressTime[i] << "\t";
 	}
 
-	out << timeThreshold[0] << "\t"
-		<< timeThreshold[1] << "\t"
-		<< timeThreshold[2] << "\t"
-		<< timeThreshold[3] << "\t"
+
+	out	<< timeThreshold[3] << "\t"
 		<< points << "\t"
 		<< fGain[0] << "\t"
 		<< fGain[1] << "\t"
@@ -612,10 +617,8 @@ void MyTrial::writeHeader(ostream& out) {
 		sprintf(header, "pressTime%d", i);
 		out << header << "\t";
 	}
-	out << "timeThreshold2" << "\t"
-		<< "timeThreshold3" << "\t"
-		<< "timeThreshold4" << "\t"
-		<< "timeThreshold14" << "\t"
+
+	out	<< "timeThreshold14" << "\t"
 		<< "points" << "\t"
 		<< "Gain1" << "\t"
 		<< "Gain2" << "\t"
@@ -1012,7 +1015,7 @@ void MyTrial::control() {
 		// Wait for the next keypress
 		//*************************Feedback loop was here
 		// Check if sequence is finished
-		
+		//nFingerErrors = 0;  // Initialization of tapping errors, SKim
 		if (numNewpress > 0 && seqCounter < seqLength) {
 			response[seqCounter] = pressedFinger;
 			pressTime[seqCounter] = gTimer[1];
@@ -1028,6 +1031,7 @@ void MyTrial::control() {
 				isError = 1;
 				// PLAY SOUND
 				PlaySound("wav/chord.wav", NULL, SND_ASYNC | SND_FILENAME);
+				nFingerErrors++;
 //				channel = Mix_PlayChannel(-1, wavTask[1], 0); // SDL
 			}
 
@@ -1065,6 +1069,7 @@ void MyTrial::control() {
 
 			if (isError > 0) {
 				gNumErrors++;
+				gNumFingerErrors += nFingerErrors;
 			}
 			else {
 				switch (seqLength) {
@@ -1093,12 +1098,12 @@ void MyTrial::control() {
 					// PLAY SOUNDS
 	//				channel = Mix_PlayChannel(-1, wavTask[2], 0); // SDL
 				}
-				else if (critTime < timeThreshold[j]) {
-					points = 2;  // SKim
-					gNumPointsBlock += 2; // SKim
-					// PLAY SOUND
-					//channel = Mix_PlayChannel(-1, wavTask[3], 0); // SDL
-				}
+				//else if (critTime < timeThreshold[j]) {
+				//	points = 2;  // SKim
+				//	gNumPointsBlock += 2; // SKim
+				//	// PLAY SOUND
+				//	//channel = Mix_PlayChannel(-1, wavTask[3], 0); // SDL
+				//}
 				else {
 					points = 1;
 					gNumPointsBlock += 1;

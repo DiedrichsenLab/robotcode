@@ -174,6 +174,7 @@ private:
 	int tempCounter;							///< Which position in the seq are we?
 	int DigPressed;							///< For Horizon-wize digit revealing
 	int isError;							///< Was there an error in the finger presses?
+	int nFingerErrors;						// Number of error tappings, SKim
 	int isComplete;							///< Are all presses made  
 	int response[MAX_PRESS];				///< Which key is pressed 
 	int points;								///< How many points did you get in a trial 0/1/-1?

@@ -90,7 +90,7 @@ int gTrial = 0;
 float timeThresPercent = 110; ///< 120% of current median MT (previous block)
 float superThresPercent = 95; ///< 95% of current median MT (previous block)
 //float ERthreshold = 15; ///< Trheshold of 20% of error rate in order to lower MT thresholds
-float ERthreshold = 3; ///< Trheshold of 3% of "finger tapping" error rate in order to lower MT thresholds, SKedited
+float ERthreshold = 5; ///< Trheshold of 5% of "finger tapping" error rate in order to lower MT thresholds, SKedited
 
 double medianMTarray[4][100]; ///< Initialise MT array across blocks (never more than 100 blocks)
 double ERarray[100]; ///< Initialise ER array across blocks
@@ -457,13 +457,13 @@ void MyBlock::giveFeedback() {
 		if (n[j] > 0) { // if more than one correct trials for seqlength j
 			medianMTarray[j][b] = median(MTarray[j], n[j]);
 
-			if ((ERarray[b] < ERthreshold) && (ERarray[b - 1] > ERthreshold)) { // if ER on previous block > 3% SKim
+			if ((ERarray[b] < ERthreshold) && (ERarray[b - 1] > ERthreshold)) { // if ER on previous block > 5% SKim
 				if (medianMTarray[j][b] < (timeThreshold[j] / (timeThresPercent / 100))) { // if MT faster than MT expected by threshold
 					timeThreshold[j] = medianMTarray[j][b] * (timeThresPercent / 100);
 					timeThresholdSuper[j] = medianMTarray[j][b] * (superThresPercent / 100);
 				}
 			}
-			else if ((ERarray[b] < ERthreshold) && (ERarray[b - 1] < ERthreshold)) { // if ER on previous block <3% SKim
+			else if ((ERarray[b] < ERthreshold) && (ERarray[b - 1] < ERthreshold)) { // if ER on previous block <5% SKim
 				//if (medianMTarray[b]<medianMTarray[b-1]) { // adjust only if MT of current block faster
 				if (medianMTarray[j][b] < (timeThreshold[j] / (timeThresPercent / 100))) { // adjust only if MT of current block faster than MT expected by threshold
 					timeThreshold[j] = medianMTarray[j][b] * (timeThresPercent / 100);
@@ -579,6 +579,7 @@ void MyTrial::writeDat(ostream& out) {
 
 
 	out	<< timeThreshold[3] << "\t"
+		<< timeThresholdSuper[3] << "\t"
 		<< points << "\t"
 		<< fGain[0] << "\t"
 		<< fGain[1] << "\t"
@@ -618,7 +619,8 @@ void MyTrial::writeHeader(ostream& out) {
 		out << header << "\t";
 	}
 
-	out	<< "timeThreshold14" << "\t"
+	out	<< "timeThreshold" << "\t"
+		<< "timeThresholdSuper" << "\t"
 		<< "points" << "\t"
 		<< "Gain1" << "\t"
 		<< "Gain2" << "\t"

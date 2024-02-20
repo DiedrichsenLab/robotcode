@@ -115,7 +115,7 @@ char TEXT[5] = { '1','2','3','4','5' };
 #define CUE_SEQ 6
 #define CUE_CHUNK 4.5
 #define CUE_PRESS 2.3 // the Y position of the presses on the screen
-#define SIZE_CUE 13    // the font size of presses
+#define SIZE_CUE 10    // the font size of presses
 #define WIDTH_CHAR_CUE 2 // the distance between letters
 #define WIDTH_REC_CUE 6 // SKim
 #define HEIGHT_REC_CUE 3 // SKim
@@ -403,7 +403,7 @@ void MyBlock::start() {
 	for (int i = 0; i < NUMDISPLAYLINES; i++) { gs.line[i] = ""; }
 	gs.boxOn = true;
 	gNumErrors = 0;
-	gNumFingerErrors = 0;
+	gNumFingerErrors = 0; 
 	gNumPointsBlock = 0;
 	sprintf(buffer, "%d", gNumPointsBlock);
 	gs.line[2] = buffer;
@@ -486,8 +486,8 @@ void MyBlock::giveFeedback() {
 
 
 	//sprintf(buffer,"MTs: %2.0fs , %2.0fs , %2.0fs, %2.0fs , %2.0fs , %2.0fs",medianMTarray[0][b], medianMTarray[1][b], medianMTarray[2][b], medianMTarray[3][b], medianMTarray[4][b], medianMTarray[5][b]);
-	sprintf(buffer, "timeThresholdSuper: %2.0fms", timeThresholdSuper[3]);
-	//	sprintf(buffer, "timeThresholdSuper: %2.0fs , %2.0fs , %2.0fs, %2.0fs", timeThresholdSuper[0], timeThresholdSuper[1], timeThresholdSuper[2], timeThresholdSuper[3]);
+	sprintf(buffer, "timeThresholdSuper: %2.0fs",timeThresholdSuper[3]);
+//	sprintf(buffer, "timeThresholdSuper: %2.0fs , %2.0fs , %2.0fs, %2.0fs", timeThresholdSuper[0], timeThresholdSuper[1], timeThresholdSuper[2], timeThresholdSuper[3]);
 
 	gs.line[1] = buffer;
 	gs.lineColor[1] = 1;
@@ -578,7 +578,7 @@ void MyTrial::writeDat(ostream& out) {
 	}
 
 
-	out << timeThreshold[3] << "\t"
+	out	<< timeThreshold[3] << "\t"
 		<< timeThresholdSuper[3] << "\t"
 		<< points << "\t"
 		<< fGain[0] << "\t"
@@ -619,7 +619,7 @@ void MyTrial::writeHeader(ostream& out) {
 		out << header << "\t";
 	}
 
-	out << "timeThreshold" << "\t"
+	out	<< "timeThreshold" << "\t"
 		<< "timeThresholdSuper" << "\t"
 		<< "points" << "\t"
 		<< "Gain1" << "\t"
@@ -782,7 +782,7 @@ void MyTrial::updateGraphics(int what) {
 					if (gs.cuePress[i] > 0) {
 						double xPos = gs.cuePress[i + seqCounter] - '1';
 						gTarget.position = Vector2D(-4.0 + 2.0 * xPos, -4.0 + i * 2);
-						gTarget.size = Vector2D(1.4, 1.4);
+						gTarget.size = Vector2D(2.0, 2.0);
 						gTarget.draw();
 					}
 				}
@@ -802,7 +802,7 @@ void MyTrial::updateGraphics(int what) {
 					if (gs.cuePress[i] > 0) {
 						double yPos = gs.cuePress[i + seqCounter] - '1';
 						gTarget.position = Vector2D(-7.0 + i * 2, -1.0 + 2.0 * yPos);
-						gTarget.size = Vector2D(1.4, 1.4);
+						gTarget.size = Vector2D(2.0, 2.0);
 						gTarget.draw();
 					}
 				}
@@ -815,7 +815,7 @@ void MyTrial::updateGraphics(int what) {
 				for (i = 0; i < min(Horizon, seqLength - seqCounter); i++) {  // Edited by SKim
 					if (gs.cuePress[i] > 0) {
 						//						gScreen.printChar(gs.cuePress[i], (i - 4) * WIDTH_CHAR_CUE, CUE_PRESS, SIZE_CUE);
-						gScreen.printChar(gs.cuePress[i + seqCounter], 0, -4.7 + i * 2, SIZE_CUE); // -4.7 is matched to -4.0 for visual target type
+						gScreen.printChar(gs.cuePress[i + seqCounter], 0, -4.0 + i * 2, SIZE_CUE);
 						// the number 6.5 is usually the seqLength/2 so that the sequence in centered
 					}
 				}
@@ -843,15 +843,15 @@ void MyTrial::updateGraphics(int what) {
 
 
 
-//else {
-//	for (i = 0; i < seqLength; i++) {  // Edited by SKim
-//		if (gs.cuePress[i] > 0) {
-//			gScreen.setColor(1);
-//			gScreen.printChar(gs.cuePress[i], (i - 4) * WIDTH_CHAR_CUE, CUE_PRESS, SIZE_CUE);
-//			// the number 6.5 is usually the seqLength/2 so that the sequence in centered
-//		}
-//	}
-//}
+	//else {
+	//	for (i = 0; i < seqLength; i++) {  // Edited by SKim
+	//		if (gs.cuePress[i] > 0) {
+	//			gScreen.setColor(1);
+	//			gScreen.printChar(gs.cuePress[i], (i - 4) * WIDTH_CHAR_CUE, CUE_PRESS, SIZE_CUE);
+	//			// the number 6.5 is usually the seqLength/2 so that the sequence in centered
+	//		}
+	//	}
+	//}
 
 
 
@@ -993,7 +993,7 @@ void MyTrial::control() {
 		}
 		if (released == 5 && gTimer[2] > PrepTime) { // Wait for PrepTime, preplanning
 			gTimer.reset(2);
-			//			gs.clearCues();
+//			gs.clearCues();
 			state = WAIT_PRESS;
 		}
 		break;
@@ -1034,7 +1034,7 @@ void MyTrial::control() {
 				// PLAY SOUND
 				PlaySound("wav/chord.wav", NULL, SND_ASYNC | SND_FILENAME);
 				nFingerErrors++;
-				//				channel = Mix_PlayChannel(-1, wavTask[1], 0); // SDL
+//				channel = Mix_PlayChannel(-1, wavTask[1], 0); // SDL
 			}
 
 			seqCounter++;

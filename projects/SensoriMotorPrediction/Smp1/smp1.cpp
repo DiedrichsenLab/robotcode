@@ -35,6 +35,7 @@ int hrfTime = 0;
 string probCue;
 
 int sliceNumber = 32;			///< How many slices do we have
+int forceFixed[2] = { 0, 0 };
 
 string fingers[5] = { "thumb", "index", "middle", "ring", "pinkie" };
 string fingerTask[2] = { fingers[finger[0]], fingers[finger[1]] };
@@ -637,8 +638,12 @@ void MyTrial::updateTextDisplay() {
 		gBox.getForce(3), gBox.getForce(4));
 	tDisp.setText(buffer, 8, 0);
 
-	tDisp.setText("forceDiff", 7, 1);
+	/*tDisp.setText("forceDiff", 7, 1);
 	sprintf(buffer, "Diff1: %2.2f", abs(gBox.getForce(1) - gBox.getForce(3)));
+	tDisp.setText(buffer, 8, 1);*/
+
+	tDisp.setText("forceAv", 7, 1);
+	sprintf(buffer, "index: %2.2f, ring: %2.2f ", Favf[0], Favf[1]);
 	tDisp.setText(buffer, 8, 1);
 
 	//// display max forces
@@ -814,13 +819,25 @@ void MyTrial::updateGraphics(int what) {
 	if (gs.showFeedback) { // show feedback
 		gScreen.setColor(Screen::red);
 		gScreen.drawLine(-X_CURSOR_DEV - FINGWIDTH / 2,
-			Favf[0] / 1250,
+			Favf[0] / Navf,
 			-X_CURSOR_DEV + FINGWIDTH / 2,
-			Favf[0] / 1250);
+			Favf[0] / Navf);
 		gScreen.drawLine(X_CURSOR_DEV - FINGWIDTH / 2,
-			Favf[1] / 1250,
+			Favf[1] / Navf,
 			X_CURSOR_DEV + FINGWIDTH / 2,
-			Favf[1] / 1250);
+			Favf[1] / Navf);
+	}
+
+	if (gs.showForceFixed) { 
+		gScreen.setColor(Screen::red);
+		gScreen.drawLine(-X_CURSOR_DEV - FINGWIDTH / 2,
+			forceFixed[0],
+			-X_CURSOR_DEV + FINGWIDTH / 2,
+			forceFixed[0]);
+		gScreen.drawLine(X_CURSOR_DEV - FINGWIDTH / 2,
+			forceFixed[1],
+			X_CURSOR_DEV + FINGWIDTH / 2,
+			forceFixed[1]);
 	}
 
 	if (gs.showDiagnostics) {
@@ -947,6 +964,7 @@ void MyTrial::control() {
 		gs.showBsLines = 1;
 		gs.showFeedback = 0;
 		gs.showForces = 1;
+		gs.showForceFixed = 0;
 		gs.showTimer5 = 0;
 		// gs.showForceBars = 1;
 		gs.boxColor = 5;	// grey baseline box color
@@ -1060,6 +1078,12 @@ void MyTrial::control() {
 		if (gTimer[3] > planTime + baseline_wait_time) {
 			state = WAIT_EXEC;
 			forceDiff = forceDiff / n;
+
+			for (i = 0; i < 2; i++) {	// check fingers' states -> fingers should stay in the baseline during planning
+				fingerForceTmp = VERT_SHIFT + forceGain * fGain[fi[i]] * gBox.getForce(fi[i]) + baselineCorrection;
+				forceFixed[i] = fingerForceTmp;
+			}
+
 			gTimer.reset(2);	// resetting timer 2 to use in next state
 			gTimer.reset(3);	// resetting timer 3 to use in next state
 			gTimer.reset(5);	// resetting timer 4 to use in next state
@@ -1092,6 +1116,7 @@ void MyTrial::control() {
 			gs.showPrLines = 0;
 			gs.showBsLines = 1;
 			gs.showForces = 0;
+			gs.showForceFixed = 1;
 			gs.showFxCross = 1;
 			gs.showTarget = 0;		// show the targets on the screen (grey bars)
 			gs.boxColor = 5;		// grey baseline box color
@@ -1114,6 +1139,7 @@ void MyTrial::control() {
 			for (i = 0; i < 2; i++) {	
 				fingerForceTmp = VERT_SHIFT + forceGain * fGain[fi[i]] * gBox.getForce(fi[i]) + baselineCorrection;
 				Favf[i] = (Favf[i] + fingerForceTmp);
+				Navf++;
 			}
 		}
 
@@ -1144,6 +1170,7 @@ void MyTrial::control() {
 		
 		gs.showBsLines = 1;
 		gs.showForces = 0;
+		gs.showForceFixed = 0;
 		gs.showFxCross = 0;
 		gs.showTarget = 0;			// no visual targets
 		gs.showTimer5 = 0;

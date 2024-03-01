@@ -179,6 +179,7 @@ private:
 	bool trialCorr;							///< 1: trial is correct , 2: trial is not correct
 	int trialErrorType;						///< 0: no error , 1: movement during planning , 2: could not execute
 	double Favf[2] = { 0, 0 };				///< Average force during response (for feedback)
+	double forceFixed[2] = { 0, 0 };
 	int Navf = 0;
 	int trialPoint;							///< point received in each trial
 	double forceDiff;

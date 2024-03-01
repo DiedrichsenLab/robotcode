@@ -35,7 +35,7 @@ int hrfTime = 0;
 string probCue;
 
 int sliceNumber = 32;			///< How many slices do we have
-int forceFixed[2] = { 0, 0 };
+//int forceFixed[2] = { 0, 0 };
 
 string fingers[5] = { "thumb", "index", "middle", "ring", "pinkie" };
 string fingerTask[2] = { fingers[finger[0]], fingers[finger[1]] };
@@ -643,7 +643,7 @@ void MyTrial::updateTextDisplay() {
 	tDisp.setText(buffer, 8, 1);*/
 
 	tDisp.setText("forceAv", 7, 1);
-	sprintf(buffer, "index: %2.2f, ring: %2.2f ", Favf[0], Favf[1]);
+	sprintf(buffer, "index: %2.2f, ring: %2.2f, samples: %d ", Favf[0] / Navf, Favf[1] / Navf, Navf);
 	tDisp.setText(buffer, 8, 1);
 
 	//// display max forces
@@ -1139,8 +1139,8 @@ void MyTrial::control() {
 			for (i = 0; i < 2; i++) {	
 				fingerForceTmp = VERT_SHIFT + forceGain * fGain[fi[i]] * gBox.getForce(fi[i]) + baselineCorrection;
 				Favf[i] = (Favf[i] + fingerForceTmp);
-				Navf++;
 			}
+			Navf++;
 		}
 
 		// If subject runs out of time:

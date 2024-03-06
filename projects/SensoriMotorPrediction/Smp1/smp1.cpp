@@ -55,7 +55,6 @@ char counterSignal = '5';		///< What char is used to count the TR
 double fGain[5] = { 1.0 ,1.0,1.0,1.0,1.0 };	// finger specific force gains -> applied on each finger
 double forceGain = 1;						// universal force gain -> applied on all the fingers
 bool blockFeedbackFlag = 0;
-bool trialFeedbackFlag = 0;
 bool wait_baseline_zone = 1;				// if 1, waits until the subject's fingers are all in the baseline zone. 
 int baseline_wait_time = 500;
 
@@ -71,7 +70,7 @@ int n = 1;
 
 double xPosBox[2] = { -X_CURSOR_DEV, X_CURSOR_DEV };
 #define FLX_ZONE_WIDTH 5
-#define FLX_BOT_Y1 5.5 - abs(baselineCorrection)  //fGain[1]*maxForce[1]*tgForce - FLX_ZONE_WIDTH / 2 + baselineCorrection
+#define FLX_BOT_Y1 3.5 - abs(baselineCorrection) //prev 6.5  //fGain[1]*maxForce[1]*tgForce - FLX_ZONE_WIDTH / 2 + baselineCorrection
 #define FLX_TOP_Y1 FLX_BOT_Y1+FLX_ZONE_WIDTH 
 #define FLX_BOT_Y2 FLX_BOT_Y1
 #define FLX_TOP_Y2 FLX_TOP_Y1
@@ -97,7 +96,7 @@ Color_t myColor[9] = {
 char gKey;
 bool gKeyPressed;
 double gVolts[5] = { 0,0,0,0,0 };   // volts sent to the valves (Marco)
-int fingerVolt = 2.5;
+int fingerVolt = 2.5; // prev 3
 
 
 ///////////
@@ -465,7 +464,7 @@ void MyBlock::giveFeedback() {
 	gs.line[3] = buffer;
 	gs.lineColor[3] = 1;
 
-	sprintf(buffer, "mean difference cued vs. non cued: %2.2f", blockDiff);
+	sprintf(buffer, "mean difference cued vs. non cued: %2.2f", blockDiff / (trialNum - 6)); // 6 50/50 trials need to be remove from average
 	gs.line[0] = buffer;
 	gs.lineColor[0] = 1;
 }
@@ -638,13 +637,13 @@ void MyTrial::updateTextDisplay() {
 		gBox.getForce(3), gBox.getForce(4));
 	tDisp.setText(buffer, 8, 0);
 
-	/*tDisp.setText("forceDiff", 7, 1);
+	tDisp.setText("forceDiff", 7, 1);
 	sprintf(buffer, "Diff1: %2.2f", abs(gBox.getForce(1) - gBox.getForce(3)));
-	tDisp.setText(buffer, 8, 1);*/
-
-	tDisp.setText("forceAv", 7, 1);
-	sprintf(buffer, "index: %2.2f, ring: %2.2f, samples: %d ", Favf[0] / Navf, Favf[1] / Navf, Navf);
 	tDisp.setText(buffer, 8, 1);
+
+	/*tDisp.setText("forceAv", 7, 1);
+	sprintf(buffer, "index: %2.2f, ring: %2.2f, samples: %d ", Favf[0] / Navf, Favf[1] / Navf, Navf);
+	tDisp.setText(buffer, 8, 1);*/
 
 	//// display max forces
 	//tDisp.setText("Max forces", 10, 0);
@@ -683,14 +682,6 @@ void MyTrial::updateGraphics(int what) {
 
 		//gScreen.setColor(Screen::white);
 		//gScreen.print(std::to_string(forceDiff), 0, 1, 5);
-	}
-
-	if (trialFeedbackFlag) {
-		gScreen.setCenter(Vector2D(0, 0));    // In cm //0,2
-		gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));
-
-		gScreen.setColor(Screen::white);
-		gScreen.print("Force difference (must be 0): " + std::to_string(forceDiff), 0, -2, 5);
 	}
 
 	// Other letters
@@ -971,8 +962,7 @@ void MyTrial::control() {
 		gs.planError = 0;
 		gs.chordError = 0;
 		planErrorFlag = 0;	// initialize planErrorFlag variable in the begining of each trial
-		chordErrorFlag = 1;	// initialize chordErrorFlag variable in the begining of each trial
-		trialFeedbackFlag = 0;
+		chordErrorFlag = 1;	// initialize chordErrorFlag variable in the begining of each trial;
 		//startTriggerEMG = 1;	// Ali EMG: starts EMG trigger in the beginning of each trial
 
 		//SetDacVoltage(0, emgTrigVolt);	// Ali EMG - gets ~200us to change digital to analog. Does it interrupt the ADC?
@@ -1003,11 +993,10 @@ void MyTrial::control() {
 		gs.showForces = 0;
 		gs.showTarget = 0;
 		gs.showFeedback = 0;
-		trialFeedbackFlag = 0;
 
 		if (gCounter.readTR() > 0 && gCounter.readTotTime() >= startTime) {
 			startTimeReal = gCounter.readTotTime();
-			startTRReal = gCounter.readTR();
+			startTRReal = gCounter.readTR(); // number of TR arrived so far
 
 			//dataman.startRecording(); // see around line #660
 			gTimer.reset(1);					//time for whole trial
@@ -1026,7 +1015,6 @@ void MyTrial::control() {
 		gs.showTimer5 = 0;
 		gs.showForces = 1;
 		gs.showFxCross = 1;
-		trialFeedbackFlag = 0;
 
 
 		for (i = 0; i < 2; i++) {	// check fingers' states -> fingers should stay in the baseline during planning
@@ -1051,13 +1039,16 @@ void MyTrial::control() {
 
 			std::string combined = std::string() + cueID[0] + cueID[1];
 
-			if (combined == "39" || combined == "93") {
-				if (stimFinger[1] == '1') {
+			if (combined == "39" || combined == "93" || combined == "12" || combined == "21") {
+				if (combined == "39" || combined == "21") {
 					forceDiff = (forceDiff + gBox.getForce(fi[0]) - gBox.getForce(fi[1]));
 				}
-				else if (stimFinger[3] == '1') {
+				else if (combined == "93" || combined == "12") {
 					forceDiff = (forceDiff + gBox.getForce(fi[1]) - gBox.getForce(fi[0]));
 				}
+			}
+			else {
+				forceDiff = 0;
 			}
 			n++;
 		}
@@ -1163,8 +1154,6 @@ void MyTrial::control() {
 		gVolts[3] = 0;
 		gBox.setVolts(0, 0, 0, 0, 0);
 
-		trialFeedbackFlag = 0;
-
 		gs.showTgLines = 1;	// set screen lines/force bars to show
 		gs.showPrLines = 0;
 		
@@ -1176,7 +1165,7 @@ void MyTrial::control() {
 		gs.showTimer5 = 0;
 		gs.showFeedback = 1;		// showing feedback (refer to MyTrial::updateGraphics() for details)
 
-		if (gTimer[2] >= feedbackTime) {
+		if (gTimer[2] >= feedbackTime || GoNogo == "nogo") {
 			state = WAIT_ITI;
 			gTimer.reset(2);
 		}
@@ -1286,9 +1275,9 @@ void DataRecord::write(ostream& out) {
 		<< state << "\t"
 		<< timeReal << "\t"
 		<< time << "\t"
-		<< TotTime << "\t"
-		<< TR << "\t"
-		<< TRtime << "\t"
+		<< TotTime << "\t" // time from first TR
+		<< TR << "\t" // number of TR so far
+		<< TRtime << "\t" // time since last TR
 		<< currentSlice << "\t";
 
 	for (i = 0; i < 5; i++) {

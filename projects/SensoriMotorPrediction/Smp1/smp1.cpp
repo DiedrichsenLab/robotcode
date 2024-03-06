@@ -71,7 +71,7 @@ int n = 1;
 
 double xPosBox[2] = { -X_CURSOR_DEV, X_CURSOR_DEV };
 #define FLX_ZONE_WIDTH 5
-#define FLX_BOT_Y1 6.5 - abs(baselineCorrection)  //fGain[1]*maxForce[1]*tgForce - FLX_ZONE_WIDTH / 2 + baselineCorrection
+#define FLX_BOT_Y1 5.5 - abs(baselineCorrection)  //fGain[1]*maxForce[1]*tgForce - FLX_ZONE_WIDTH / 2 + baselineCorrection
 #define FLX_TOP_Y1 FLX_BOT_Y1+FLX_ZONE_WIDTH 
 #define FLX_BOT_Y2 FLX_BOT_Y1
 #define FLX_TOP_Y2 FLX_TOP_Y1
@@ -97,7 +97,7 @@ Color_t myColor[9] = {
 char gKey;
 bool gKeyPressed;
 double gVolts[5] = { 0,0,0,0,0 };   // volts sent to the valves (Marco)
-int fingerVolt = 3;
+int fingerVolt = 2.5;
 
 
 ///////////

@@ -99,12 +99,12 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	// 1. initialization window, text display and screen
 	gThisInst = hThisInst;
 	gExp = new MyExperiment("efc1", "efc1", "C:/data/ExtFlexChord/efc1/");
-	//gExp->redirectIOToConsole();
+	gExp->redirectIOToConsole();
 	
 	// gExp->redirectIOToConsole();		// I uncommented this!!!
 	tDisp.init(gThisInst, 0, 0, 600, 20, 9, 2, &(::parseCommand));		// Default setting for the Windows 10 PC
 	tDisp.setText("Subj", 0, 0);
-	gScreen.init(gThisInst, 1920, 0, 1920, 1080, &(::updateGraphics));	// Default setting for the Windows 10 PC
+	gScreen.init(gThisInst, 1920, 0, 1440, 900, &(::updateGraphics));	// Default setting for the Windows 10 PC
 	gScreen.setCenter(Vector2D(0, 0));									// In cm //0,2
 	gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));					// cm/pixel
 

@@ -366,14 +366,14 @@ void MyBlock::giveFeedback() {
 	ERarray[0] = 0;			//initialize ER array for the 0th block to be 0 
 
 
-	for (i = 0; i < trialNum; i++) { //check each trial
-		tpnr = (MyTrial*)trialVec.at(i);
-		if (tpnr->isError == 0 && tpnr->exeType == 1) { //if correct go trial
-			MTarray[n] = tpnr->norm_MT; //normalized MT from the correct go trials and add them
-			n++; //remember number of correct trials
-		}
-		nn++; //count total trials
-	}
+	//for (i = 0; i < trialNum; i++) { //check each trial
+	//	tpnr = (MyTrial*)trialVec.at(i);
+	//	if (tpnr->isError == 0 && tpnr->exeType == 1) { //if correct go trial
+	//		MTarray[n] = tpnr->norm_MT; //normalized MT from the correct go trials and add them
+	//		n++; //remember number of correct trials
+	//	}
+	//	nn++; //count total trials
+	//}
 
 	// before eventual thres update, store the previous thres for writing in the .dat file
 	tempThres1 = timeThreshold;
@@ -467,9 +467,7 @@ MyTrial::MyTrial() {
 ///////////////////////////////////////////////////////////////
 void MyTrial::read(istream& in) {
 	// read from .tgt file
-	in >> subNum >> isTrain >> seq >> planTime >> execTime >> iti >> chunkSize >> digitChangePos
-		>> seqNum >> cuePress >> handTrans >> cueMask >> cueTime >> prepTime >> exeTime >> iti
-		>> startTime >> fixed_dur;
+	in >> subNum >> isTrain >> seq >> planTime >> execTime >> iti >> chunkSize >> digitChangePos >> digitChangeValue;
 	seqLength = cuePress.length(); //get seqLength	 
 }
 
@@ -478,9 +476,7 @@ void MyTrial::read(istream& in) {
 ///////////////////////////////////////////////////////////////
 void MyTrial::writeDat(ostream& out) {
 	// write to .dat file
-	out << subNum << "\t" << mask << "\t" << hand << "\t" << load << "\t" << show << "\t" << coord << "\t" << exeType << "\t" << cueType << "\t"
-		<< seqNum << "\t" << cuePress << "\t" << isExtrinsic << "\t" << isIntrinsic << "\t" << isRepetition << "\t" << handTrans << "\t"
-		<< cueMask << "\t" << cueTime << "\t" << prepTime << "\t" << exeTime << "\t" << iti << "\t" << startTime << "\t" << fixed_dur << "\t";
+	out << subNum << "\t" << isTrain << "\t" << seq << "\t" << chunkSize << "\t" << digitChangePos << "\t" << digitChangeValue << "\t";
 	int i;
 
 	for (i = 0; i < MAX_PRESS; i++) {
@@ -631,7 +627,7 @@ void MyTrial::updateTextDisplay() {
 	sprintf(buffer, "upper Threshold: %2.0f   lower Threshold: %2.0f", timeThreshold, timeThresholdSuper);
 	tDisp.setText(buffer, 4, 0);
 
-	sprintf(buffer, "trial: %d/%d   state: %d   seqNum: %d", gExp->theBlock->trialNum + 1, gExp->theBlock->numTrials, state, seqNum);
+	sprintf(buffer, "trial: %d/%d   state: %d   seqNum: %d", gExp->theBlock->trialNum + 1, gExp->theBlock->numTrials, state, seq);
 	tDisp.setText(buffer, 5, 0);
 
 
@@ -646,7 +642,7 @@ void MyTrial::updateTextDisplay() {
 	tDisp.setText(buffer, 7, 0);
 
 
-	sprintf(buffer, "prepTime: %d   seqCounter: %d   seqLength: %d", prepTime, seqCounter, seqLength);
+	sprintf(buffer, "seqCounter: %d   seqLength: %d", seqCounter, seqLength);
 	tDisp.setText(buffer, 11, 0);
 
 	sprintf(buffer, "isError: %d   errors block: %d   points block: %2.1f", isError, gNumErrorsBlock, gNumPointsBlock);
@@ -780,21 +776,21 @@ void MyTrial::updateGraphics(int what) {
 
 		//----------------------------------
 		// DELAYED-MOVEMENT GO-NOGO PARADIGM
-		if ((state >= 3 && state <= 5) && gTimer[1] >= (prepTime + cueTime)) { // go/nogo after preparatory period defined by prepTime
+		//if ((state >= 3 && state <= 5) && gTimer[1] >= (prepTime + cueTime)) { // go/nogo after preparatory period defined by prepTime
 
-			if (exeType == 1) { // GO 
-				//gScreen.setColor(Screen::oceanblue);
-				//gScreen.drawRect(RECWIDTH_X + 0.3, RECWIDTH_Y + 0.3, REC_xPOS, REC_yPOS);
-				gScreen.setColor(Screen::black);
-				gScreen.drawRect(RECWIDTH_X, RECWIDTH_Y, REC_xPOS, REC_yPOS);
-				gScreen.setColor(Screen::white);
-			}
-			else if (exeType == 0) { // NO-GO
-				gScreen.setColor(Screen::darkorange);
-				gScreen.drawRect(RECWIDTH_X + 0.3, RECWIDTH_Y + 0.3, REC_xPOS, REC_yPOS);
-				gScreen.setColor(Screen::white);
-			}
-		}
+		//	if (exeType == 1) { // GO 
+		//		//gScreen.setColor(Screen::oceanblue);
+		//		//gScreen.drawRect(RECWIDTH_X + 0.3, RECWIDTH_Y + 0.3, REC_xPOS, REC_yPOS);
+		//		gScreen.setColor(Screen::black);
+		//		gScreen.drawRect(RECWIDTH_X, RECWIDTH_Y, REC_xPOS, REC_yPOS);
+		//		gScreen.setColor(Screen::white);
+		//	}
+		//	else if (exeType == 0) { // NO-GO
+		//		gScreen.setColor(Screen::darkorange);
+		//		gScreen.drawRect(RECWIDTH_X + 0.3, RECWIDTH_Y + 0.3, REC_xPOS, REC_yPOS);
+		//		gScreen.setColor(Screen::white);
+		//	}
+		//}
 	}
 
 	if (useMetronome == 1 && state == 3 && timeMet == 0) {
@@ -805,7 +801,7 @@ void MyTrial::updateGraphics(int what) {
 		gScreen.setColor(Screen::white);
 		gScreen.drawLine(MET_LINE_X1, MET_LINE_Y1, MET_LINE_X2, MET_LINE_Y2);
 		gScreen.setColor(Screen::black);
-		gScreen.drawLine(MET_LINE_X1, MET_LINE_Y1, MET_LINE_X1 + gTimer[2] / (exeTime / MAX_PRESS) * (WIDTH_CHAR_CUE), MET_LINE_Y2);
+		gScreen.drawLine(MET_LINE_X1, MET_LINE_Y1, MET_LINE_X1 + gTimer[2] / (execTime / MAX_PRESS) * (WIDTH_CHAR_CUE), MET_LINE_Y2);
 	}
 	else if (useMetronome == 1 && state == 4 && timeMet > MAX_PRESS) {
 		gScreen.setColor(Screen::black);
@@ -813,7 +809,7 @@ void MyTrial::updateGraphics(int what) {
 	}
 
 	// Debugging tool to visualize current state of program control
-	/*
+	
 	string stateString;
 	switch(state)
 	{
@@ -846,7 +842,7 @@ void MyTrial::updateGraphics(int what) {
 	break;
 	}
 	gScreen.print(stateString,0,9,5);
-	//*/
+	
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -957,6 +953,7 @@ void MyTrial::control() {
 		break;
 
 	case START_TRIAL: //1		
+		cout << "in start trial";
 		trialDur = 0;
 		for (i = 0; i < MAX_PRESS; i++) {
 			response[i] = 0;
@@ -1046,16 +1043,16 @@ void MyTrial::control() {
 	case WAIT_PREP: //3 
 		//----------------------------------
 		// CHECK FOR BASELINE FINGER FORCES
-		if (numNewThresCross > 0 && gTimer[1] < (cueTime + prepTime)) { // check for pre-movement finger presses
-			timeStamp = gTimer[1];
-			isCross = 1;
-			if (startTime < 0) { // display warning message (practice blocks only)
-				sprintf(buffer, "Please remain within the red area");
-				gs.lineColor[0] = 1;
-				gs.line[0] = buffer;
-				gs.lineYpos[0] = 8;
-			}
-		}
+		//if (numNewThresCross > 0 && gTimer[1] < (cueTime + prepTime)) { // check for pre-movement finger presses
+		//	timeStamp = gTimer[1];
+		//	isCross = 1;
+		//	if (startTime < 0) { // display warning message (practice blocks only)
+		//		sprintf(buffer, "Please remain within the red area");
+		//		gs.lineColor[0] = 1;
+		//		gs.line[0] = buffer;
+		//		gs.lineYpos[0] = 8;
+		//	}
+		//}
 		/*
 		if (gTimer[1]>timeStamp+500) {
 		sprintf(buffer,"");
@@ -1066,59 +1063,59 @@ void MyTrial::control() {
 		//*/
 
 		// DELAYED-MOVEMENT GO-NOGO PARADIGM
-		if (newPress > 0 && gTimer[1] < (cueTime + prepTime)) { // check for error: go cue anticipation
-			response[seqCounter] = pressedFinger;
-			handPressed[seqCounter] = pressedHand;
-			pressTime[seqCounter] = gTimer[1];
-			RT = gTimer[1] - (cueTime + prepTime);	// anticipation: negative reaction time
-			ET = 0;								// execution time
-			norm_MT = (RT + ET);		// normalized movement time, in this exp defined as (RT + ET) (what gets rewarded)
-			isError = 1;
-			timingError = 1;
-			gTimer.reset(5);
-			sprintf(buffer, "TOO EARLY");
-			gs.lineColor[0] = 1;
-			gs.line[0] = buffer;
-			gs.lineYpos[0] = 8;
-			isError = 1;
-			timingError = 1;
-			responseArray[seqCounter] = 2; // red
-			seqCounter++;
-			state = WAIT_RELEASE;
-		}
+		//if (newPress > 0 && gTimer[1] < (cueTime + prepTime)) { // check for error: go cue anticipation
+		//	response[seqCounter] = pressedFinger;
+		//	handPressed[seqCounter] = pressedHand;
+		//	pressTime[seqCounter] = gTimer[1];
+		//	RT = gTimer[1] - (cueTime + prepTime);	// anticipation: negative reaction time
+		//	ET = 0;								// execution time
+		//	norm_MT = (RT + ET);		// normalized movement time, in this exp defined as (RT + ET) (what gets rewarded)
+		//	isError = 1;
+		//	timingError = 1;
+		//	gTimer.reset(5);
+		//	sprintf(buffer, "TOO EARLY");
+		//	gs.lineColor[0] = 1;
+		//	gs.line[0] = buffer;
+		//	gs.lineYpos[0] = 8;
+		//	isError = 1;
+		//	timingError = 1;
+		//	responseArray[seqCounter] = 2; // red
+		//	seqCounter++;
+		//	state = WAIT_RELEASE;
+		//}
 
-		if (gTimer[1] >= cueTime && mask == 1) { // mask at delay
-			gs.clearCues();
-			for (i = 0; i < seqLength; i++) {
-				gs.cueMask[i] = cueMask.at(i);
-			}
-		}
+		//if (gTimer[1] >= cueTime && mask == 1) { // mask at delay
+		//	gs.clearCues();
+		//	for (i = 0; i < seqLength; i++) {
+		//		gs.cueMask[i] = cueMask.at(i);
+		//	}
+		//}
 
-		if (gTimer[1] >= (cueTime + prepTime)) { // give go/nogo signal
+		//if (gTimer[1] >= (cueTime + prepTime)) { // give go/nogo signal
 
-			sprintf(buffer, "");
-			gs.lineColor[0] = 1;
-			gs.line[0] = buffer;
-			gs.lineYpos[0] = 8;
+		//	sprintf(buffer, "");
+		//	gs.lineColor[0] = 1;
+		//	gs.line[0] = buffer;
+		//	gs.lineYpos[0] = 8;
 
-			if (mask == 2) {      // only mask at Go time
-				gs.clearCues();
-				for (i = 0; i < seqLength; i++) {
-					gs.cueMask[i] = cueMask.at(i);
-				}
-			}
+		//	if (mask == 2) {      // only mask at Go time
+		//		gs.clearCues();
+		//		for (i = 0; i < seqLength; i++) {
+		//			gs.cueMask[i] = cueMask.at(i);
+		//		}
+		//	}
 
-			if (exeType == 1) { // GO 
-				// PLAY SOUND
-				PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
-			}
-			else if (exeType == 0) { // NO-GO
-				// PLAY SOUND
-				//PlaySound(TASKSOUNDS[7].c_str(), NULL, SND_ASYNC);
-			}
-			gTimer.reset(2);
-			state = WAIT_PRESS;
-		}
+		//	if (exeType == 1) { // GO 
+		//		// PLAY SOUND
+		//		PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
+		//	}
+		//	else if (exeType == 0) { // NO-GO
+		//		// PLAY SOUND
+		//		//PlaySound(TASKSOUNDS[7].c_str(), NULL, SND_ASYNC);
+		//	}
+		//	gTimer.reset(2);
+		//	state = WAIT_PRESS;
+		//}
 		break;
 
 	case WAIT_PRESS: //4
@@ -1135,12 +1132,12 @@ void MyTrial::control() {
 			}
 		}
 
-		if (useMetronome > 0 && gTimer[2] > timeMet * (exeTime / MAX_PRESS) && timeMet < MAX_PRESS + 1) {
+		if (useMetronome > 0 && gTimer[2] > timeMet * (execTime / MAX_PRESS) && timeMet < MAX_PRESS + 1) {
 			timeMet++;	// update counter
 		};
 
 		// Wait for a key press
-		if (exeType == 1) { // GO TRIAL
+		if (isTrain == 1) { // GO TRIAL
 
 			// START OF SEQUENCE
 			if (newPress > 0 && seqCounter < seqLength) { // correct timing
@@ -1170,7 +1167,7 @@ void MyTrial::control() {
 					gTimer.reset(5);
 				}
 				if (fixed_dur == 1) { // fixed trial duration: wait exeTime before moving on to wait release (same time for GO and NOGO trials)
-					if (gTimer[2] >= exeTime) {
+					if (gTimer[2] >= execTime) {
 						state = WAIT_RELEASE;
 					}
 				}
@@ -1182,9 +1179,9 @@ void MyTrial::control() {
 
 				// SEQUENCE TIME OUT
 			}
-			else if (gTimer[2] >= exeTime) { // time out (if sequence not completed in time)
+			else if (gTimer[2] >= execTime) { // time out (if sequence not completed in time)
 				RT = RT;				// reaction time
-				ET = prepTime + exeTime;	// execution time
+				ET =   execTime;	// execution time //todo: change
 				norm_MT = (RT + ET);
 				isError = 1;
 				timingError = 1;
@@ -1199,7 +1196,7 @@ void MyTrial::control() {
 			}
 		}
 
-		else if (exeType == 0) { // NO-GO TRIAL
+		else if (isTrain == 0) { // NO-GO TRIAL
 			if (numNewThresCross > 0 && seqCounter < seqLength) { // wrong timing
 				sprintf(buffer, "HAD TO STAY");
 				gs.lineColor[0] = 1;
@@ -1218,7 +1215,7 @@ void MyTrial::control() {
 				seqCounter++;
 				state = WAIT_RELEASE;
 			}
-			if (gTimer[2] >= exeTime) { // wait exeTime before moving on to wait release (same time for GO and NOGO trials) 
+			if (gTimer[2] >= execTime) { // wait exeTime before moving on to wait release (same time for GO and NOGO trials) 
 				if (isError == 0) {
 					isError = 0;
 					timingError = 0;
@@ -1237,7 +1234,7 @@ void MyTrial::control() {
 		// Wait for the release of all keys, assign points
 		if (released == NUMFINGERS) {
 
-			if (exeType == 1) { // GO
+			if (isTrain == 1) { // GO
 
 				if (isError == 0) {
 
@@ -1281,7 +1278,7 @@ void MyTrial::control() {
 				state = WAIT_FEEDBACK;
 			}
 
-			else if (exeType == 0) { // NO-GO
+			else if (isTrain == 0) { // NO-GO
 
 				if (isError == 0) {
 					points = 1;

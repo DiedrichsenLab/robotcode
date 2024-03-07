@@ -26,7 +26,7 @@ using namespace std;
 #define RECORDRATE 5
 #define UPDATE_TEXTDISP 60
 #define SCR_SCALE 1.84/72 //3/72 //2.54/72 // cm/pixel 
-#define MAX_PRESS 12 // max number of finger presses in a sequence
+#define MAX_PRESS 11 // max number of finger presses in a sequence
 /////////////////////////////////////////k//////////////////////
 // Enumeration of Trial State 
 ///////////////////////////////////////////////////////////////
@@ -126,17 +126,18 @@ public:
 private:
 	TrialState state;						///< State of the Trial 
 	int subNum;									///< Which subject number 
-	int seqNum;								///< Which sequence number (indicator)
-	int exeType;							///< Whether it is a go or a no-go trial
-	int cueTime;                            ///< How long to encode the cue? (1.5 sec fixed)
-	int prepTime;							///< Time for movement preparation
-	int exeTime;							///< Time for movement execution
+	bool isTrain;
+	string seq;
+	int planTime;
+	int execTime;
+	int iti;
+	string chunkSize;
+	char digitChangePos;
+	char digitChangeValue;
 	int press[MAX_PRESS];					///< Which digit to press (in intrinsic coordinates 1:thumb 5: pinkie) 
 	int load;                               ///< How many keypresses to plan? (from 1 to 5)
 	int show;                               ///< Do you show hand information at ecoding (1) or at go cue (2)?
-	int iti;								///< Time delay before the next trail starts in[ms]
 	int hand;								///< Which board are we using left= 1 right= 2
-	int mask;                               ///< What mask condition? 0 = no mask; 1 = mask at delay; 2 = mask at go cue
 	int seqCounter;							///< Which position in the seq are we?
 	int fixed_dur;							///< Is the trial duration fixed or not?
 

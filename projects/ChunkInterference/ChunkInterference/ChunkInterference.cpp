@@ -468,7 +468,9 @@ MyTrial::MyTrial() {
 void MyTrial::read(istream& in) {
 	// read from .tgt file
 	in >> subNum >> isTrain >> seq >> planTime >> execTime >> iti >> chunkSize >> digitChangePos >> digitChangeValue;
-	seqLength = cuePress.length(); //get seqLength	 
+	//cout << seq << "\n";
+	seqLength = seq.length(); //get seqLength	 
+	//cout << "seq Length" << seqLength << "\n";
 }
 
 ///////////////////////////////////////////////////////////////
@@ -522,9 +524,12 @@ void MyTrial::writeDat(ostream& out) {
 ///////////////////////////////////////////////////////////////
 void MyTrial::writeHeader(ostream& out) {
 	char header[200];
-	out << "SN" << "\t" << "mask" << "\t" << "hand" << "\t" << "load" << "\t" << "show" << "\t" << "coord" << "\t" << "exeType" << "\t" << "cueType" << "\t"
-		<< "seqNum" << "\t" << "cuePress" << "\t" << "isExtrinsic" << "\t" << "isIntrinsic" << "\t" << "isRepetition" << "\t" << "handTrans" << "\t"
-		<< "cueMask" << "\t" << "cueTime" << "\t" << "prepTime" << "\t" << "exeTime" << "\t" << "iti" << "\t" << "startTime" << "\t" << "fixed_dur" << "\t";
+
+	out << "SubNum" << "\t" << "isTrain" << "\t" << "seq" << "\t" << "ChunkSize" << "\t" << "digitChangePos" << "\t" << "digitChangeValue" << "\t";
+
+	//out << "SubNum" << "\t" << "isTrain" << "\t" << "seq" << "\t" << "ChunkSize" << "\t" << "digitChangePos" << "\t" << "digitChangeValue" << "\t" << "exeType" << "\t" << "cueType" << "\t"
+	//	<< "seqNum" << "\t" << "cuePress" << "\t" << "isExtrinsic" << "\t" << "isIntrinsic" << "\t" << "isRepetition" << "\t" << "handTrans" << "\t"
+	//	<< "cueMask" << "\t" << "cueTime" << "\t" << "prepTime" << "\t" << "exeTime" << "\t" << "iti" << "\t" << "startTime" << "\t" << "fixed_dur" << "\t";
 
 	int i;
 
@@ -758,13 +763,13 @@ void MyTrial::updateGraphics(int what) {
 	// Press Cue
 	gScreen.setColor(1);		// White
 	for (i = 0; i < MAX_PRESS; i++) {
-		if (gs.cuePress[i] > 0) { // Numbers
+		if (gs.seq[i] > 0) { // Numbers
 			gScreen.setColor(responseArray[i]);
-			gScreen.printChar(gs.cuePress[i], (i - ((double)(MAX_PRESS / 2) - 0.5)) * WIDTH_CHAR_CUE + WIDTH_CHAR_CUE * ((double)(MAX_PRESS - seqLength) / 2), CUE_PRESS_yPOS, SIZE_CUE);
+			gScreen.printChar(gs.seq[i], (i - ((double)(MAX_PRESS / 2) - 0.5)) * WIDTH_CHAR_CUE + WIDTH_CHAR_CUE * ((double)(MAX_PRESS - seqLength) / 2), CUE_PRESS_yPOS, SIZE_CUE);
 		}
-		if (gs.cueMask[i] > 0) { // Mask (asterisk)
+		if (gs.seqMask[i] > 0) { // Mask (asterisk)
 			gScreen.setColor(responseArray[i]);
-			gScreen.printChar(gs.cueMask[i], (i - ((double)(MAX_PRESS / 2) - 0.5)) * WIDTH_CHAR_CUE + WIDTH_CHAR_CUE * ((double)(MAX_PRESS - seqLength) / 2), CUE_PRESS_yPOS, SIZE_CUE);
+			gScreen.printChar(gs.seqMask[i], (i - ((double)(MAX_PRESS / 2) - 0.5)) * WIDTH_CHAR_CUE + WIDTH_CHAR_CUE * ((double)(MAX_PRESS - seqLength) / 2), CUE_PRESS_yPOS, SIZE_CUE);
 		}
 	}
 
@@ -889,37 +894,37 @@ void MyTrial::control() {
 	//int FalseAlarm = 0;			// has the false alarm trheshold been crossed?
 
 	for (f = 5; f < 10; f++) {
-		if (f < 5) { // left hand
-			if (coord == 2) {
-				force = gBox[0].getForce(4 - f);
-				if (finger[4 - f] == 0 && force > THRESHOLD[0][4 - f]) { // Press threshold comparison
-					newPress++;
-					pressedFinger = (4 - f) + 1;
-					pressedHand = 1;
-					finger[4 - f] = 1;
-					released = 0;
-				}
-				if (force <= THRESHOLD[1][4 - f]) { // Release threshold comparison
-					finger[4 - f] = 0;
-					released++;
-				}
-			}
-			else if (coord == 1) {
-				force = gBox[0].getForce(4 - f);
-				if (finger[f] == 0 && force > THRESHOLD[0][f]) { // Press threshold comparison
-					newPress++;
-					pressedFinger = f + 1;
-					pressedHand = 1;
-					finger[f] = 1;
-					released = 0;
-				}
-				if (force <= THRESHOLD[1][f]) { // Release threshold comparison
-					finger[f] = 0;
-					released++;
-				}
-			}
-		}
-		else {
+		//if (f < 5) { // left hand
+		//	if (coord == 2) {
+		//		force = gBox[0].getForce(4 - f);
+		//		if (finger[4 - f] == 0 && force > THRESHOLD[0][4 - f]) { // Press threshold comparison
+		//			newPress++;
+		//			pressedFinger = (4 - f) + 1;
+		//			pressedHand = 1;
+		//			finger[4 - f] = 1;
+		//			released = 0;
+		//		}
+		//		if (force <= THRESHOLD[1][4 - f]) { // Release threshold comparison
+		//			finger[4 - f] = 0;
+		//			released++;
+		//		}
+		//	}
+		//	else if (coord == 1) {
+		//		force = gBox[0].getForce(4 - f);
+		//		if (finger[f] == 0 && force > THRESHOLD[0][f]) { // Press threshold comparison
+		//			newPress++;
+		//			pressedFinger = f + 1;
+		//			pressedHand = 1;
+		//			finger[f] = 1;
+		//			released = 0;
+		//		}
+		//		if (force <= THRESHOLD[1][f]) { // Release threshold comparison
+		//			finger[f] = 0;
+		//			released++;
+		//		}
+		//	}
+		//}
+		//else {
 			force = gBox[1].getForce(f - 5);
 			if (finger[f] == 0 && force > THRESHOLD[0][f - 5]) { // Press threshold comparison
 				newPress++;
@@ -932,7 +937,7 @@ void MyTrial::control() {
 				finger[f] = 0;
 				released++;
 			}
-		}
+		//}
 	}
 
 	switch (state) {
@@ -953,7 +958,7 @@ void MyTrial::control() {
 		break;
 
 	case START_TRIAL: //1		
-		cout << "in start trial";
+		//cout << "in start trial";
 		trialDur = 0;
 		for (i = 0; i < MAX_PRESS; i++) {
 			response[i] = 0;
@@ -978,8 +983,8 @@ void MyTrial::control() {
 			if ((gExp->theBlock->trialNum + 1) == 1) {	// if first trial of the block 
 				if (gTimer[1] >= waitTime) {			// wait waitTime before presenting cuePress
 					for (i = 0; i < seqLength; i++) {
-						press[i] = cuePress.at(i) - '0';
-						gs.cuePress[i] = cuePress.at(i);
+						press[i] = seq.at(i) - '0';
+						gs.seq[i] = seq.at(i);
 						if (show == 1) {
 							if (hand == 2) {
 								responseArray[i] = 6; // orange for the right
@@ -997,8 +1002,8 @@ void MyTrial::control() {
 			else { // every other trial of the block
 				if (gTimer[1] >= stimOnsetTime) {		// wait stimOnsetTime before presenting cuePress
 					for (i = 0; i < seqLength; i++) {
-						press[i] = cuePress.at(i) - '0';
-						gs.cuePress[i] = cuePress.at(i);
+						press[i] = seq.at(i) - '0';
+						gs.seq[i] = seq.at(i);
 						if (show == 1) {
 							if (hand == 2) {
 								responseArray[i] = 6; // orange for the right
@@ -1023,8 +1028,8 @@ void MyTrial::control() {
 			startTRtime = gCounter.readTime();
 			// present cuePress (visual cues)
 			for (i = 0; i < seqLength; i++) {
-				press[i] = cuePress.at(i) - '0';
-				gs.cuePress[i] = cuePress.at(i);
+				press[i] = seq.at(i) - '0';
+				gs.seq[i] = seq.at(i);
 				if (show == 1) {
 					if (hand == 2) {
 						responseArray[i] = 6; // orange for the right
@@ -1116,6 +1121,7 @@ void MyTrial::control() {
 		//	gTimer.reset(2);
 		//	state = WAIT_PRESS;
 		//}
+		state = WAIT_PRESS;
 		break;
 
 	case WAIT_PRESS: //4
@@ -1131,7 +1137,6 @@ void MyTrial::control() {
 				}
 			}
 		}
-
 		if (useMetronome > 0 && gTimer[2] > timeMet * (execTime / MAX_PRESS) && timeMet < MAX_PRESS + 1) {
 			timeMet++;	// update counter
 		};
@@ -1410,8 +1415,8 @@ GraphicState::GraphicState() {
 void GraphicState::clearCues(void) {
 	int i;
 	for (i = 0; i < MAX_PRESS; i++) {
-		cuePress[i] = 0;
-		cueMask[i] = 0;
+		seq[i] = 0;
+		seqMask[i] = 0;
 	}
 }
 

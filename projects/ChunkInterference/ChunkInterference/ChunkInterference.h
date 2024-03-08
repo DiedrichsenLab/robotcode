@@ -69,8 +69,8 @@ public:
 	GLfloat size[NUMDISPLAYLINES];
 	bool boxOn;
 	bool showlines;
-	char cuePress[MAX_PRESS];
-	char cueMask[MAX_PRESS];
+	char seq[MAX_PRESS];
+	char seqMask[MAX_PRESS];
 };
 
 ///////////////////////////////////////////////////////////////
@@ -127,7 +127,7 @@ private:
 	TrialState state;						///< State of the Trial 
 	int subNum;									///< Which subject number 
 	bool isTrain;
-	string seq;
+	//string seq;
 	int planTime;
 	int execTime;
 	int iti;
@@ -183,8 +183,8 @@ private:
 	double RT;								///< Reaction time (from go cue)
 	double ET;								///< Execution time (from first press)
 	double MT;								///< Movement time (RT + MT)
-	string cuePress; 						///< Visual cues for sequences
-	string cueMask;							///< Mask for visual cues
+	string seq; 						///< Visual cues for sequences
+	string seqMask;							///< Mask for visual cues
 	DataManager<DataRecord, 30000 / 2> dataman;///< For data recording for MOV file 
 };
 

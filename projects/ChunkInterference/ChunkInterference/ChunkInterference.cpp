@@ -467,7 +467,7 @@ MyTrial::MyTrial() {
 ///////////////////////////////////////////////////////////////
 void MyTrial::read(istream& in) {
 	// read from .tgt file
-	in >> subNum >> isTrain >> seq >> planTime >> execTime >> iti >> chunkSize >> digitChangePos >> digitChangeValue;
+	in >> subNum>> hand >> isTrain >> seq >> planTime >> execTime >> iti >> chunkSize >> digitChangePos >> digitChangeValue;
 	//cout << seq << "\n";
 	seqLength = seq.length(); //get seqLength	 
 	//cout << "seq Length" << seqLength << "\n";
@@ -478,7 +478,7 @@ void MyTrial::read(istream& in) {
 ///////////////////////////////////////////////////////////////
 void MyTrial::writeDat(ostream& out) {
 	// write to .dat file
-	out << subNum << "\t" << isTrain << "\t" << seq << "\t" << chunkSize << "\t" << digitChangePos << "\t" << digitChangeValue << "\t";
+	out << subNum << "\t" << hand << "\t" << isTrain << "\t" << seq << "\t" << chunkSize << "\t" << digitChangePos << "\t" << digitChangeValue << "\t";
 	int i;
 
 	for (i = 0; i < MAX_PRESS; i++) {
@@ -525,7 +525,7 @@ void MyTrial::writeDat(ostream& out) {
 void MyTrial::writeHeader(ostream& out) {
 	char header[200];
 
-	out << "SubNum" << "\t" << "isTrain" << "\t" << "seq" << "\t" << "ChunkSize" << "\t" << "digitChangePos" << "\t" << "digitChangeValue" << "\t";
+	out << "SubNum" << "\t" << "hand" << "\t" << "isTrain" << "\t" << "seq" << "\t" << "ChunkSize" << "\t" << "digitChangePos" << "\t" << "digitChangeValue" << "\t";
 
 	//out << "SubNum" << "\t" << "isTrain" << "\t" << "seq" << "\t" << "ChunkSize" << "\t" << "digitChangePos" << "\t" << "digitChangeValue" << "\t" << "exeType" << "\t" << "cueType" << "\t"
 	//	<< "seqNum" << "\t" << "cuePress" << "\t" << "isExtrinsic" << "\t" << "isIntrinsic" << "\t" << "isRepetition" << "\t" << "handTrans" << "\t"
@@ -985,6 +985,7 @@ void MyTrial::control() {
 					for (i = 0; i < seqLength; i++) {
 						press[i] = seq.at(i) - '0';
 						gs.seq[i] = seq.at(i);
+						cout <<"hand" <<  hand << '\n';
 						if (show == 1) {
 							if (hand == 2) {
 								responseArray[i] = 6; // orange for the right
@@ -1142,7 +1143,7 @@ void MyTrial::control() {
 		};
 
 		// Wait for a key press
-		if (isTrain == 1) { // GO TRIAL
+		if (isTrain == 1) { // Train  Trials
 
 			// START OF SEQUENCE
 			if (newPress > 0 && seqCounter < seqLength) { // correct timing
@@ -1201,7 +1202,7 @@ void MyTrial::control() {
 			}
 		}
 
-		else if (isTrain == 0) { // NO-GO TRIAL
+		else if (isTrain == 0) { // Test Trials //todo: fix this
 			if (numNewThresCross > 0 && seqCounter < seqLength) { // wrong timing
 				sprintf(buffer, "HAD TO STAY");
 				gs.lineColor[0] = 1;

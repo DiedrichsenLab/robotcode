@@ -25,7 +25,7 @@ Experiment* gExp;				///< Pointer to myExperiment
 Trial* currentTrial;			///< Pointer to current Trial 
 #define DAC_VSCALAR 819.1       ///< Binary-to-volts scalar for DAC.
 
-double baselineCorrection = -0.8; //-1.7;    // move force cursor away from baseline area at rest (Marco)
+double baselineCorrection = -0.3;//-0.8; //-1.7;    // move force cursor away from baseline area at rest (Marco)
 //bool maxF = 0;					///< 0>Task 1>Max Voluntary Force Measurament (Marco)
 int finger[2] = { 1, 3 };					///< Finger from which Max Voluntary Force is measured (Marco)
 double currentForce = 0;			// max force recorded from <finger>
@@ -51,7 +51,7 @@ char counterSignal = '5';		///< What char is used to count the TR
 //int sliceNumber = 32;			///< How many slices do we have
 
 ///< Screen graphics definitions
-#define baseTHhi  0.5			// Half height of baseline area
+#define baseTHhi  0.25//0.5			// Half height of baseline area
 double fGain[5] = { 1.0 ,1.0,1.0,1.0,1.0 };	// finger specific force gains -> applied on each finger
 double forceGain = 1;						// universal force gain -> applied on all the fingers
 bool blockFeedbackFlag = 0;
@@ -65,8 +65,8 @@ int n = 1;
 
 #define FINGWIDTH 2 //previously 1.3
 #define X_CURSOR_DEV 1.5
-#define BASELINE_X1 -3//-(FINGWIDTH*N_FINGERS/2)
-#define BASELINE_X2 3//+(FINGWIDTH*N_FINGERS/2)
+#define BASELINE_X1 -3 //-(FINGWIDTH*N_FINGERS/2)
+#define BASELINE_X2 3 //+(FINGWIDTH*N_FINGERS/2)
 
 double xPosBox[2] = { -X_CURSOR_DEV, X_CURSOR_DEV };
 #define FLX_ZONE_WIDTH 5
@@ -96,7 +96,7 @@ Color_t myColor[9] = {
 char gKey;
 bool gKeyPressed;
 double gVolts[5] = { 0,0,0,0,0 };   // volts sent to the valves (Marco)
-int fingerVolt = 2.5; // prev 3
+int fingerVolt = 2.8; // prev 3
 
 
 ///////////
@@ -268,7 +268,7 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 		}
 
 		else {
-			baselineCorrection = std::stoi(arguments[1]);
+			baselineCorrection = std::stod(arguments[1]);
 		}
 	}
 

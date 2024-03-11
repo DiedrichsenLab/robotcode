@@ -129,6 +129,7 @@ public: // colors and other static members
 	static Color_t forestgreen;
 	static Color_t darkred;
 	static Color_t darkblue;
+	static Color_t darkgrey;
 
 	static bool keyPressed;
 	static char key;

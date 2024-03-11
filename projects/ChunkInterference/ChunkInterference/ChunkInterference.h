@@ -138,6 +138,8 @@ private:
 	int show;                               ///< Do you show hand information at ecoding (1) or at go cue (2)?
 	int hand;								///< Which board are we using left= 1 right= 2
 	int seqCounter;							///< Which position in the seq are we?
+	int maskCounter;
+	int chunkIndex;
 	int fixed_dur;							///< Is the trial duration fixed or not?
 
 	int newPress;							///< Is this a new press?

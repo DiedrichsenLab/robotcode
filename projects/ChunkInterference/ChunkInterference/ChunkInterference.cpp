@@ -6,6 +6,7 @@
 #include "StimulatorBox.h"
 
 #include <string>
+#include <chrono>
 
 ///////////////////////////////////////////////////////////////
 /// Global variables 
@@ -91,7 +92,14 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 {
 	gThisInst = hThisInst;
 	gExp = new MyExperiment("ChunkInterference", "ChunkInterference", "C:/data/ChunkInterference/");
+	//auto start = std::chrono::high_resolution_clock::now();
 	gExp->redirectIOToConsole();
+	//auto end = std::chrono::high_resolution_clock::now();
+	//auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+
+	//std::cout << "Process time: " << duration.count() << " microseconds" << std::endl;
+
+
 
 	//tDisp.init(gThisInst,100,200,600,30,9,2,&(::parseCommand)); // STARK
 	tDisp.init(gThisInst, 0, 0, 400, 20, 9, 2, &(::parseCommand));
@@ -104,30 +112,35 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	gScreen.setCenter(Vector2D(0, 0));    // In cm //0,2
 	gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE)); // cm/pixel
 
+
+
+
+
+
 	// initialize s626cards 
 	s626.init("c:/robotcode/calib/s626_single.txt");
 
-	if (s626.getErrorState() == 0) {
-		cout << "Hello" << endl;
-		atexit(::onExit);
-		s626.initInterrupt(updateHaptics, UPDATERATE); // initialize at 200 Hz update rate 
-	}
 
 	// high force 1
-	//gBox[0].init(BOX_LEFT,"c:/robot/calib/Flatbox1_highforce_LEFT_07-Jun-2017.txt");
-	//gBox[1].init(BOX_RIGHT,"c:/robot/calib/Flatbox1_highforce_RIGHT_31-July-2017.txt");
+//gBox[0].init(BOX_LEFT,"c:/robot/calib/Flatbox1_highforce_LEFT_07-Jun-2017.txt");
+ gBox[1].init(BOX_RIGHT,"c:/robotcode/calib/Flatbox1_highforce_RIGHT_31-July-2017.txt");
 
-	// high force 2
-	//gBox[0].init(BOX_LEFT,"c:/robot/calib/Flatbox1_highforce2_LEFT_03-Dec-2021.txt");
+// high force 2
+//gBox[0].init(BOX_LEFT,"c:/robot/calib/Flatbox1_highforce2_LEFT_03-Dec-2021.txt");
 
-	// STARK
-	//gBox[0].init(BOX_LEFT,"c:/robot/calib/Flatbox1_highforce2_LEFT_12-Feb-2022.txt");
-	//gBox[1].init(BOX_RIGHT,"c:/robot/calib/Flatbox1_highforce2_RIGHT_03-Dec-2021.txt");
+// STARK
+//gBox[0].init(BOX_LEFT,"c:/robot/calib/Flatbox1_highforce2_LEFT_12-Feb-2022.txt");
+//gBox[1].init(BOX_RIGHT,"c:/robot/calib/Flatbox1_highforce2_RIGHT_03-Dec-2021.txt");
 
 
-	// CHOMSKY
-	gBox[0].init(BOX_LEFT, "c:/robotcode/calib/LEFT_lowForce_FlatBox2_24-Jan-2018.txt");
-	gBox[1].init(BOX_RIGHT, "c:/robotcode/calib/flatbox2_lowforce_RIGHT_06-Jul-2017.txt");
+// CHOMSKY
+//auto start = std::chrono::high_resolution_clock::now();
+	//gBox[0].init(BOX_LEFT, "c:/robotcode/calib/LEFT_lowForce_FlatBox2_24-Jan-2018.txt");
+	//gBox[1].init(BOX_RIGHT, "c:/robotcode/calib/flatbox2_lowforce_RIGHT_06-Jul-2017.txt");
+	//auto end = std::chrono::high_resolution_clock::now();
+	//auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+
+	//std::cout << "Process time: " << duration.count() << " microseconds" << std::endl;
 
 	// low force
 	//gBox[0].init(BOX_LEFT,"c:/robot/calib/flatbox2_lowforce_LEFT_03-Mar-2017.txt");
@@ -136,6 +149,14 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	gBox[0].filterconst = 0.8;
 	gBox[1].filterconst = 0.8;
 
+
+	if (s626.getErrorState() == 0) {
+		cout << "Hello" << endl;
+		atexit(::onExit);
+		s626.initInterrupt(updateHaptics, UPDATERATE); // initialize at 200 Hz update rate 
+	}
+
+	
 	gTimer.init();
 
 	// initialize TR counter 
@@ -172,6 +193,7 @@ void MyExperiment::control(void) {
 		theBlock->control();
 		currentTrial->copyHaptics();		// Thread save copy 
 		//cout << gTimer[4] << " , ";
+		//gTimer.clear();
 		if (gTimer[4] > UPDATE_TEXTDISP) {   //currently every 10ms
 			currentTrial->updateTextDisplay();
 			InvalidateRect(tDisp.windowHnd, NULL, TRUE);
@@ -445,6 +467,8 @@ MyTrial::MyTrial() {
 	numCrosses = 0;						// init how many times pre-mov threshold has been crossed in this trial
 	timingError = 0;						// init timing error flag
 	seqCounter = 0;						// init the sequence index variable
+	maskCounter = 0;
+	chunkIndex = 0;
 	norm_MT = 0;						// init normalized MT = (RT + ET)/seqLength
 	RT = 0;								// init reaction time
 	ET = 0;								// init sequence execution time
@@ -635,15 +659,16 @@ void MyTrial::updateTextDisplay() {
 	tDisp.setText(buffer, 4, 0);
 
 	sprintf(buffer, "trial: %d/%d   state: %d   seqNum: %lld", gExp->theBlock->trialNum + 1, gExp->theBlock->numTrials, state, std::stoll(seq));
+	//sprintf(buffer, "trial: %d/%d   state: %d", gExp->theBlock->trialNum + 1, gExp->theBlock->numTrials, state);
 	tDisp.setText(buffer, 5, 0);
 
 
 
-	sprintf(buffer, "press LH: %d %d %d %d %d    force LH: %2.2f %2.2f %2.2f %2.2f %2.2f", finger[0], finger[1], finger[2], finger[3], finger[4], gBox[0].getForce(0), gBox[0].getForce(1), gBox[0].getForce(2), gBox[0].getForce(3), gBox[0].getForce(4));
-	tDisp.setText(buffer, 6, 0);
+	//sprintf(buffer, "press LH: %d %d %d %d %d    force LH: %2.2f %2.2f %2.2f %2.2f %2.2f", finger[0], finger[1], finger[2], finger[3], finger[4], gBox[0].getForce(0), gBox[0].getForce(1), gBox[0].getForce(2), gBox[0].getForce(3), gBox[0].getForce(4));
+	//tDisp.setText(buffer, 6, 0);
 
-	//sprintf(buffer, "press RH: %d %d %d %d %d    force RH: %2.2f %2.2f %2.2f %2.2f %2.2f", finger[5], finger[6], finger[7], finger[8], finger[9], gBox[1].getForce(0), gBox[1].getForce(1), gBox[1].getForce(2), gBox[1].getForce(3), gBox[1].getForce(4));
-	//tDisp.setText(buffer, 7, 0);
+	sprintf(buffer, "press RH: %d %d %d %d %d    force RH: %2.2f %2.2f %2.2f %2.2f %2.2f", finger[5], finger[6], finger[7], finger[8], finger[9], gBox[1].getForce(0), gBox[1].getForce(1), gBox[1].getForce(2), gBox[1].getForce(3), gBox[1].getForce(4));
+	tDisp.setText(buffer, 6, 0);
 
 	sprintf(buffer, "pressTime1: %2.0f   pressTime2: %2.0f   pressTime3   pressTime4: %2.0f   pressTime5: %2.0f", pressTime[0], pressTime[1], pressTime[2], pressTime[3], pressTime[4]);
 	tDisp.setText(buffer, 7, 0);
@@ -667,7 +692,7 @@ void MyTrial::updateTextDisplay() {
 ///////////////////////////////////////////////////////////////
 
 // force thresholds 
-#define preTH 1.5				// Press threshold
+#define preTH 1.5//1.5				// Press threshold
 #define relTH 0.8//1.0//1.0		// Release threshold
 #define baseTHhi  0.5 //0.8//1.0		// Baseline higher threshold (to check for premature movements during sequence planning phase)
 #define baseTHlow 0 //0.8//1.0		// Baseline lower threshold (to check for premature movements during sequence planning phase)
@@ -765,13 +790,14 @@ void MyTrial::updateGraphics(int what) {
 	// Press Cue
 	gScreen.setColor(1);		// White
 	for (i = 0; i < MAX_PRESS; i++) {
-		if (gs.seq[i] > 0) { // Numbers
-			gScreen.setColor(responseArray[i]);
-			gScreen.printChar(gs.seq[i], (i - ((double)(MAX_PRESS / 2) )) * WIDTH_CHAR_CUE + WIDTH_CHAR_CUE * ((double)(MAX_PRESS - seqLength) / 2), CUE_PRESS_yPOS, SIZE_CUE);
-		}
 		if (gs.seqMask[i] > 0) { // Mask (asterisk)
 			gScreen.setColor(responseArray[i]);
 			gScreen.printChar(gs.seqMask[i], (i - ((double)(MAX_PRESS / 2))) * WIDTH_CHAR_CUE + WIDTH_CHAR_CUE * ((double)(MAX_PRESS - seqLength) / 2), CUE_PRESS_yPOS, SIZE_CUE);
+		}
+
+		else if (gs.seq[i] > 0) { // Numbers
+			gScreen.setColor(responseArray[i]);
+			gScreen.printChar(gs.seq[i], (i - ((double)(MAX_PRESS / 2) )) * WIDTH_CHAR_CUE + WIDTH_CHAR_CUE * ((double)(MAX_PRESS - seqLength) / 2), CUE_PRESS_yPOS, SIZE_CUE);
 		}
 	}
 
@@ -962,6 +988,8 @@ void MyTrial::control() {
 	case START_TRIAL: //1		
 		//cout << "in start trial";
 		trialDur = 0;
+
+
 		for (i = 0; i < MAX_PRESS; i++) {
 			response[i] = 0;
 			pressTime[i] = 0;
@@ -987,6 +1015,14 @@ void MyTrial::control() {
 					for (i = 0; i < seqLength; i++) {
 						press[i] = seq.at(i) - '0';
 						gs.seq[i] = seq.at(i);
+						if (isTrain) {
+							if (i < maskCounter + (chunkSize[chunkIndex] - '0')) {
+								gs.seqMask[i] = 0;
+							}
+							else {
+								gs.seqMask[i] = '*';
+							}
+						}
 						cout <<"hand" <<  hand << '\n';
 						if (show == 1) {
 							if (hand == 2) {
@@ -1007,6 +1043,14 @@ void MyTrial::control() {
 					for (i = 0; i < seqLength; i++) {
 						press[i] = seq.at(i) - '0';
 						gs.seq[i] = seq.at(i);
+						if (isTrain) {
+							if (i < maskCounter + (chunkSize[chunkIndex] - '0')) {
+								gs.seqMask[i] = 0;
+							}
+							else {
+								gs.seqMask[i] = '*';
+							}
+						}
 						if (show == 1) {
 							if (hand == 2) {
 								responseArray[i] = 6; // orange for the right
@@ -1033,6 +1077,14 @@ void MyTrial::control() {
 			for (i = 0; i < seqLength; i++) {
 				press[i] = seq.at(i) - '0';
 				gs.seq[i] = seq.at(i);
+				if (isTrain) {
+					if (i < maskCounter + (chunkSize[chunkIndex] - '0')) {
+						gs.seqMask[i] = 0;
+					}
+					else {
+						gs.seqMask[i] = '*';
+					}
+				}
 				if (show == 1) {
 					if (hand == 2) {
 						responseArray[i] = 6; // orange for the right
@@ -1163,6 +1215,14 @@ void MyTrial::control() {
 					responseArray[seqCounter] = 2; // red
 					isError = 1;
 				};
+				if ((seqCounter >= maskCounter + (chunkSize[chunkIndex] - '0') - 1) && seqCounter != (seqLength - 1)) {
+					maskCounter += chunkSize[chunkIndex] - '0';
+					chunkIndex++;
+					cout << "chunkIndex" << chunkIndex << "\n";
+					for (i = 0; i < chunkSize[chunkIndex] - '0'; i++) {
+						gs.seqMask[i + maskCounter] = 0;
+					}
+				}
 				seqCounter++;
 			}
 

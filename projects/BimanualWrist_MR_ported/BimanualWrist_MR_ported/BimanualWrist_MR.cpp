@@ -113,12 +113,10 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst, LPSTR kposzArgs, in
 
 	for (int targetn = 0; targetn < N_TARGETS; targetn++) { targetspreview[targetn] = targetn * 360 / N_TARGETS; }
 
-<<<<<<< Updated upstream
 	//gScreen.init(gThisInst, 1920, 0, 1920, 1080, &(::updateGraphics)); ///< Display for subject
-	gScreen.init(gThisInst, 640, 0, 640, 1024, &(::updateGraphics)); ///< Display for subject
-=======
+	//gScreen.init(gThisInst, 640, 0, 640, 1024, &(::updateGraphics)); ///< Display for subject
 	gScreen.init(gThisInst, 1920, 0, 1440, 900, &(::updateGraphics)); ///< Display for subject
->>>>>>> Stashed changes
+
 	gScreen.setCenter(Vector2D(0, 0));
 	gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));
 

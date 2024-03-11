@@ -770,6 +770,7 @@ void MyTrial::updateGraphics(int what) {
 			if (seqType == 1) {  // Visual, vertical
 				gHorizon.position = Vector2D(0, 3.5 + Horizon);
 				gHorizon.size = Vector2D(10, 16 - 2 * Horizon);
+				gHorizon.setColor(5);
 				gHorizon.draw();
 				gScreen.drawLine(-5, -5, -5, 11);
 				gScreen.drawLine(-3, -5, -3, 11);
@@ -783,6 +784,7 @@ void MyTrial::updateGraphics(int what) {
 						double xPos = gs.cuePress[i + seqCounter] - '1';
 						gTarget.position = Vector2D(-4.0 + 2.0 * xPos, -4.0 + i * 2);
 						gTarget.size = Vector2D(1.4, 1.4);
+						gHorizon.setColor(5);
 						gTarget.draw();
 					}
 				}
@@ -790,6 +792,7 @@ void MyTrial::updateGraphics(int what) {
 			else if (seqType == 3) { // Visual horizontal
 				gHorizon.position = Vector2D(Horizon, 3);
 				gHorizon.size = Vector2D(16 - 2 * Horizon, 10);
+				gHorizon.setColor(5);
 				gHorizon.draw();
 				gScreen.drawLine(-8, -2, 8, -2);
 				gScreen.drawLine(-8, 0, 8, 0);
@@ -803,6 +806,7 @@ void MyTrial::updateGraphics(int what) {
 						double yPos = gs.cuePress[i + seqCounter] - '1';
 						gTarget.position = Vector2D(-7.0 + i * 2, -1.0 + 2.0 * yPos);
 						gTarget.size = Vector2D(1.4, 1.4);
+						gHorizon.setColor(5);
 						gTarget.draw();
 					}
 				}
@@ -811,6 +815,7 @@ void MyTrial::updateGraphics(int what) {
 			else if (seqType == 2) { // Vertical, Numbers
 				gHorizon.position = Vector2D(0, 3.5 + Horizon);
 				gHorizon.size = Vector2D(10, 16 - 2 * Horizon);
+				gHorizon.setColor(5);
 				gHorizon.draw();
 				for (i = 0; i < min(Horizon, seqLength - seqCounter); i++) {  // Edited by SKim
 					if (gs.cuePress[i] > 0) {

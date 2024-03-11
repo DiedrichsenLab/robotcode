@@ -169,7 +169,7 @@ void MyExperiment::control(void) {
 		}
 		theBlock->control();
 		currentTrial->copyHaptics();		// Thread save copy 
-		//cout << gTimer[4] << " , ";
+		cout << gTimer[4] << " , ";
 		if (gTimer[4] > UPDATE_TEXTDISP) {   //currently every 10ms
 			currentTrial->updateTextDisplay();
 			InvalidateRect(tDisp.windowHnd, NULL, TRUE);

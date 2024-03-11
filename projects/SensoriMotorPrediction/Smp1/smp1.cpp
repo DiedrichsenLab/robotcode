@@ -25,7 +25,7 @@ Experiment* gExp;				///< Pointer to myExperiment
 Trial* currentTrial;			///< Pointer to current Trial 
 #define DAC_VSCALAR 819.1       ///< Binary-to-volts scalar for DAC.
 
-double baselineCorrection = -0.3;//-0.8; //-1.7;    // move force cursor away from baseline area at rest (Marco)
+double baselineCorrection = -0.35;//-0.8; //-1.7;    // move force cursor away from baseline area at rest (Marco)
 //bool maxF = 0;					///< 0>Task 1>Max Voluntary Force Measurament (Marco)
 int finger[2] = { 1, 3 };					///< Finger from which Max Voluntary Force is measured (Marco)
 double currentForce = 0;			// max force recorded from <finger>

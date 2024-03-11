@@ -127,7 +127,6 @@ private:
 	TrialState state;						///< State of the Trial 
 	int subNum;									///< Which subject number 
 	bool isTrain;
-	//string seq;
 	int planTime;
 	int execTime;
 	int iti;

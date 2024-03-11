@@ -5,6 +5,8 @@
 #include "ChunkInterference.h" 
 #include "StimulatorBox.h"
 
+#include <string>
+
 ///////////////////////////////////////////////////////////////
 /// Global variables 
 ///////////////////////////////////////////////////////////////
@@ -169,7 +171,7 @@ void MyExperiment::control(void) {
 		}
 		theBlock->control();
 		currentTrial->copyHaptics();		// Thread save copy 
-		cout << gTimer[4] << " , ";
+		//cout << gTimer[4] << " , ";
 		if (gTimer[4] > UPDATE_TEXTDISP) {   //currently every 10ms
 			currentTrial->updateTextDisplay();
 			InvalidateRect(tDisp.windowHnd, NULL, TRUE);
@@ -451,7 +453,7 @@ MyTrial::MyTrial() {
 	stimOnsetTime = 100;					// stimulus onset time in free-RT task
 	timeStamp = 0;						// when was the pre-movement threshold crossed?
 	useMetronome = 1;//0;
-
+	seq = "0";
 	for (int i = 0; i < MAX_PRESS; i++) {
 		response[i] = 0;					// finger response
 		pressTime[i] = 0;					// press time	
@@ -470,7 +472,7 @@ void MyTrial::read(istream& in) {
 	in >> subNum>> hand >> isTrain >> seq >> planTime >> execTime >> iti >> chunkSize >> digitChangePos >> digitChangeValue;
 	//cout << seq << "\n";
 	seqLength = seq.length(); //get seqLength	 
-	//cout << "seq Length" << seqLength << "\n";
+	//cout << "seq Length " << seqLength << "\n";
 }
 
 ///////////////////////////////////////////////////////////////
@@ -632,7 +634,7 @@ void MyTrial::updateTextDisplay() {
 	sprintf(buffer, "upper Threshold: %2.0f   lower Threshold: %2.0f", timeThreshold, timeThresholdSuper);
 	tDisp.setText(buffer, 4, 0);
 
-	sprintf(buffer, "trial: %d/%d   state: %d   seqNum: %d", gExp->theBlock->trialNum + 1, gExp->theBlock->numTrials, state, seq);
+	sprintf(buffer, "trial: %d/%d   state: %d   seqNum: %lld", gExp->theBlock->trialNum + 1, gExp->theBlock->numTrials, state, std::stoll(seq));
 	tDisp.setText(buffer, 5, 0);
 
 
@@ -693,7 +695,7 @@ char TEXT[5] = { '1','2','3','4','5' };
 #define OTHER_LETTERS_SIZE 1.5
 
 // cuePress rectangle 
-#define RECWIDTH_X WIDTH_CHAR_CUE*MAX_PRESS
+#define RECWIDTH_X WIDTH_CHAR_CUE*(MAX_PRESS)
 #define RECWIDTH_Y WIDTH_CHAR_CUE
 #define REC_xPOS 0
 #define REC_yPOS CUE_PRESS_yPOS + 0.75
@@ -765,11 +767,11 @@ void MyTrial::updateGraphics(int what) {
 	for (i = 0; i < MAX_PRESS; i++) {
 		if (gs.seq[i] > 0) { // Numbers
 			gScreen.setColor(responseArray[i]);
-			gScreen.printChar(gs.seq[i], (i - ((double)(MAX_PRESS / 2) - 0.5)) * WIDTH_CHAR_CUE + WIDTH_CHAR_CUE * ((double)(MAX_PRESS - seqLength) / 2), CUE_PRESS_yPOS, SIZE_CUE);
+			gScreen.printChar(gs.seq[i], (i - ((double)(MAX_PRESS / 2) )) * WIDTH_CHAR_CUE + WIDTH_CHAR_CUE * ((double)(MAX_PRESS - seqLength) / 2), CUE_PRESS_yPOS, SIZE_CUE);
 		}
 		if (gs.seqMask[i] > 0) { // Mask (asterisk)
 			gScreen.setColor(responseArray[i]);
-			gScreen.printChar(gs.seqMask[i], (i - ((double)(MAX_PRESS / 2) - 0.5)) * WIDTH_CHAR_CUE + WIDTH_CHAR_CUE * ((double)(MAX_PRESS - seqLength) / 2), CUE_PRESS_yPOS, SIZE_CUE);
+			gScreen.printChar(gs.seqMask[i], (i - ((double)(MAX_PRESS / 2))) * WIDTH_CHAR_CUE + WIDTH_CHAR_CUE * ((double)(MAX_PRESS - seqLength) / 2), CUE_PRESS_yPOS, SIZE_CUE);
 		}
 	}
 

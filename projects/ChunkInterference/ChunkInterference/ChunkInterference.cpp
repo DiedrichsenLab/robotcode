@@ -123,7 +123,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 
 	// high force 1
 //gBox[0].init(BOX_LEFT,"c:/robot/calib/Flatbox1_highforce_LEFT_07-Jun-2017.txt");
- gBox[1].init(BOX_RIGHT,"c:/robotcode/calib/Flatbox1_highforce_RIGHT_31-July-2017.txt");
+ gBox[1].init(BOX_RIGHT,"c:/robotcode/calib/Flatbox1_highforce_RIGHT_31-July-2017.txt"); //todo: check this with Jorn
 
 // high force 2
 //gBox[0].init(BOX_LEFT,"c:/robot/calib/Flatbox1_highforce2_LEFT_03-Dec-2021.txt");
@@ -390,14 +390,14 @@ void MyBlock::giveFeedback() {
 	ERarray[0] = 0;			//initialize ER array for the 0th block to be 0 
 
 
-	//for (i = 0; i < trialNum; i++) { //check each trial
-	//	tpnr = (MyTrial*)trialVec.at(i);
-	//	if (tpnr->isError == 0 && tpnr->exeType == 1) { //if correct go trial
-	//		MTarray[n] = tpnr->norm_MT; //normalized MT from the correct go trials and add them
-	//		n++; //remember number of correct trials
-	//	}
-	//	nn++; //count total trials
-	//}
+	for (i = 0; i < trialNum; i++) { //check each trial
+		tpnr = (MyTrial*)trialVec.at(i);
+		if (tpnr->isError == 0) { //if correct go trial
+			MTarray[n] = tpnr->norm_MT; //normalized MT from the correct go trials and add them
+			n++; //remember number of correct trials
+		}
+		nn++; //count total trials
+	}
 
 	// before eventual thres update, store the previous thres for writing in the .dat file
 	tempThres1 = timeThreshold;
@@ -1013,8 +1013,14 @@ void MyTrial::control() {
 			if ((gExp->theBlock->trialNum + 1) == 1) {	// if first trial of the block 
 				if (gTimer[1] >= waitTime) {			// wait waitTime before presenting cuePress
 					for (i = 0; i < seqLength; i++) {
-						press[i] = seq.at(i) - '0';
-						gs.seq[i] = seq.at(i);
+						if (i == digitChangePos && !isTrain) {
+							press[i] = digitChangeValue - '0';
+							gs.seq[i] = digitChangeValue;
+						}
+						else{
+							press[i] = seq.at(i) - '0';
+							gs.seq[i] = seq.at(i);
+						}
 						if (isTrain) {
 							if (i < maskCounter + (chunkSize[chunkIndex] - '0')) {
 								gs.seqMask[i] = 0;
@@ -1041,8 +1047,15 @@ void MyTrial::control() {
 			else { // every other trial of the block
 				if (gTimer[1] >= stimOnsetTime) {		// wait stimOnsetTime before presenting cuePress
 					for (i = 0; i < seqLength; i++) {
-						press[i] = seq.at(i) - '0';
-						gs.seq[i] = seq.at(i);
+						if (i == digitChangePos && !isTrain) {
+							press[i] = digitChangeValue - '0';
+							gs.seq[i] = digitChangeValue;
+						}
+						else {
+							press[i] = seq.at(i) - '0';
+							gs.seq[i] = seq.at(i);
+						}
+
 						if (isTrain) {
 							if (i < maskCounter + (chunkSize[chunkIndex] - '0')) {
 								gs.seqMask[i] = 0;
@@ -1196,25 +1209,25 @@ void MyTrial::control() {
 			timeMet++;	// update counter
 		};
 
-		// Wait for a key press
-		if (isTrain == 1) { // Train  Trials
 
-			// START OF SEQUENCE
-			if (newPress > 0 && seqCounter < seqLength) { // correct timing
-				response[seqCounter] = pressedFinger;
-				handPressed[seqCounter] = pressedHand;
-				pressTime[seqCounter] = gTimer[1];
-				if (seqCounter == 0) {			// if first press 
-					RT = gTimer[2];
-					gTimer.reset(5);
-				}
-				if (response[seqCounter] == press[seqCounter] && handPressed[seqCounter] == hand) { // correct press	
-					responseArray[seqCounter] = 3; // green
-				}
-				else { // error: wrong key pressed
-					responseArray[seqCounter] = 2; // red
-					isError = 1;
-				};
+
+		// START OF SEQUENCE
+		if (newPress > 0 && seqCounter < seqLength) { // correct timing
+			response[seqCounter] = pressedFinger;
+			handPressed[seqCounter] = pressedHand;
+			pressTime[seqCounter] = gTimer[1];
+			if (seqCounter == 0) {			// if first press 
+				RT = gTimer[2];
+				gTimer.reset(5);
+			}
+			if (response[seqCounter] == press[seqCounter] && handPressed[seqCounter] == hand) { // correct press	
+				responseArray[seqCounter] = 3; // green
+			}
+			else { // error: wrong key pressed
+				responseArray[seqCounter] = 2; // red
+				isError = 1;
+			};
+			if (isTrain == 1) {
 				if ((seqCounter >= maskCounter + (chunkSize[chunkIndex] - '0') - 1) && seqCounter != (seqLength - 1)) {
 					maskCounter += chunkSize[chunkIndex] - '0';
 					chunkIndex++;
@@ -1223,80 +1236,51 @@ void MyTrial::control() {
 						gs.seqMask[i + maskCounter] = 0;
 					}
 				}
-				seqCounter++;
 			}
-
-			// END OF SEQUENCE: get execution time and movement time
-			if (seqCounter >= seqLength && released == NUMFINGERS) {
-				if (complete == 0) {
-					ET = gTimer[5]; // execution time
-					norm_MT = (RT + ET);
-					complete = 1;
-					gTimer.reset(5);
-				}
-				if (fixed_dur == 1) { // fixed trial duration: wait exeTime before moving on to wait release (same time for GO and NOGO trials)
-					if (gTimer[2] >= execTime) {
-						state = WAIT_RELEASE;
-					}
-				}
-				else { // flexible trial duration: move on to next trial, just wait an extra 200ms to make color feedback visible
-					if (gTimer[5] >= 200) {
-						state = WAIT_RELEASE;
-					}
-				}
-
-				// SEQUENCE TIME OUT
-			}
-			else if (gTimer[2] >= execTime) { // time out (if sequence not completed in time)
-				RT = RT;				// reaction time
-				ET =   execTime;	// execution time //todo: change
-				norm_MT = (RT + ET);
-				isError = 1;
-				timingError = 1;
-				// PLAY SOUND 
-				//PlaySound(TASKSOUNDS[6].c_str(), NULL, SND_ASYNC);
-				gs.clearCues(); sprintf(buffer, "TOO SLOW");
-				gs.lineColor[0] = 1;
-				gs.line[0] = buffer;
-				gs.lineYpos[0] = 8;
-				gTimer.reset(5);
-				state = WAIT_RELEASE;
-			}
+			seqCounter++;
 		}
 
-		else if (isTrain == 0) { // Test Trials //todo: fix this
-			if (numNewThresCross > 0 && seqCounter < seqLength) { // wrong timing
-				sprintf(buffer, "HAD TO STAY");
-				gs.lineColor[0] = 1;
-				gs.line[0] = buffer;
-				gs.lineYpos[0] = 8;
-				response[seqCounter] = pressedFinger;
-				handPressed[seqCounter] = pressedHand;
-				pressTime[seqCounter] = gTimer[1];
-				RT = gTimer[2];	// reaction time
-				ET = 0;			// execution time
-				norm_MT = (RT + ET);
-				gTimer.reset(5);
-				isError = 1;
-				timingError = 1;
-				responseArray[seqCounter] = 2; // red
-				seqCounter++;
-				state = WAIT_RELEASE;
-			}
-			if (gTimer[2] >= execTime) { // wait exeTime before moving on to wait release (same time for GO and NOGO trials) 
-				if (isError == 0) {
-					isError = 0;
-					timingError = 0;
-					RT = 0;			// reaction time
-					ET = 0;			// execution time
-					norm_MT = (RT + ET);
-					gTimer.reset(5);
 
-				}
-				state = WAIT_RELEASE;
+		// END OF SEQUENCE: get execution time and movement time
+		if (seqCounter >= seqLength && released == NUMFINGERS) {
+			if (complete == 0) {
+				ET = gTimer[5]; // execution time
+				norm_MT = (RT + ET);
+				complete = 1;
+				gTimer.reset(5);
 			}
+			if (fixed_dur == 1) { // fixed trial duration: wait exeTime before moving on to wait release (same time for GO and NOGO trials)
+				if (gTimer[2] >= execTime) {
+					state = WAIT_RELEASE;
+				}
+			}
+			else { // flexible trial duration: move on to next trial, just wait an extra 200ms to make color feedback visible
+				if (gTimer[5] >= 200) {
+					state = WAIT_RELEASE;
+				}
+			}
+
+
+		// SEQUENCE TIME OUT
 		}
+		else if (gTimer[2] >= execTime) { // time out (if sequence not completed in time)
+			RT = RT;				// reaction time
+			ET = execTime;	// execution time //todo: change
+			norm_MT = (RT + ET);
+			isError = 1;
+			timingError = 1;
+			// PLAY SOUND 
+			//PlaySound(TASKSOUNDS[6].c_str(), NULL, SND_ASYNC);
+			gs.clearCues(); sprintf(buffer, "TOO SLOW");
+			gs.lineColor[0] = 1;
+			gs.line[0] = buffer;
+			gs.lineYpos[0] = 8;
+			gTimer.reset(5);
+			state = WAIT_RELEASE;
+		}
+
 		break;
+
 
 	case WAIT_RELEASE: //5
 		// Wait for the release of all keys, assign points
@@ -1358,7 +1342,7 @@ void MyTrial::control() {
 					points = -1;
 					// PLAY SOUND 
 					//PlaySound(TASKSOUNDS[6].c_str(), NULL, SND_ASYNC);
-					gs.clearCues(); sprintf(buffer, "+%d", points);
+					gs.clearCues(); sprintf(buffer, "%d", points);
 					gs.lineColor[1] = 1; // white
 					gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
 				}

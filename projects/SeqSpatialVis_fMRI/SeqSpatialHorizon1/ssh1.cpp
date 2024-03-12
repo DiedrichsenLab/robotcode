@@ -17,7 +17,7 @@ TextDisplay tDisp; ///< Text Display
 Screen gScreen; ///< Screen
 StimulatorBox gBox[2]; ///< Stimulator Box
 Target gTarget(SHAPE_DISC, 1); // Draw a white box for visual target, SKim
-Target gHorizon(SHAPE_BOX, 1); // Draw a white box for visual target, SKim
+//Target gHorizon(SHAPE_BOX, 1); // Draw a white box for visual target, SKim
 
 
 Timer gTimer(UPDATERATE); ///< Timer from S626 board experiments
@@ -33,6 +33,7 @@ HapticState hs; ///< This is the haptic State as d by the interrupt set up in Se
 ///< the interrupt is running. Use Thread-safe copy to
 ///< Get the current haptic state for graphical display
 GraphicState gs;
+
 
 
 ///______________________________________________________  Neda added
@@ -139,7 +140,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	///__________________________________________Neda - End
 	gThisInst = hThisInst;
 	// gExp = new MyExperiment("SeqSpatialVis", "ssh_vis", "C:/data/SeqSpatial/ssh_vis");
-	gExp = new MyExperiment("SeqSpat", "_", "C:/data/SeqSpatialHorizon/ssh");
+	gExp = new MyExperiment("SeqSpat", "_", "C:/data/SeqSpatial_fMRI/ssh");
 
 	//gExp->redirectIOToConsole();
 
@@ -440,7 +441,7 @@ void MyBlock::giveFeedback() {
 		else if (tpnr->seqLength == 4) {
 			j = 2;
 		}
-		else if (tpnr->seqLength == 14) {  // edited by SKim
+		else {  // edited by SKim
 			j = 3;
 
 		}
@@ -452,7 +453,7 @@ void MyBlock::giveFeedback() {
 		nn[j]++;
 	}
 	//ERarray[b] = 100 * ((double)gNumErrors) / (double)(trialNum); // error rate
-	ERarray[b] = 100 * ((double)gNumFingerErrors) / (double)(trialNum * 14); // error rate, SKim
+	ERarray[b] = 100 * ((double)gNumFingerErrors) / (double)(trialNum * 9); // error rate, SKim
 	for (j = 0; j < 4; j++) {
 		if (n[j] > 0) { // if more than one correct trials for seqlength j
 			medianMTarray[j][b] = median(MTarray[j], n[j]);
@@ -521,7 +522,7 @@ MyTrial::MyTrial() {
 	int released = 0;
 	for (int i = 0; i < MAX_PRESS; i++) {    // MAX_PRESS = 9 defined in header
 		response[i] = 0; // respose, pressTime and releaseTime
-		pressTime[i] = 0; // are arrays of length 14
+		pressTime[i] = 0; // are arrays of length 9
 		releaseTime[i] = 0;
 		fGiven[i] = 0;
 	}
@@ -558,7 +559,6 @@ void MyTrial::read(istream& in) {
 void MyTrial::writeDat(ostream& out) {
 	out << seqType << "\t"
 		<< Horizon << "\t"
-		<< feedback << "\t"
 		<< PrepTime << "\t"
 		;
 	for (int i = 0; i < MAX_PRESS; i++) {
@@ -598,7 +598,6 @@ void MyTrial::writeHeader(ostream& out) {
 	char header[200];
 	out << "seqType" << "\t"
 		<< "Horizon" << "\t"
-		<< "FT" << "\t"
 		<< "PrepTime" << "\t";
 	for (int i = 0; i < MAX_PRESS; i++) {
 		sprintf(header, "press%d", i);
@@ -749,8 +748,8 @@ void MyTrial::updateGraphics(int what) {
 	//	gScreen.printChar('+', 0, -6, 2*SIZE_CUE);
 	//	
 	//}
-	if (state == WAIT_ALLRELEASE || state == WAIT_GOCUE || state == WAIT_PRESS) {
-		if (state == WAIT_ALLRELEASE || state == WAIT_GOCUE) {
+	if (state == WAIT_END_RELEASE || state == WAIT_GOCUE || state == WAIT_PRESS) {
+		if (state == WAIT_END_RELEASE || state == WAIT_GOCUE) {
 			gScreen.setColor(2);  // Red signal, wait for "GO" signal and all fingers are released
 			gScreen.printChar('+', 0, -7, SIZE_CUE);
 		}
@@ -769,9 +768,9 @@ void MyTrial::updateGraphics(int what) {
 			gScreen.setColor(1);
 
 			if (seqType == 1) {  // Visual, vertical
-				gHorizon.position = Vector2D(0, 3.5 + Horizon);
-				gHorizon.size = Vector2D(10, 16 - 2 * Horizon);
-				gHorizon.draw();
+				//gHorizon.position = Vector2D(0, 3.5 + Horizon);
+				//gHorizon.size = Vector2D(10, 16 - 2 * Horizon);
+				//gHorizon.draw();
 				gScreen.drawLine(-5, -5, -5, 11);
 				gScreen.drawLine(-3, -5, -3, 11);
 				gScreen.drawLine(-1, -5, -1, 11);
@@ -790,9 +789,9 @@ void MyTrial::updateGraphics(int what) {
 			}
 
 			else if (seqType == 0) { // Vertical, Numbers
-				gHorizon.position = Vector2D(0, 3.5 + Horizon);
-				gHorizon.size = Vector2D(10, 16 - 2 * Horizon);
-				gHorizon.draw();
+				//gHorizon.position = Vector2D(0, 3.5 + Horizon);
+				//gHorizon.size = Vector2D(10, 16 - 2 * Horizon);
+				//gHorizon.draw();
 				for (i = 0; i < min(Horizon, seqLength - seqCounter); i++) {  // Edited by SKim
 					if (gs.cuePress[i] > 0) {
 						//						gScreen.printChar(gs.cuePress[i], (i - 4) * WIDTH_CHAR_CUE, CUE_PRESS, SIZE_CUE);
@@ -1097,7 +1096,7 @@ GraphicState::GraphicState() {
 	//}
 
 	// Press Cue
-	for (i = 0; i < 14; i++) {//(i=0;i<3;i++){
+	for (i = 0; i < 9; i++) {//(i=0;i<3;i++){ // edited by SK
 		lineXpos[i + 8] = 0;//i*1.4-1.4;
 		lineYpos[i + 8] = CUE_PRESS;//2.3;
 		lineColor[i + 8] = 1; // white
@@ -1114,7 +1113,7 @@ GraphicState::GraphicState() {
 void GraphicState::clearCues(void) {
 	int i;
 
-	for (i = 0; i < 14; i++) {
+	for (i = 0; i < 9; i++) { // seqLength
 		cuePress[i] = 0;
 	}
 }

@@ -131,7 +131,7 @@ private:
 	int execTime;
 	int iti;
 	string chunkSize;
-	char digitChangePos;
+	int digitChangePos;
 	char digitChangeValue;
 	int press[MAX_PRESS];					///< Which digit to press (in intrinsic coordinates 1:thumb 5: pinkie) 
 	int load;                               ///< How many keypresses to plan? (from 1 to 5)

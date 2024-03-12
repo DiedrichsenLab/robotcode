@@ -96,7 +96,7 @@ Color_t myColor[9] = {
 char gKey;
 bool gKeyPressed;
 double gVolts[5] = { 0,0,0,0,0 };   // volts sent to the valves (Marco)
-int fingerVolt = 2.8; // prev 3
+double fingerVolt = 2.8; // prev 3
 
 
 ///////////

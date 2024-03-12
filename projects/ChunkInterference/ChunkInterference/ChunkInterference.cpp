@@ -530,9 +530,7 @@ void MyTrial::writeDat(ostream& out) {
 		out << pressTime[i] << "\t";
 	}
 
-	out << tempThres1 << "\t"
-		<< tempThres2 << "\t"
-		<< startTime << "\t"
+	out << startTime << "\t"
 		<< startTimeReal << "\t"
 		<< trialDur << "\t"
 		<< startTR << "\t"
@@ -916,6 +914,7 @@ void MyTrial::control() {
 	pressedHand = 0;
 	newPress = 0;						// is there a new press?
 
+
 	int crossedFinger = 0;
 	int numNewThresCross = 0;			// has the pre-movement trheshold been crossed?
 	int withinThres = 1;
@@ -961,6 +960,7 @@ void MyTrial::control() {
 				finger[f] = 1;
 				released = 0;
 			}
+			//todo: Should I add release fingers? Ask Jorn
 			if (force <= THRESHOLD[1][f - 5]) { // Release threshold comparison
 				finger[f] = 0;
 				released++;

@@ -143,6 +143,7 @@ private:
 	int fixed_dur;							///< Is the trial duration fixed or not?
 
 	int newPress;							///< Is this a new press?
+	int newRelease;							///todo: Should I add this? Ask Jorn
 	int pressedFinger;						///< Which finger was pressed
 	int pressedHand;                        ///< Which hand was pressed
 	int released;							///< Are all fingers released?
@@ -159,7 +160,6 @@ private:
 
 	int complete;
 	int isError;							///< Was there an error in the trial?
-	double norm_MT;
 	int coord;                              ///< 1: Extrinsic coordinate -- 2: intrinsic coordinate
 	int cueType;                            ///< 1: numerical - 2: alphabetical
 	int isCross;							///< Was there a thres cross in the trial?
@@ -183,7 +183,7 @@ private:
 	double releaseTime[MAX_PRESS];			///< Time when each finger was released
 	double RT;								///< Reaction time (from go cue)
 	double ET;								///< Execution time (from first press)
-	double MT;								///< Movement time (RT + MT)
+	double norm_MT;							///< Movement time (RT + MT)
 	string seq; 						///< Visual cues for sequences
 	string seqMask;							///< Mask for visual cues
 	DataManager<DataRecord, 30000 / 2> dataman;///< For data recording for MOV file 

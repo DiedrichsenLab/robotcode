@@ -137,6 +137,9 @@ TRCounter gCounter;				///< TR counter, simulated and pulse-triggered
 char counterSignal = '5';		///< What char is used to count the TR
 int sliceNumber = 32;			///< How many slices do we have
 
+/////// TR counter
+#define TRTIME				2720 // must be adjusted, SKim, fMRI
+
 ///////////////////////////////////////////////////////////////
 /// Main Program: Start the experiment, initialize the robot and run it
 ///////////////////////////////////////////////////////////////

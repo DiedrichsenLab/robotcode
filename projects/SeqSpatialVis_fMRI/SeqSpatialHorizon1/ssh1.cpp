@@ -133,7 +133,7 @@ double fGain[5] = { 1.0,1.0,1.0,1.0,1.0 };  // Increased gains for index and lit
 /// <summary>
 ///  fMRI counter setup, SKim
 /// </summary>
-TRCounter gCounter;				///< TR counter, simulated and pulse-triggered 
+//TRCounter gCounter;				///< TR counter, simulated and pulse-triggered 
 char counterSignal = '5';		///< What char is used to count the TR
 int sliceNumber = 32;			///< How many slices do we have
 
@@ -463,7 +463,7 @@ void MyBlock::giveFeedback() {
 		nn[j]++;
 	}
 	//ERarray[b] = 100 * ((double)gNumErrors) / (double)(trialNum); // error rate
-	ERarray[b] = 100 * ((double)gNumFingerErrors) / (double)(trialNum * 9); // error rate, SKim
+	ERarray[b] = 100 * ((double)gNumFingerErrors) / (double)(trialNum *5); // error rate, SKim, seqLength, fMRI
 	for (j = 0; j < 4; j++) {
 		if (n[j] > 0) { // if more than one correct trials for seqlength j
 			medianMTarray[j][b] = median(MTarray[j], n[j]);
@@ -490,24 +490,24 @@ void MyBlock::giveFeedback() {
 	}
 
 
-	// print FEEDBACK on the screen
-	sprintf(buffer, "Error rate: %2.0f%%", ERarray[b]);
-	gs.line[0] = buffer;
-	gs.lineColor[0] = 1;
-
-
-	//sprintf(buffer,"MTs: %2.0fs , %2.0fs , %2.0fs, %2.0fs , %2.0fs , %2.0fs",medianMTarray[0][b], medianMTarray[1][b], medianMTarray[2][b], medianMTarray[3][b], medianMTarray[4][b], medianMTarray[5][b]);
-	sprintf(buffer, "timeThresholdSuper: %2.0fms", timeThresholdSuper[3]);
-	//	sprintf(buffer, "timeThresholdSuper: %2.0fs , %2.0fs , %2.0fs, %2.0fs", timeThresholdSuper[0], timeThresholdSuper[1], timeThresholdSuper[2], timeThresholdSuper[3]);
-
-	gs.line[1] = buffer;
-	gs.lineColor[1] = 1;
-
-	gNumPoints += gNumPointsBlock;
-	sprintf(buffer, "Point you've got: %d   Total points: %d", gNumPointsBlock, gNumPoints);
-	gs.line[2] = buffer;
-	gs.lineColor[2] = 1;
-}
+//	// print FEEDBACK on the screen, disabled in fMRI experiment
+//	sprintf(buffer, "Error rate: %2.0f%%", ERarray[b]);
+//	gs.line[0] = buffer;
+//	gs.lineColor[0] = 1;
+//
+//
+//	//sprintf(buffer,"MTs: %2.0fs , %2.0fs , %2.0fs, %2.0fs , %2.0fs , %2.0fs",medianMTarray[0][b], medianMTarray[1][b], medianMTarray[2][b], medianMTarray[3][b], medianMTarray[4][b], medianMTarray[5][b]);
+//	sprintf(buffer, "timeThresholdSuper: %2.0fms", timeThresholdSuper[3]);
+//	//	sprintf(buffer, "timeThresholdSuper: %2.0fs , %2.0fs , %2.0fs, %2.0fs", timeThresholdSuper[0], timeThresholdSuper[1], timeThresholdSuper[2], timeThresholdSuper[3]);
+//
+//	gs.line[1] = buffer;
+//	gs.lineColor[1] = 1;
+//
+//	gNumPoints += gNumPointsBlock;
+//	sprintf(buffer, "Point you've got: %d   Total points: %d", gNumPointsBlock, gNumPoints);
+//	gs.line[2] = buffer;
+//	gs.lineColor[2] = 1;
+//}
 
 ///////////////////////////////////////////////////////////////
 /// My Trial class contains the main info of how a trial in this experiment is run
@@ -1123,7 +1123,7 @@ GraphicState::GraphicState() {
 void GraphicState::clearCues(void) {
 	int i;
 
-	for (i = 0; i < 9; i++) { // seqLength
+	for (i = 0; i < 5; i++) { // seqLength
 		cuePress[i] = 0;
 	}
 }

@@ -26,7 +26,7 @@ using namespace std;
 #define RECORDRATE 2    // recording update rate
 #define UPDATE_TEXTDISP 60
 #define SCR_SCALE 1.84/72 //3/72 //2.54/72 // cm/pixel 
-#define MAX_PRESS 9 // edited by SKim, fMRI
+#define MAX_PRESS 5 // edited by SKim, fMRI
 ///////////////////////////////////////////////////////////////
 // Enumeration of Trial State 
 ///////////////////////////////////////////////////////////////

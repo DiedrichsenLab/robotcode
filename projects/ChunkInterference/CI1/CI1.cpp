@@ -2,7 +2,7 @@
 /// WorkingMemoryPlanning - ....
 ///////////////////////////////////////////////////////////////
 
-#include "ChunkInterference.h" 
+#include "CI1.h" 
 #include "StimulatorBox.h"
 
 #include <string>
@@ -122,11 +122,21 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 
 
 	// high force 1
-//gBox[0].init(BOX_LEFT,"c:/robot/calib/Flatbox1_highforce_LEFT_07-Jun-2017.txt");
- gBox[1].init(BOX_RIGHT,"c:/robotcode/calib/Flatbox1_highforce_RIGHT_31-July-2017.txt"); //todo: check this with Jorn
+//gBox[0].init(BOX_LEFT,"c:/robotcode/calib/Flatbox1_highforce_LEFT_07-Jun-2017.txt");
+ //gBox[1].init(BOX_RIGHT,"c:/robotcode/calib/Flatbox1_highforce_RIGHT_31-July-2017.txt"); //todo: check this with Jorn
 
 // high force 2
-//gBox[0].init(BOX_LEFT,"c:/robot/calib/Flatbox1_highforce2_LEFT_03-Dec-2021.txt");
+//gBox[0].init(BOX_LEFT,"c:/robotcode/calib/Flatbox1_highforce2_LEFT_03-Dec-2021.txt");
+
+
+//high force 3
+//gBox[0].init(BOX_LEFT,"c:/robotcode/calib/flatbox2_highforce2_LEFT_27-May-2018.txt");
+gBox[1].init(BOX_RIGHT,"c:/robotcode/calib/flatbox2_highforce2_RIGHT_27-May-2018.txt");
+
+//high force 4
+//gBox[0].init(BOX_LEFT,"c:/robotcode/calib/flatbox2_highforce_LEFT_02-Mar-2017.txt");
+//gBox[1].init(BOX_RIGHT, "c:/robotcode/calib/flatbox2_highforce_RIGHT_07-Feb-2017.txt");
+
 
 // STARK
 //gBox[0].init(BOX_LEFT,"c:/robot/calib/Flatbox1_highforce2_LEFT_12-Feb-2022.txt");
@@ -405,7 +415,7 @@ void MyBlock::giveFeedback() {
 
 	if (n > 0) { //if at least one correct trial
 		b = b++; //increase counter of block number
-		medianMTarray[b] = median(MTarray, n); //median of movement times
+		medianMTarray[b] = median(MTarray, n); //median of movement times	
 		ERarray[b] = (((double)gNumErrorsBlock) / (double)(nn) * 100); //error rate
 
 

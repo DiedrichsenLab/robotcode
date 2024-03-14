@@ -159,7 +159,7 @@
     <ClInclude Include="..\..\..\include\TRCounter626.h" />
     <ClInclude Include="..\..\..\include\Vector2d.h" />
     <ClInclude Include="..\..\..\include\Win626.h" />
-    <ClInclude Include="ChunkInterference.h" />
+    <ClInclude Include="CI1.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\source\Experiment.cpp" />
@@ -171,7 +171,7 @@
     <ClCompile Include="..\..\..\source\Timer626.cpp" />
     <ClCompile Include="..\..\..\source\TRCounter626.cpp" />
     <ClCompile Include="..\..\..\source\WIN626.C" />
-    <ClCompile Include="ChunkInterference.cpp" />
+    <ClCompile Include="CI1.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

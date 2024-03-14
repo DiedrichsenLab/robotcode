@@ -19,7 +19,7 @@
     <None Include="..\..\..\source\.DS_Store" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ChunkInterference.h">
+    <ClInclude Include="CI1.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\include\DataManager.h">
@@ -60,7 +60,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ChunkInterference.cpp">
+    <ClCompile Include="CI1.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\source\Experiment.cpp">

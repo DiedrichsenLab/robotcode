@@ -17,7 +17,7 @@ TextDisplay tDisp; ///< Text Display
 Screen gScreen; ///< Screen
 StimulatorBox gBox[2]; ///< Stimulator Box
 Target gTarget(SHAPE_DISC, 1); // Draw a white box for visual target, SKim
-Target gHorizon(SHAPE_BOX, 1); // Draw a white box for visual target, SKim
+//Target gHorizon(SHAPE_BOX, 1); // Draw a white box for visual target, SKim
 
 
 Timer gTimer(UPDATERATE); ///< Timer from S626 board experiments
@@ -33,6 +33,7 @@ HapticState hs; ///< This is the haptic State as d by the interrupt set up in Se
 ///< the interrupt is running. Use Thread-safe copy to
 ///< Get the current haptic state for graphical display
 GraphicState gs;
+
 
 
 ///______________________________________________________  Neda added
@@ -115,7 +116,7 @@ char TEXT[5] = { '1','2','3','4','5' };
 #define CUE_SEQ 6
 #define CUE_CHUNK 4.5
 #define CUE_PRESS 2.3 // the Y position of the presses on the screen
-#define SIZE_CUE 13    // the font size of presses
+#define SIZE_CUE 11    // the font size of presses
 #define WIDTH_CHAR_CUE 2 // the distance between letters
 #define WIDTH_REC_CUE 6 // SKim
 #define HEIGHT_REC_CUE 3 // SKim
@@ -129,6 +130,16 @@ char TEXT[5] = { '1','2','3','4','5' };
 double THRESHOLD[3][5] = { {preTH, preTH, preTH, preTH, preTH}, {relTH, relTH, relTH, relTH, relTH}, {maxTH, maxTH, maxTH, maxTH, maxTH} };
 double fGain[5] = { 1.0,1.0,1.0,1.0,1.0 };  // Increased gains for index and little fingers, SKim
 
+/// <summary>
+///  fMRI counter setup, SKim
+/// </summary>
+//TRCounter gCounter;				///< TR counter, simulated and pulse-triggered 
+char counterSignal = '5';		///< What char is used to count the TR
+int sliceNumber = 32;			///< How many slices do we have
+
+/////// TR counter
+#define TRTIME				2720 // must be adjusted, SKim, fMRI
+
 ///////////////////////////////////////////////////////////////
 /// Main Program: Start the experiment, initialize the robot and run it
 ///////////////////////////////////////////////////////////////
@@ -139,7 +150,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	///__________________________________________Neda - End
 	gThisInst = hThisInst;
 	// gExp = new MyExperiment("SeqSpatialVis", "ssh_vis", "C:/data/SeqSpatial/ssh_vis");
-	gExp = new MyExperiment("SeqSpat", "_", "C:/data/SeqSpatialHorizon/ssh");
+	gExp = new MyExperiment("SeqSpat", "_", "C:/data/SeqSpatial_fMRI/ssh");
 
 	//gExp->redirectIOToConsole();
 
@@ -440,7 +451,7 @@ void MyBlock::giveFeedback() {
 		else if (tpnr->seqLength == 4) {
 			j = 2;
 		}
-		else if (tpnr->seqLength == 14) {  // edited by SKim
+		else {  // edited by SKim
 			j = 3;
 
 		}
@@ -452,7 +463,7 @@ void MyBlock::giveFeedback() {
 		nn[j]++;
 	}
 	//ERarray[b] = 100 * ((double)gNumErrors) / (double)(trialNum); // error rate
-	ERarray[b] = 100 * ((double)gNumFingerErrors) / (double)(trialNum * 14); // error rate, SKim
+	ERarray[b] = 100 * ((double)gNumFingerErrors) / (double)(trialNum *5); // error rate, SKim, seqLength, fMRI
 	for (j = 0; j < 4; j++) {
 		if (n[j] > 0) { // if more than one correct trials for seqlength j
 			medianMTarray[j][b] = median(MTarray[j], n[j]);
@@ -479,24 +490,24 @@ void MyBlock::giveFeedback() {
 	}
 
 
-	// print FEEDBACK on the screen
-	sprintf(buffer, "Error rate: %2.0f%%", ERarray[b]);
-	gs.line[0] = buffer;
-	gs.lineColor[0] = 1;
-
-
-	//sprintf(buffer,"MTs: %2.0fs , %2.0fs , %2.0fs, %2.0fs , %2.0fs , %2.0fs",medianMTarray[0][b], medianMTarray[1][b], medianMTarray[2][b], medianMTarray[3][b], medianMTarray[4][b], medianMTarray[5][b]);
-	sprintf(buffer, "timeThresholdSuper: %2.0fms", timeThresholdSuper[3]);
-	//	sprintf(buffer, "timeThresholdSuper: %2.0fs , %2.0fs , %2.0fs, %2.0fs", timeThresholdSuper[0], timeThresholdSuper[1], timeThresholdSuper[2], timeThresholdSuper[3]);
-
-	gs.line[1] = buffer;
-	gs.lineColor[1] = 1;
-
-	gNumPoints += gNumPointsBlock;
-	sprintf(buffer, "Point you've got: %d   Total points: %d", gNumPointsBlock, gNumPoints);
-	gs.line[2] = buffer;
-	gs.lineColor[2] = 1;
-}
+//	// print FEEDBACK on the screen, disabled in fMRI experiment
+//	sprintf(buffer, "Error rate: %2.0f%%", ERarray[b]);
+//	gs.line[0] = buffer;
+//	gs.lineColor[0] = 1;
+//
+//
+//	//sprintf(buffer,"MTs: %2.0fs , %2.0fs , %2.0fs, %2.0fs , %2.0fs , %2.0fs",medianMTarray[0][b], medianMTarray[1][b], medianMTarray[2][b], medianMTarray[3][b], medianMTarray[4][b], medianMTarray[5][b]);
+//	sprintf(buffer, "timeThresholdSuper: %2.0fms", timeThresholdSuper[3]);
+//	//	sprintf(buffer, "timeThresholdSuper: %2.0fs , %2.0fs , %2.0fs, %2.0fs", timeThresholdSuper[0], timeThresholdSuper[1], timeThresholdSuper[2], timeThresholdSuper[3]);
+//
+//	gs.line[1] = buffer;
+//	gs.lineColor[1] = 1;
+//
+//	gNumPoints += gNumPointsBlock;
+//	sprintf(buffer, "Point you've got: %d   Total points: %d", gNumPointsBlock, gNumPoints);
+//	gs.line[2] = buffer;
+//	gs.lineColor[2] = 1;
+//}
 
 ///////////////////////////////////////////////////////////////
 /// My Trial class contains the main info of how a trial in this experiment is run
@@ -519,9 +530,9 @@ MyTrial::MyTrial() {
 	RT = 0; // Added by SKim, reaction time
 	points = 0;
 	int released = 0;
-	for (int i = 0; i < MAX_PRESS; i++) {    // MAX_PRESS = 14 defined in header
+	for (int i = 0; i < MAX_PRESS; i++) {    // MAX_PRESS = 9 defined in header
 		response[i] = 0; // respose, pressTime and releaseTime
-		pressTime[i] = 0; // are arrays of length 14
+		pressTime[i] = 0; // are arrays of length 9
 		releaseTime[i] = 0;
 		fGiven[i] = 0;
 	}
@@ -534,14 +545,15 @@ MyTrial::MyTrial() {
 ///////////////////////////////////////////////////////////////
 void MyTrial::read(istream& in) {
 	// read from .tgt file
-	(in) >> seqType >> feedback;
+	(in) >> seqType;
 	for (int i = 0; i < MAX_PRESS; i++) {   // MAX_PRESS = 14--> read presses
 		(in) >> press[i];
 	}
 	// (in) >> hand >> cueS >> cueC >> cueP >> iti >> sounds >> Horizon >> StimTimeLim;
-	(in) >> cueP >> iti >> Horizon >> StimTimeLim >> PrepTime;
+	(in) >> cueP >> iti >> Horizon >> PrepTime >> MovTimeLim;
 
 	// do other job
+	TrialTime = PrepTime + MovTimeLim + iti; // added by SKim for fMRI
 	string zero("0");
 	gTrial++;
 	cTrial = gTrial;
@@ -557,7 +569,6 @@ void MyTrial::read(istream& in) {
 void MyTrial::writeDat(ostream& out) {
 	out << seqType << "\t"
 		<< Horizon << "\t"
-		<< feedback << "\t"
 		<< PrepTime << "\t"
 		;
 	for (int i = 0; i < MAX_PRESS; i++) {
@@ -597,7 +608,6 @@ void MyTrial::writeHeader(ostream& out) {
 	char header[200];
 	out << "seqType" << "\t"
 		<< "Horizon" << "\t"
-		<< "FT" << "\t"
 		<< "PrepTime" << "\t";
 	for (int i = 0; i < MAX_PRESS; i++) {
 		sprintf(header, "press%d", i);
@@ -626,8 +636,8 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "Gain2" << "\t"
 		<< "Gain3" << "\t"
 		<< "Gain4" << "\t"
-		<< "Gain5" << "\t"
-		<< "StimTimeLim" << "\t" << endl;
+		<< "Gain5" << "\t" << endl;
+//		<< "StimTimeLim" << "\t" << endl;
 	//_____________________end
 
 }
@@ -748,8 +758,8 @@ void MyTrial::updateGraphics(int what) {
 	//	gScreen.printChar('+', 0, -6, 2*SIZE_CUE);
 	//	
 	//}
-	if (state == WAIT_ALLRELEASE || state == WAIT_GOCUE || state == WAIT_PRESS) {
-		if (state == WAIT_ALLRELEASE || state == WAIT_GOCUE) {
+	if (state == WAIT_END_RELEASE || state == WAIT_GOCUE || state == WAIT_PRESS) {
+		if (state == WAIT_END_RELEASE || state == WAIT_GOCUE) {
 			gScreen.setColor(2);  // Red signal, wait for "GO" signal and all fingers are released
 			gScreen.printChar('+', 0, -7, SIZE_CUE);
 		}
@@ -768,10 +778,9 @@ void MyTrial::updateGraphics(int what) {
 			gScreen.setColor(1);
 
 			if (seqType == 1) {  // Visual, vertical
-				gHorizon.position = Vector2D(0, 3.5 + Horizon);
-				gHorizon.size = Vector2D(10, 16 - 2 * Horizon);
-				gHorizon.setColor(17);
-				gHorizon.draw();
+				//gHorizon.position = Vector2D(0, 3.5 + Horizon);
+				//gHorizon.size = Vector2D(10, 16 - 2 * Horizon);
+				//gHorizon.draw();
 				gScreen.drawLine(-5, -5, -5, 11);
 				gScreen.drawLine(-3, -5, -3, 11);
 				gScreen.drawLine(-1, -5, -1, 11);
@@ -782,64 +791,25 @@ void MyTrial::updateGraphics(int what) {
 				for (i = 0; i < min(Horizon, seqLength - seqCounter); i++) {
 					if (gs.cuePress[i] > 0) {
 						double xPos = gs.cuePress[i + seqCounter] - '1';
-						gTarget.position = Vector2D(-4.0 + 2.0 * xPos, -4.0 + i * 2);
-						gTarget.size = Vector2D(1.4, 1.4);
-						gTarget.setColor(1);
-						gTarget.draw();
-					}
-				}
-			}
-			else if (seqType == 3) { // Visual horizontal
-				gHorizon.position = Vector2D(Horizon, 3);
-				gHorizon.size = Vector2D(16 - 2 * Horizon, 10);
-				gHorizon.draw();
-				gScreen.drawLine(-8, -2, 8, -2);
-				gScreen.drawLine(-8, 0, 8, 0);
-				gScreen.drawLine(-8, 2, 8, 2);
-				gScreen.drawLine(-8, 4, 8, 4);
-				gScreen.drawLine(-8, 6, 8, 6);
-				gScreen.drawLine(-8, 8, 8, 8);
-
-				for (i = 0; i < min(Horizon, seqLength - seqCounter); i++) {
-					if (gs.cuePress[i] > 0) {
-						double yPos = gs.cuePress[i + seqCounter] - '1';
-						gTarget.position = Vector2D(-7.0 + i * 2, -1.0 + 2.0 * yPos);
+						gTarget.position = Vector2D(-4.0 + 2.0 * xPos, -4.0 + i * 1.8);
 						gTarget.size = Vector2D(1.4, 1.4);
 						gTarget.draw();
 					}
 				}
 			}
 
-			else if (seqType == 2) { // Vertical, Numbers
-				gHorizon.position = Vector2D(0, 3.5 + Horizon);
-				gHorizon.size = Vector2D(10, 16 - 2 * Horizon);
-				gHorizon.setColor(17);
-				gHorizon.draw();
+			else if (seqType == 0) { // Vertical, Numbers
+				//gHorizon.position = Vector2D(0, 3.5 + Horizon);
+				//gHorizon.size = Vector2D(10, 16 - 2 * Horizon);
+				//gHorizon.draw();
 				for (i = 0; i < min(Horizon, seqLength - seqCounter); i++) {  // Edited by SKim
 					if (gs.cuePress[i] > 0) {
 						//						gScreen.printChar(gs.cuePress[i], (i - 4) * WIDTH_CHAR_CUE, CUE_PRESS, SIZE_CUE);
-						gScreen.setColor(1);
-						gScreen.printChar(gs.cuePress[i + seqCounter], 0, -4.7 + i * 2, SIZE_CUE); // -4.7 is matched to -4.0 for visual target type
+						gScreen.printChar(gs.cuePress[i + seqCounter], 0, -4.7 + i * 1.8, SIZE_CUE); // -4.7 is matched to -4.0 for visual target type
 						// the number 6.5 is usually the seqLength/2 so that the sequence in centered
 					}
 				}
 			}
-
-			else {  // seqType==4, Horizontal, Numbers
-				gHorizon.position = Vector2D(Horizon, 3);
-				gHorizon.size = Vector2D(16 - 2 * Horizon, 10);
-				gHorizon.draw();
-				for (i = 0; i < min(Horizon, seqLength - seqCounter); i++) {  // Edited by SKim
-					if (gs.cuePress[i] > 0) {
-						//						gScreen.printChar(gs.cuePress[i], (i - 4) * WIDTH_CHAR_CUE, CUE_PRESS, SIZE_CUE);
-						gScreen.printChar(gs.cuePress[i + seqCounter], -7.0 + i * 2, 3.0, SIZE_CUE);
-						// the number 6.5 is usually the seqLength/2 so that the sequence in centered
-					}
-				}
-
-
-			}
-
 
 		}
 	}
@@ -956,32 +926,17 @@ void MyTrial::control() {
 		for (i = 0; i < NUMDISPLAYLINES; i++) {
 			gs.line[i] = "";
 		} // clear screen
-		//__________________________________Neda
-		// here I add the WAIT_FOR_EYE state which is supposed to wait
-		//for the eye to fixate at the begginig of the cue
-
+	
 		state = START_FIX;
 		break;
-	case START_FIX: //2 as appears in mov
 
-		if (released == 5) {
+	case START_FIX: //3 as appears in mov
+
+		//if (released == 5 && gTimer[2] > 2000) { //gTimer[2] > 1500 makes sure that the cross is being shown for 3 secs
+		if (released == 5) { //gTimer[2] > 1500 makes sure that the cross is being shown for 3 secs
 			dataman.startRecording();
 			gTimer.reset(1); // time for whole trial
 			gTimer.reset(2); // time for events in the trial
-			int T1 = time(0);
-			int w = 0;
-			state = WAIT_ALLRELEASE;
-		}
-		break;
-
-	case WAIT_ALLRELEASE: //3 as appears in mov
-
-		if (gTimer[1] > 20000) {
-			gs.clearCues();
-			state = WAIT_FEEDBACK;
-		}
-		if (released == 5 && gTimer[2] > 2000) { //gTimer[2] > 1500 makes sure that the cross is being shown for 3 secs
-			gTimer.reset(2);
 			gs.clearCues();
 			for (i = 0; i < seqLength; i++) {
 				gs.cuePress[i] = cueP.at(i);
@@ -991,12 +946,9 @@ void MyTrial::control() {
 		break;
 	case WAIT_GOCUE:
 		// check for time out
-		if (gTimer[1] > 20000) {
+		if (gTimer[1] > (PrepTime + MovTimeLim)) {
 			gs.clearCues();
-			state = WAIT_FEEDBACK;
-		}
-		if (gTimer[2] == 1000 || gTimer[2] == 2000 || gTimer[2] == 3000) {
-			PlaySound("wav/ding.wav", NULL, SND_ASYNC | SND_FILENAME);
+			state = WAIT_ITI;
 		}
 		if (released == 5 && gTimer[2] > PrepTime) { // Wait for PrepTime, preplanning
 			gTimer.reset(2);
@@ -1007,19 +959,18 @@ void MyTrial::control() {
 
 	case WAIT_PRESS: //5 as appears in mov, Targets are shown here for preplanning
 		// check for time out
-		if (gTimer[1] > 20000) {
+		if (gTimer[1] > (PrepTime + MovTimeLim)) {
 			gs.clearCues();
-			state = WAIT_FEEDBACK;
+			state = WAIT_ITI;
 		}
 
-		if (StimTimeLim) {
-			if (gTimer[2] > StimTimeLim) {
+		if (MovTimeLim) {
+			if (gTimer[2] > MovTimeLim) {
 				for (i = 0; i < NUMDISPLAYLINES; i++) {
 					gs.clearCues();
 				}
 			}
 		}
-
 
 		// Wait for the next keypress
 		//*************************Feedback loop was here
@@ -1054,92 +1005,16 @@ void MyTrial::control() {
 			state = WAIT_END_RELEASE;
 		}
 
-
-		/*if (Horizon < seqLength -1){
-		if (DigPressed < seqLength - Horizon){
-
-		for (i= DigPressed; i<DigPressed + Horizon + 1; i++) {
-		gs.cuePress[i] = cueP.at(i);
-		}
-
-		DigPressed += 1;
-		} else if ((DigPressed == seqLength - Horizon)){
-		for (i= DigPressed; i<seqLength; i++) {
-		gs.cuePress[i] = cueP.at(i);
-		}
-		}
-		}*/
 		break;
 	case WAIT_END_RELEASE: //6 as appears in mov
 
 		if (released == 5) {
 
 			MT = gTimer[1] - pressTime[0]; // Calculate total reaction time starting from the first press
-
-			if (isError > 0) {
-				gNumErrors++;
-				gNumFingerErrors += nFingerErrors;
-			}
-			else {
-				switch (seqLength) {
-				case 2:
-					j = 0;
-					break;
-				case 3:
-					j = 1;
-					break;
-				case 4:
-					j = 2;
-					break;
-				case 14:
-					j = 3;
-					break;
-				default:
-					j = 3;
-					break;
-				}
-
-				critTime = MT;
-
-				if (critTime < timeThresholdSuper[j]) {
-					points = 3;
-					gNumPointsBlock += 3;
-					// PLAY SOUNDS
-	//				channel = Mix_PlayChannel(-1, wavTask[2], 0); // SDL
-				}
-				//else if (critTime < timeThreshold[j]) {
-				//	points = 2;  // SKim
-				//	gNumPointsBlock += 2; // SKim
-				//	// PLAY SOUND
-				//	//channel = Mix_PlayChannel(-1, wavTask[3], 0); // SDL
-				//}
-				else {
-					points = 1;
-					gNumPointsBlock += 1;
-					// PLAY SOUND
-					// channel = Mix_PlayChannel(-1, wavTask[1], 0); // SDL
-				}
-
-			}
 			gTimer.reset(2);
 			gs.clearCues();
-			// commented by SKim
-			//if (seqLength == 2) {
-			// gs.cuePress[7] = '+';
-			//}
-			//else if (seqLength == 3) {
-			// gs.cuePress[8] = '+';
-			//}
-			//else if (seqLength == 4) {
-			// gs.cuePress[8] = '+';
-			//}
-			//else {
-			// gs.cuePress[13] = '+';
-			//}
-
-
-			gTimer.reset(2);
-			state = WAIT_FEEDBACK;
+			//state = WAIT_FEEDBACK;
+			state = WAIT_ITI; // DO not give a feedback for fMRI
 		}
 		else {
 			state = WAIT_PRESS;
@@ -1147,32 +1022,9 @@ void MyTrial::control() {
 
 		break;
 
-	case WAIT_FEEDBACK:  //7 as appears in mov
-
-		//do iti
-		if (gTimer[2] > 1000) { // after 1 sec, providing feedback 
-			dataman.stopRecording();
-			int w = seqLength - 1;
-			gs.clearCues();
-			sprintf(buffer, "+%d", points);
-			gs.lineColor[2] = 1;
-			gs.line[2] = buffer; // displays the text
-			state = END_FIX;
-		}
-		break;
-	case END_FIX: //8
-		if (gTimer[2] > FEEDBACKTIME) {
-			// reset clear the screen
-
-			for (i = 0; i < 2; i++) { gs.boxColor[i] = 0; }
-			gTimer.reset(2);
-			gs.clearCues();
-			state = WAIT_ITI;
-
-		}
-		break;
 	case WAIT_ITI:  //9 as appears in mov
-		if (gTimer[2] > 2000) { // ITI fixed as 2 sec
+		gTimer.reset(2); // time for events in the trial
+		if (gTimer[1] > TrialTime) { // TrialTime = PrepTime + MovTimeLim + iti
 			state = END_TRIAL;
 
 		}
@@ -1254,7 +1106,7 @@ GraphicState::GraphicState() {
 	//}
 
 	// Press Cue
-	for (i = 0; i < 14; i++) {//(i=0;i<3;i++){
+	for (i = 0; i < 9; i++) {//(i=0;i<3;i++){ // edited by SK
 		lineXpos[i + 8] = 0;//i*1.4-1.4;
 		lineYpos[i + 8] = CUE_PRESS;//2.3;
 		lineColor[i + 8] = 1; // white
@@ -1271,7 +1123,7 @@ GraphicState::GraphicState() {
 void GraphicState::clearCues(void) {
 	int i;
 
-	for (i = 0; i < 14; i++) {
+	for (i = 0; i < 5; i++) { // seqLength
 		cuePress[i] = 0;
 	}
 }

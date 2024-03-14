@@ -61,7 +61,7 @@ Color_t Screen::oceanblue={30,110,255};	    ///< 13
 Color_t Screen::forestgreen={34,102,34};	///< 14
 Color_t Screen::darkred={100,0,0};			///< 15
 Color_t Screen::darkblue={0,0,100};			///< 16
-
+Color_t Screen::darkgrey={135,135,135};     ///< 17
 
 /******************************************************************************
 Constructor
@@ -356,7 +356,11 @@ void Screen::setColor(int color){
 	case 9:
 		setColor(lightblue);
 		break;
+	case 17:
+		setColor(darkgrey);
+		break;
 	} 
+	
 } 
 
 void Screen::drawDisk(GLfloat xsize, GLfloat ysize, GLfloat xpos, GLfloat ypos)

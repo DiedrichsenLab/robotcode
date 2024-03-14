@@ -127,21 +127,23 @@ private:
 	TrialState state;						///< State of the Trial 
 	int subNum;									///< Which subject number 
 	bool isTrain;
-	//string seq;
 	int planTime;
 	int execTime;
 	int iti;
 	string chunkSize;
-	char digitChangePos;
+	int digitChangePos;
 	char digitChangeValue;
 	int press[MAX_PRESS];					///< Which digit to press (in intrinsic coordinates 1:thumb 5: pinkie) 
 	int load;                               ///< How many keypresses to plan? (from 1 to 5)
 	int show;                               ///< Do you show hand information at ecoding (1) or at go cue (2)?
 	int hand;								///< Which board are we using left= 1 right= 2
 	int seqCounter;							///< Which position in the seq are we?
+	int maskCounter;
+	int chunkIndex;
 	int fixed_dur;							///< Is the trial duration fixed or not?
 
 	int newPress;							///< Is this a new press?
+	int newRelease;							///todo: Should I add this? Ask Jorn
 	int pressedFinger;						///< Which finger was pressed
 	int pressedHand;                        ///< Which hand was pressed
 	int released;							///< Are all fingers released?
@@ -158,7 +160,6 @@ private:
 
 	int complete;
 	int isError;							///< Was there an error in the trial?
-	double norm_MT;
 	int coord;                              ///< 1: Extrinsic coordinate -- 2: intrinsic coordinate
 	int cueType;                            ///< 1: numerical - 2: alphabetical
 	int isCross;							///< Was there a thres cross in the trial?
@@ -182,7 +183,7 @@ private:
 	double releaseTime[MAX_PRESS];			///< Time when each finger was released
 	double RT;								///< Reaction time (from go cue)
 	double ET;								///< Execution time (from first press)
-	double MT;								///< Movement time (RT + MT)
+	double norm_MT;							///< Movement time (RT + MT)
 	string seq; 						///< Visual cues for sequences
 	string seqMask;							///< Mask for visual cues
 	DataManager<DataRecord, 30000 / 2> dataman;///< For data recording for MOV file 

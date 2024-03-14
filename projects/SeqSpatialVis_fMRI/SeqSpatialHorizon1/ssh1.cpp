@@ -130,6 +130,13 @@ char TEXT[5] = { '1','2','3','4','5' };
 double THRESHOLD[3][5] = { {preTH, preTH, preTH, preTH, preTH}, {relTH, relTH, relTH, relTH, relTH}, {maxTH, maxTH, maxTH, maxTH, maxTH} };
 double fGain[5] = { 1.0,1.0,1.0,1.0,1.0 };  // Increased gains for index and little fingers, SKim
 
+/// <summary>
+///  fMRI counter setup, SKim
+/// </summary>
+TRCounter gCounter;				///< TR counter, simulated and pulse-triggered 
+char counterSignal = '5';		///< What char is used to count the TR
+int sliceNumber = 32;			///< How many slices do we have
+
 ///////////////////////////////////////////////////////////////
 /// Main Program: Start the experiment, initialize the robot and run it
 ///////////////////////////////////////////////////////////////

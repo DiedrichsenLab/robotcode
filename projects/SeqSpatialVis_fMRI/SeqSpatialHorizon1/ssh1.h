@@ -36,16 +36,16 @@ enum TrialState {
 	//____________________Neda
 	START_FIX,	    	// 3 wait for eye to fixate at the begining of the seq
 	//____________________end
-	WAIT_ALLRELEASE,	// 4
+	//WAIT_ALLRELEASE,	// 4
 	WAIT_GOCUE,		// 5
 	WAIT_PRESS,			// 6
 	WAIT_END_RELEASE,		// 7
-	WAIT_FEEDBACK,		// 8
-	END_FIX,            // 9      
+	//WAIT_FEEDBACK,		// 8
+	//END_FIX,            // 9      
 	WAIT_ITI,			// 10
 	//____________________Neda	
 	END_TRIAL,			// 11 wait for eye to fixate at the begining of the seq
-	CALIB        		// 12 only used for calibration
+	//CALIB        		// 12 only used for calibration
 	//____________________end
 };
 

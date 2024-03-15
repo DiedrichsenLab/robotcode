@@ -507,7 +507,8 @@ void MyBlock::giveFeedback() {
 //	sprintf(buffer, "Point you've got: %d   Total points: %d", gNumPointsBlock, gNumPoints);
 //	gs.line[2] = buffer;
 //	gs.lineColor[2] = 1;
-//}
+
+}
 
 ///////////////////////////////////////////////////////////////
 /// My Trial class contains the main info of how a trial in this experiment is run
@@ -515,6 +516,7 @@ void MyBlock::giveFeedback() {
 ///////////////////////////////////////////////////////////////
 // Constructor
 ///////////////////////////////////////////////////////////////
+
 MyTrial::MyTrial() {
 	state = WAIT_TRIAL;
 
@@ -929,6 +931,8 @@ void MyTrial::control() {
 	
 		state = START_FIX;
 		break;
+
+	case WAIT_TR:
 
 	case START_FIX: //3 as appears in mov
 

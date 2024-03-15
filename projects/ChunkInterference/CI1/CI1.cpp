@@ -91,7 +91,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	LPSTR kposzArgs, int nWinMode)
 {
 	gThisInst = hThisInst;
-	gExp = new MyExperiment("ChunkInterference", "ChunkInterference", "C:/data/ChunkInterference/");
+	gExp = new MyExperiment("ChunkInterference", "ChunkInterference", "C:/data/ChunkInterference/CI1");
 	//auto start = std::chrono::high_resolution_clock::now();
 	gExp->redirectIOToConsole();
 	//auto end = std::chrono::high_resolution_clock::now();
@@ -1200,6 +1200,10 @@ void MyTrial::control() {
 		//	gTimer.reset(2);
 		//	state = WAIT_PRESS;
 		//}
+
+		PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
+		gTimer.reset(2);
+
 		state = WAIT_PRESS;
 		break;
 
@@ -1324,7 +1328,7 @@ void MyTrial::control() {
 				else if (isError == 1 && timingError == 0) {
 					points = 0;
 					// PLAY SOUND 
-					//PlaySound(TASKSOUNDS[5].c_str(), NULL, SND_ASYNC);
+					PlaySound(TASKSOUNDS[5].c_str(), NULL, SND_ASYNC);
 					gs.clearCues(); sprintf(buffer, "%d", points);
 					gs.lineColor[1] = 1; // white
 					gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
@@ -1332,7 +1336,7 @@ void MyTrial::control() {
 				else if (isError == 1 && timingError == 1) {
 					points = -1;
 					// PLAY SOUND 
-					//PlaySound(TASKSOUNDS[6].c_str(), NULL, SND_ASYNC);
+					PlaySound(TASKSOUNDS[6].c_str(), NULL, SND_ASYNC);
 					gs.clearCues(); sprintf(buffer, "%d", points);
 					gs.lineColor[1] = 1; // white
 					gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
@@ -1352,7 +1356,7 @@ void MyTrial::control() {
 				else {
 					points = -1;
 					// PLAY SOUND 
-					//PlaySound(TASKSOUNDS[6].c_str(), NULL, SND_ASYNC);
+					PlaySound(TASKSOUNDS[5].c_str(), NULL, SND_ASYNC);
 					gs.clearCues(); sprintf(buffer, "%d", points);
 					gs.lineColor[1] = 1; // white
 					gs.line[1] = buffer; gs.lineYpos[1] = 5.4;

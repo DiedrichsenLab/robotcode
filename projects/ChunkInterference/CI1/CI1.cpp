@@ -1281,7 +1281,7 @@ void MyTrial::control() {
 			isError = 1;
 			timingError = 1;
 			// PLAY SOUND 
-			//PlaySound(TASKSOUNDS[6].c_str(), NULL, SND_ASYNC);
+			PlaySound(TASKSOUNDS[6].c_str(), NULL, SND_ASYNC);
 			gs.clearCues(); sprintf(buffer, "TOO SLOW");
 			gs.lineColor[0] = 1;
 			gs.line[0] = buffer;

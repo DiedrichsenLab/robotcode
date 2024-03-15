@@ -24,6 +24,7 @@
     <ProjectGuid>{9233d209-a4da-4d28-99bc-e2d81a7bae0d}</ProjectGuid>
     <RootNamespace>ChunkInterference</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>ChunkInterference</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

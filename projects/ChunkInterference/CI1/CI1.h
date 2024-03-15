@@ -137,6 +137,7 @@ private:
 	int load;                               ///< How many keypresses to plan? (from 1 to 5)
 	int show;                               ///< Do you show hand information at ecoding (1) or at go cue (2)?
 	int hand;								///< Which board are we using left= 1 right= 2
+	int group;								/// Which group the subject blongs to
 	int seqCounter;							///< Which position in the seq are we?
 	int maskCounter;
 	int chunkIndex;

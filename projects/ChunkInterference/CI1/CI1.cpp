@@ -123,7 +123,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 
 	// high force 1
 //gBox[0].init(BOX_LEFT,"c:/robotcode/calib/Flatbox1_highforce_LEFT_07-Jun-2017.txt");
- //gBox[1].init(BOX_RIGHT,"c:/robotcode/calib/Flatbox1_highforce_RIGHT_31-July-2017.txt"); //todo: check this with Jorn
+ gBox[1].init(BOX_RIGHT,"c:/robotcode/calib/Flatbox1_highforce_RIGHT_31-July-2017.txt"); //todo: check this with Jorn
 
 // high force 2
 //gBox[0].init(BOX_LEFT,"c:/robotcode/calib/Flatbox1_highforce2_LEFT_03-Dec-2021.txt");
@@ -131,11 +131,12 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 
 //high force 3
 //gBox[0].init(BOX_LEFT,"c:/robotcode/calib/flatbox2_highforce2_LEFT_27-May-2018.txt");
-gBox[1].init(BOX_RIGHT,"c:/robotcode/calib/flatbox2_highforce2_RIGHT_27-May-2018.txt");
+//gBox[1].init(BOX_RIGHT,"c:/robotcode/calib/flatbox2_highforce2_RIGHT_27-May-2018.txt");
 
 //high force 4
 //gBox[0].init(BOX_LEFT,"c:/robotcode/calib/flatbox2_highforce_LEFT_02-Mar-2017.txt");
 //gBox[1].init(BOX_RIGHT, "c:/robotcode/calib/flatbox2_highforce_RIGHT_07-Feb-2017.txt");
+
 
 
 // STARK
@@ -503,7 +504,7 @@ MyTrial::MyTrial() {
 ///////////////////////////////////////////////////////////////
 void MyTrial::read(istream& in) {
 	// read from .tgt file
-	in >> subNum>> hand >> isTrain >> seq >> planTime >> execTime >> iti >> chunkSize >> digitChangePos >> digitChangeValue;
+	in >> subNum>> group >> hand >> isTrain >> seq >> planTime >> execTime >> iti >> chunkSize >> digitChangePos >> digitChangeValue;
 	//cout << seq << "\n";
 	seqLength = seq.length(); //get seqLength	 
 	//cout << "seq Length " << seqLength << "\n";
@@ -514,7 +515,7 @@ void MyTrial::read(istream& in) {
 ///////////////////////////////////////////////////////////////
 void MyTrial::writeDat(ostream& out) {
 	// write to .dat file
-	out << subNum << "\t" << hand << "\t" << isTrain << "\t" << seq << "\t" << chunkSize << "\t" << digitChangePos << "\t" << digitChangeValue << "\t";
+	out << subNum << "\t" << group << "\t" << hand << "\t" << isTrain << "\t" << seq << "\t" << chunkSize << "\t" << digitChangePos << "\t" << digitChangeValue << "\t";
 	int i;
 
 	for (i = 0; i < MAX_PRESS; i++) {
@@ -559,7 +560,7 @@ void MyTrial::writeDat(ostream& out) {
 void MyTrial::writeHeader(ostream& out) {
 	char header[200];
 
-	out << "SubNum" << "\t" << "hand" << "\t" << "isTrain" << "\t" << "seq" << "\t" << "ChunkSize" << "\t" << "digitChangePos" << "\t" << "digitChangeValue" << "\t";
+	out << "SubNum" << "\t" << "group" << "\t" << "hand" << "\t" << "isTrain" << "\t" << "seq" << "\t" << "ChunkSize" << "\t" << "digitChangePos" << "\t" << "digitChangeValue" << "\t";
 
 	//out << "SubNum" << "\t" << "isTrain" << "\t" << "seq" << "\t" << "ChunkSize" << "\t" << "digitChangePos" << "\t" << "digitChangeValue" << "\t" << "exeType" << "\t" << "cueType" << "\t"
 	//	<< "seqNum" << "\t" << "cuePress" << "\t" << "isExtrinsic" << "\t" << "isIntrinsic" << "\t" << "isRepetition" << "\t" << "handTrans" << "\t"

@@ -852,38 +852,38 @@ void MyTrial::updateGraphics(int what) {
 
 	// Debugging tool to visualize current state of program control
 	
-	string stateString;
-	switch(state)
-	{
-	case WAIT_TRIAL:
-	stateString = "0. WAIT TRIAL";		// 0
-	break;
-	case START_TRIAL:
-	stateString = "1. START TRIAL";		// 1
-	break;
-	case WAIT_TR:
-	stateString = "2. WAIT TR";			// 2
-	break;
-	case WAIT_PREP:
-	stateString = "3. WAIT PREP";		// 3
-	break;
-	case WAIT_PRESS:
-	stateString = "4. WAIT PRESS";		// 4
-	break;
-	case WAIT_RELEASE:
-	stateString = "5. WAIT RELEASE";	// 5
-	break;
-	case WAIT_FEEDBACK:
-	stateString = "6. WAIT FEEDBACK";	// 6
-	break;
-	case WAIT_ITI:
-	stateString = "7. WAIT ITI";		// 7
-	break;
-	case END_TRIAL:
-	stateString = "8. END TRIAL";		// 8
-	break;
-	}
-	gScreen.print(stateString,0,9,5);
+	//string stateString;
+	//switch(state)
+	//{
+	//case WAIT_TRIAL:
+	//stateString = "0. WAIT TRIAL";		// 0
+	//break;
+	//case START_TRIAL:
+	//stateString = "1. START TRIAL";		// 1
+	//break;
+	//case WAIT_TR:
+	//stateString = "2. WAIT TR";			// 2
+	//break;
+	//case WAIT_PREP:
+	//stateString = "3. WAIT PREP";		// 3
+	//break;
+	//case WAIT_PRESS:
+	//stateString = "4. WAIT PRESS";		// 4
+	//break;
+	//case WAIT_RELEASE:
+	//stateString = "5. WAIT RELEASE";	// 5
+	//break;
+	//case WAIT_FEEDBACK:
+	//stateString = "6. WAIT FEEDBACK";	// 6
+	//break;
+	//case WAIT_ITI:
+	//stateString = "7. WAIT ITI";		// 7
+	//break;
+	//case END_TRIAL:
+	//stateString = "8. END TRIAL";		// 8
+	//break;
+	//}
+	//gScreen.print(stateString,0,9,5);
 	
 }
 

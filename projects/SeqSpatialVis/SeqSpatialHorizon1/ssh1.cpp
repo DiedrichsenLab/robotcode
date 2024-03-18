@@ -995,9 +995,9 @@ void MyTrial::control() {
 			gs.clearCues();
 			state = WAIT_FEEDBACK;
 		}
-		if (gTimer[2] == 1000 || gTimer[2] == 2000 || gTimer[2] == 3000) {
+		/*if (gTimer[2] == 1000 || gTimer[2] == 2000 || gTimer[2] == 3000) {
 			PlaySound("wav/ding.wav", NULL, SND_ASYNC | SND_FILENAME);
-		}
+		}*/
 		if (released == 5 && gTimer[2] > PrepTime) { // Wait for PrepTime, preplanning
 			gTimer.reset(2);
 			//			gs.clearCues();

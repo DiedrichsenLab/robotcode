@@ -87,26 +87,17 @@ int gNumPointsBlock = 0;
 int gNumPoints = 0;
 int gTrial = 0;
 
-//float timeThresPercent = 120; ///< 120% of current median MT (previous block)
-//float timeThresPercent = 95;
-float timeThresPercent = 120; ///< 120% of superThreshold
+float timeThresPercent = 110; ///< 120% of current median MT (previous block)
 float superThresPercent = 95; ///< 95% of current median MT (previous block)
 //float ERthreshold = 15; ///< Trheshold of 20% of error rate in order to lower MT thresholds
 float ERthreshold = 5; ///< Trheshold of 5% of "finger tapping" error rate in order to lower MT thresholds, SKedited
 
-double medianMTarray[100]; ///< Initialise MT array across blocks (never more than 100 blocks)
-//double medianMTarray[100]; ///< Initialise MT array across blocks (never more than 100 blocks)
-//double medianMTarray[4][100]; ///< Initialise MT array across blocks (never more than 100 blocks)
+double medianMTarray[4][100]; ///< Initialise MT array across blocks (never more than 100 blocks)
 double ERarray[100]; ///< Initialise ER array across blocks
 int b = 0;
-double timeThreshold[2] = {6000, 6000}; ///< Double and triple chunk time threshold
 
-//double timeThreshold[2][4] = { { 800,1100,1500,6000 },{ 800,1100,1500,6000 } }; ///< Double and triple chunk time threshold
-//double timeThreshold[4] = { 800,1100,1500,6000 }; ///< Double and triple chunk time threshold
-
-double timeThresholdSuper[2] = { 5000,5000 }; ///< Time threshold for super points
-//double timeThresholdSuper[4] = { 320,560,740,5000 }; ///< Time threshold for super points
-
+double timeThreshold[4] = { 800,1100,1500,6000 }; ///< Double and triple chunk time threshold
+double timeThresholdSuper[4] = { 320,560,740,5000 }; ///< Time threshold for super points
 #define FEEDBACKTIME 1500    // time for which the points of the trial is displayed at the end of a trial
 // Neda increased feedback time so that the subject has time to blink
 string FINGERSOUND[6] = { "A.wav", "C.wav", "D.wav", "E.wav", "G.wav" };
@@ -339,27 +330,24 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 
 	else if (arguments[0] == "thres") {
 		if (numArgs != 5) {
-			//tDisp.print("USAGE: thresh medianMT");  // SKim
-			tDisp.print("USAGE: thresholds for 3 points, visual, letter conditions");  // SKim
+			tDisp.print("USAGE: thresh medianMT for seqLength of 2 3 4 14");
 		}
 		else {
 			sscanf(arguments[1].c_str(), "%f", &arg[0]);
-			timeThresholdSuper[0] = arg[0];
 			timeThreshold[0] = (arg[0] * (timeThresPercent / 100));
-			//timeThresholdSuper[0] = (arg[0] * (superThresPercent / 100));
+			timeThresholdSuper[0] = (arg[0] * (superThresPercent / 100));
 
 			sscanf(arguments[2].c_str(), "%f", &arg[1]);
-			timeThresholdSuper[1] = arg[1];
 			timeThreshold[1] = (arg[1] * (timeThresPercent / 100));
-			//timeThresholdSuper[1] = (arg[1] * (superThresPercent / 100));
+			timeThresholdSuper[1] = (arg[1] * (superThresPercent / 100));
 
-			//sscanf(arguments[3].c_str(), "%f", &arg[2]);
-			//timeThreshold[2] = (arg[2] * (timeThresPercent / 100));
-			//timeThresholdSuper[2] = (arg[2] * (superThresPercent / 100));
+			sscanf(arguments[3].c_str(), "%f", &arg[2]);
+			timeThreshold[2] = (arg[2] * (timeThresPercent / 100));
+			timeThresholdSuper[2] = (arg[2] * (superThresPercent / 100));
 
-			//sscanf(arguments[4].c_str(), "%f", &arg[3]);
-			//timeThreshold[3] = (arg[3] * (timeThresPercent / 100));
-			//timeThresholdSuper[3] = (arg[3] * (superThresPercent / 100));
+			sscanf(arguments[4].c_str(), "%f", &arg[3]);
+			timeThreshold[3] = (arg[3] * (timeThresPercent / 100));
+			timeThresholdSuper[3] = (arg[3] * (superThresPercent / 100));
 
 		}
 	}
@@ -427,89 +415,78 @@ void MyBlock::start() {
 ///////////////////////////////////////////////////////////////
 void MyBlock::giveFeedback() {
 	b = b++;
-	//int i, j;
-	int i;
-	int n = 0;
-//	double nn[4] = { 0,0,0,0 };
-	//double MTarray[4][200];
-	//double medianMT[4] = { 0,0,0,0 };
-	double MTarray[200];
-	double medianMT =  0;
-	//int gType; // groupType
-	int sType; //seqType
-	MyTrial* tpnr;  //MyTrial object --> inherits class Trial in Experiment.h
-	medianMTarray[0] = 10000;
-	//for (i = 0; i < 4; i++) {
-	//	medianMTarray[i][0] = 10000; // Initialise the MT for the 0th block to be 10000 (same as default)
+	int i, j;
 
-	//}
+	int n[4] = { 0,0,0,0 };
+	double nn[4] = { 0,0,0,0 };
+	double MTarray[4][200];
+	double medianMT[4] = { 0,0,0,0 };
+	MyTrial* tpnr;  //MyTrial object --> inherits class Trial in Experiment.h
+
+	for (i = 0; i < 4; i++) {
+		medianMTarray[i][0] = 10000; // Initialise the MT for the 0th block to be 10000 (same as default)
+
+	}
 	ERarray[0] = 0; // Initialise the ER for the 0th block to be 0
 
 	for (i = 0; i < trialNum; i++) {
 		tpnr = (MyTrial*)trialVec.at(i);
-		//if (tpnr->seqLength == 2) {
-		//	j = 0;
-		//}
-		//else if (tpnr->seqLength == 3) {
-		//	j = 1;
-		//}
-		//else if (tpnr->seqLength == 4) {
-		//	j = 2;
-		//}
-		//else if (tpnr->seqLength == 14) {  // edited by SKim
-		//	j = 3;
+		if (tpnr->seqLength == 2) {
+			j = 0;
+		}
+		else if (tpnr->seqLength == 3) {
+			j = 1;
+		}
+		else if (tpnr->seqLength == 4) {
+			j = 2;
+		}
+		else if (tpnr->seqLength == 14) {  // edited by SKim
+			j = 3;
 
-		//}
+		}
 
 		if (tpnr->isError == 0) {
-			MTarray[n] = tpnr->MT; //remember the RT from the correct trials and add them
-			n++; // remember number of trials
+			MTarray[j][n[j]] = tpnr->MT; //remember the RT from the correct trials and add them
+			n[j]++; // remember number of trials
 		}
-		//gType = tpnr->groupType;
-		sType = tpnr->seqType;
-
-		//nn++;
+		nn[j]++;
 	}
 	//ERarray[b] = 100 * ((double)gNumErrors) / (double)(trialNum); // error rate
 	ERarray[b] = 100 * ((double)gNumFingerErrors) / (double)(trialNum * 14); // error rate, SKim
+	for (j = 0; j < 4; j++) {
+		if (n[j] > 0) { // if more than one correct trials for seqlength j
+			medianMTarray[j][b] = median(MTarray[j], n[j]);
 
-	//for (j = 0; j < 4; j++) {
-	if (n > 0) { // if more than one correct trials for seqlength j
-		medianMTarray[b] = median(MTarray, n);
-
-		if (ERarray[b] < ERthreshold) { // if ER on previous block > 5% SKim
-			//if ((ERarray[b] < ERthreshold) && (ERarray[b - 1] > ERthreshold)) { // if ER on previous block > 5% SKim
-			//if (medianMTarray[j][b] < (timeThreshold[j] / (timeThresPercent / 100))) { // if MT faster than MT expected by threshold
-			if (sType==1) {
-				if (medianMTarray[b] < (timeThreshold[0] * (superThresPercent / 100))) { // if MT faster than MT expected by threshold
-					timeThreshold[0] = timeThreshold[0] * (superThresPercent / 100); //superThreshPercent = 90
-					timeThresholdSuper[0] = timeThresholdSuper[0] * (superThresPercent / 100);
+			if ((ERarray[b] < ERthreshold) && (ERarray[b - 1] > ERthreshold)) { // if ER on previous block > 5% SKim
+				if (medianMTarray[j][b] < (timeThreshold[j] / (timeThresPercent / 100))) { // if MT faster than MT expected by threshold
+					timeThreshold[j] = medianMTarray[j][b] * (timeThresPercent / 100);
+					timeThresholdSuper[j] = medianMTarray[j][b] * (superThresPercent / 100);
 				}
 			}
-
-			else {
-				if (medianMTarray[b] < (timeThreshold[1] * (superThresPercent / 100))) { // if MT faster than MT expected by threshold
-					timeThreshold[1] = timeThreshold[1] * (superThresPercent / 100); //superThreshPercent = 90
-					timeThresholdSuper[1] = timeThresholdSuper[1] * (superThresPercent / 100);
+			else if ((ERarray[b] < ERthreshold) && (ERarray[b - 1] < ERthreshold)) { // if ER on previous block <5% SKim
+				//if (medianMTarray[b]<medianMTarray[b-1]) { // adjust only if MT of current block faster
+				if (medianMTarray[j][b] < (timeThreshold[j] / (timeThresPercent / 100))) { // adjust only if MT of current block faster than MT expected by threshold
+					timeThreshold[j] = medianMTarray[j][b] * (timeThresPercent / 100);
+					timeThresholdSuper[j] = medianMTarray[j][b] * (superThresPercent / 100);
 				}
 			}
 		}
+		else {
 
+			medianMTarray[j][b] = 0;
+
+		}
 	}
-	else {
 
-		medianMTarray[b] = 0;
 
-		}
-	
 	// print FEEDBACK on the screen
-	sprintf(buffer, "Error rate: %.1f%%", ERarray[b]);
+	sprintf(buffer, "Error rate: %2.0f%%", ERarray[b]);
 	gs.line[0] = buffer;
 	gs.lineColor[0] = 1;
 
 
 	//sprintf(buffer,"MTs: %2.0fs , %2.0fs , %2.0fs, %2.0fs , %2.0fs , %2.0fs",medianMTarray[0][b], medianMTarray[1][b], medianMTarray[2][b], medianMTarray[3][b], medianMTarray[4][b], medianMTarray[5][b]);
-	sprintf(buffer, "timeThresholdSuper: %2.0fms, %2.0fms", timeThresholdSuper[0], timeThresholdSuper[1]);
+	sprintf(buffer, "timeThresholdSuper: %2.0fms", timeThresholdSuper[3]);
 	//	sprintf(buffer, "timeThresholdSuper: %2.0fs , %2.0fs , %2.0fs, %2.0fs", timeThresholdSuper[0], timeThresholdSuper[1], timeThresholdSuper[2], timeThresholdSuper[3]);
 
 	gs.line[1] = buffer;
@@ -557,9 +534,7 @@ MyTrial::MyTrial() {
 ///////////////////////////////////////////////////////////////
 void MyTrial::read(istream& in) {
 	// read from .tgt file
-	//(in) >> groupType >> seqType >> feedback;
 	(in) >> seqType >> feedback;
-
 	for (int i = 0; i < MAX_PRESS; i++) {   // MAX_PRESS = 14--> read presses
 		(in) >> press[i];
 	}
@@ -580,8 +555,7 @@ void MyTrial::read(istream& in) {
 // Write  // Neda - Eye data to be added
 ///////////////////////////////////////////////////////////////
 void MyTrial::writeDat(ostream& out) {
-	//out << groupType << "\t"
-	out	<< seqType << "\t"
+	out << seqType << "\t"
 		<< Horizon << "\t"
 		<< feedback << "\t"
 		<< PrepTime << "\t"
@@ -604,10 +578,8 @@ void MyTrial::writeDat(ostream& out) {
 	}
 
 
-	out << timeThreshold[0] << "\t"
-		<< timeThreshold[1] << "\t"
-		<< timeThresholdSuper[1] << "\t"
-		<< timeThresholdSuper[1] << "\t"
+	out << timeThreshold[3] << "\t"
+		<< timeThresholdSuper[3] << "\t"
 		<< points << "\t"
 		<< fGain[0] << "\t"
 		<< fGain[1] << "\t"
@@ -623,8 +595,7 @@ void MyTrial::writeDat(ostream& out) {
 ///////////////////////////////////////////////////////////////
 void MyTrial::writeHeader(ostream& out) {
 	char header[200];
-	//out << "groupType" << "\t"
-	out	<< "seqType" << "\t"
+	out << "seqType" << "\t"
 		<< "Horizon" << "\t"
 		<< "FT" << "\t"
 		<< "PrepTime" << "\t";
@@ -648,10 +619,8 @@ void MyTrial::writeHeader(ostream& out) {
 		out << header << "\t";
 	}
 
-	out << "timeThreshold_Vis" << "\t"
-		<< "timeThreshold_Letter" << "\t"
-		<< "timeThresholdSuper_Vis" << "\t"
-		<< "timeThresholdSuper_Letter" << "\t"
+	out << "timeThreshold" << "\t"
+		<< "timeThresholdSuper" << "\t"
 		<< "points" << "\t"
 		<< "Gain1" << "\t"
 		<< "Gain2" << "\t"
@@ -1112,12 +1081,21 @@ void MyTrial::control() {
 				gNumFingerErrors += nFingerErrors;
 			}
 			else {
-				switch (seqType) {
-				case 1:
+				switch (seqLength) {
+				case 2:
 					j = 0;
 					break;
-				case 2:
+				case 3:
 					j = 1;
+					break;
+				case 4:
+					j = 2;
+					break;
+				case 14:
+					j = 3;
+					break;
+				default:
+					j = 3;
 					break;
 				}
 

@@ -338,7 +338,7 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 	}
 
 	else if (arguments[0] == "thres") {
-		if (numArgs != 5) {
+		if (numArgs != 3) {
 			//tDisp.print("USAGE: thresh medianMT");  // SKim
 			tDisp.print("USAGE: thresholds for 3 points, visual, letter conditions");  // SKim
 		}
@@ -604,17 +604,28 @@ void MyTrial::writeDat(ostream& out) {
 	}
 
 
-	out << timeThreshold[0] << "\t"
-		<< timeThreshold[1] << "\t"
-		<< timeThresholdSuper[1] << "\t"
-		<< timeThresholdSuper[1] << "\t"
-		<< points << "\t"
-		<< fGain[0] << "\t"
-		<< fGain[1] << "\t"
-		<< fGain[2] << "\t"
-		<< fGain[3] << "\t"
-		<< fGain[4] << "\t"
-		<< StimTimeLim << "\t" << endl;
+	if (seqType == 1) {
+		out << timeThreshold[0] << "\t"
+			<< timeThresholdSuper[0] << "\t"
+			<< points << "\t"
+			<< fGain[0] << "\t"
+			<< fGain[1] << "\t"
+			<< fGain[2] << "\t"
+			<< fGain[3] << "\t"
+			<< fGain[4] << "\t"
+			<< StimTimeLim << "\t" << endl;
+	} else if (seqType == 2) {
+		out << timeThreshold[1] << "\t"
+			<< timeThresholdSuper[1] << "\t"
+			<< points << "\t"
+			<< fGain[0] << "\t"
+			<< fGain[1] << "\t"
+			<< fGain[2] << "\t"
+			<< fGain[3] << "\t"
+			<< fGain[4] << "\t"
+			<< StimTimeLim << "\t" << endl;
+	}
+	
 
 }
 
@@ -648,10 +659,8 @@ void MyTrial::writeHeader(ostream& out) {
 		out << header << "\t";
 	}
 
-	out << "timeThreshold_Vis" << "\t"
-		<< "timeThreshold_Letter" << "\t"
-		<< "timeThresholdSuper_Vis" << "\t"
-		<< "timeThresholdSuper_Letter" << "\t"
+	out << "timeThreshold" << "\t"
+		<< "timeThresholdSuper" << "\t"
 		<< "points" << "\t"
 		<< "Gain1" << "\t"
 		<< "Gain2" << "\t"

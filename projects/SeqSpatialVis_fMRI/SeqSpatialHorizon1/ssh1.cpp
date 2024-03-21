@@ -135,7 +135,7 @@ double fGain[5] = { 1.0,1.0,1.0,1.0,1.0 };  // Increased gains for index and lit
 ///  fMRI counter setup, SKim
 /// </summary>
 TRCounter gCounter;				///< TR counter, simulated and pulse-triggered 
-char counterSignal = '5';		///< What char is used to count the TR
+//char counterSignal = '5';		///< What char is used to count the TR
 int sliceNumber = 32;			///< How many slices do we have
 
 /////// TR counter
@@ -396,6 +396,17 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 			if (gExp->theBlock->init(bn, arguments[2])) {
 				gExp->theBlock->state = START_BLOCK;
 			}
+		}
+	}
+
+	else if (arguments[0] == "resize") {
+		if (numArgs != 2) {
+			tDisp.print("USAGE: resize 0|1");
+		}
+		else {
+			sscanf(arguments[1].c_str(), "%f", &arg[0]);
+			gScreen.setCenter(Vector2D(0, 0));    // In cm //0,2
+			gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));
 		}
 	}
 
@@ -730,10 +741,10 @@ void MyTrial::updateTextDisplay() {
 	tDisp.setText(buffer, 2, 0);
 	// fMRI, SKim
 	sprintf(buffer, "TotTime: %d", gCounter.readTotTime());
-	tDisp.setText(buffer, 3, 2);
+	tDisp.setText(buffer, 3, 0);
 	// fMRI, SKim
 	sprintf(buffer, "TR: %d", gCounter.readTR());
-	tDisp.setText(buffer, 4, 2);
+	tDisp.setText(buffer, 4, 0);
 	
 	sprintf(buffer, "Press:  %d %d %d %d %d", finger[0], finger[1], finger[2], finger[3], finger[4]);
 	tDisp.setText(buffer, 5, 0);

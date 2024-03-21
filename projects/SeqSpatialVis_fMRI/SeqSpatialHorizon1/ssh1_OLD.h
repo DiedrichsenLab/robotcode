@@ -33,7 +33,6 @@ using namespace std;
 enum TrialState {
 	WAIT_TRIAL,			// 1
 	START_TRIAL,		// 2
-	WAIT_TR,
 	//____________________Neda
 	START_FIX,	    	// 3 wait for eye to fixate at the begining of the seq
 	//____________________end
@@ -100,13 +99,6 @@ public:
 	int state;
 	double timeReal;
 	double time;
-
-	//fMRI synchronising variables, SKim, fMRI
-	double	TotTime;
-	int		TR;
-	int		currentSlice;
-	double	TRtime;
-
 	double force_left[5];
 	double force_right[5];
 	///_______________________Neda add
@@ -197,15 +189,6 @@ private:
 	double RT;								// Reaction Time, added by SKim
 	string cueP;							// edited by SKim, using only press cue	
 //	string cueS, cueC, cueP; 					///< Visual cues for sequence, chunk, and press
-
-	//variables for fMRI synchronisation, SKim
-	double startTRReal;     			///< Ask if this is used
-	int startTR;						///< Starting value for TR count
-	//int startSlice;						///< Starting value for slice no. 
-	//int startSlicereal;					///< Starting value for slice no. 
-	double startTime;					///< Time of the start of the trial 
-	double startTimeReal;				///< Time of the start of the trial 
-
 	DataManager<DataRecord, 30000 / 2> dataman;	///< For data recording for MOV file 
 };
 

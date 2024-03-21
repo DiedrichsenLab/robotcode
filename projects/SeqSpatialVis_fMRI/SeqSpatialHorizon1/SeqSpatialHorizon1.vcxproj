@@ -42,6 +42,7 @@
     <ClCompile Include="..\..\..\source\StimulatorBox.cpp" />
     <ClCompile Include="..\..\..\source\TextDisplay.cpp" />
     <ClCompile Include="..\..\..\source\Timer626.cpp" />
+    <ClCompile Include="..\..\..\source\TRCounter626.cpp" />
     <ClCompile Include="..\..\..\source\WIN626.C" />
     <ClCompile Include="ssh1.cpp" />
   </ItemGroup>

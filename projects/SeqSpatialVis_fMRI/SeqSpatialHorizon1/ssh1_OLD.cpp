@@ -48,7 +48,6 @@ GraphicState gs;
 #define RT_POS START_Y+1
 #define JUMP_POS  RT_POS+1
 
-#define TRTIME				2720 // must be adjusted, SKim, fMRI
 
 Color_t defaultCol = { 255,255,255 }; ///< set default color to grey
 Color_t detectCol = { 32,32,32 };
@@ -134,7 +133,7 @@ double fGain[5] = { 1.0,1.0,1.0,1.0,1.0 };  // Increased gains for index and lit
 /// <summary>
 ///  fMRI counter setup, SKim
 /// </summary>
-TRCounter gCounter;				///< TR counter, simulated and pulse-triggered 
+//TRCounter gCounter;				///< TR counter, simulated and pulse-triggered 
 char counterSignal = '5';		///< What char is used to count the TR
 int sliceNumber = 32;			///< How many slices do we have
 
@@ -183,11 +182,6 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 
 	//******************************************************************//
 	gTimer.init();
-
-	// TR Counter for fMRI, SKim
-	gCounter.init3(3, 0, sliceNumber); // TTL pulse for counting TR
-	gCounter.simulate(TRTIME);
-
 	gExp->control();
 	return 0;
 }
@@ -273,22 +267,7 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 	//		gs.showDiagnostics = arg[0];
 	//	}
 	//}
-	// fMRI experiment, SKim
-	else if (arguments[0] == "TR" || arguments[0] == "tr") {
-		if (numArgs != 2) {
-			tDisp.print("USAGE: TR delay [ms]");
-		}
-		else {
-			sscanf(arguments[1].c_str(), "%f", &dummy1);
-			if (dummy1 >= 0) {
-				gCounter.simulate(dummy1);
-			}
-			else {
-				gCounter.simulate(0);
-			}
-		}
 
-	}
 	/// Print continusly state of the encodeers
 	else if (arguments[0] == "zeroF") {
 		tDisp.keyPressed = 0;
@@ -385,7 +364,7 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 	}
 	// Added by Skim
 	else if (arguments[0] == "krun" || arguments[0] == "KRUN") {
-		if (arguments[1][0] != arguments[2][13]) { //file name shold be "ssh_sx_by.tgt", x and y seqType, blocknumber
+		if (arguments[1][0] != arguments[2][8]) { //file name shold be "ssh_sx_by.tgt", x and y seqType, blocknumber
 			tDisp.print("Use the same block number shown in tgt file");
 		}
 		else if (numArgs != 3) {
@@ -432,8 +411,6 @@ Trial* MyBlock::getTrial() {
 /// Called at the start of the block: resets TR Counter
 ///////////////////////////////////////////////////////////////
 void MyBlock::start() {
-	gCounter.reset(); // SKim
-	gCounter.start(); // Skim
 	for (int i = 0; i < NUMDISPLAYLINES; i++) { gs.line[i] = ""; }
 	gs.boxOn = true;
 	gNumErrors = 0;
@@ -448,8 +425,6 @@ void MyBlock::start() {
 /// giveFeedback and put it to the graphic state
 ///////////////////////////////////////////////////////////////
 void MyBlock::giveFeedback() {
-	gCounter.stop(); // SKim
-
 	b = b++;
 	int i, j;
 
@@ -555,12 +530,6 @@ MyTrial::MyTrial() {
 	DigPressed = 0;
 	MT = 0; // init total movement time, SKim edited
 	RT = 0; // Added by SKim, reaction time
-
-	startTR = 0; // SKim, fMRI
-	startTRReal = 0; // SKim, fMRI
-	startTime = 0; // SKim, fMRI
-	startTimeReal = 0; // SKim, fMRI
-
 	points = 0;
 	int released = 0;
 	for (int i = 0; i < MAX_PRESS; i++) {    // MAX_PRESS = 9 defined in header
@@ -578,7 +547,7 @@ MyTrial::MyTrial() {
 ///////////////////////////////////////////////////////////////
 void MyTrial::read(istream& in) {
 	// read from .tgt file
-	(in) >> startTime >> seqType; // SKim, fMRI
+	(in) >> seqType;
 	for (int i = 0; i < MAX_PRESS; i++) {   // MAX_PRESS = 14--> read presses
 		(in) >> press[i];
 	}
@@ -603,8 +572,6 @@ void MyTrial::writeDat(ostream& out) {
 	out << seqType << "\t"
 		<< Horizon << "\t"
 		<< PrepTime << "\t"
-		<< startTime << "\t" //repeat of target file. if 0, training mode
-		<< startTimeReal << "\t" //actual time of the beginning of each trial since T=0
 		;
 	for (int i = 0; i < MAX_PRESS; i++) {
 		out << press[i] << "\t";
@@ -643,9 +610,7 @@ void MyTrial::writeHeader(ostream& out) {
 	char header[200];
 	out << "seqType" << "\t"
 		<< "Horizon" << "\t"
-		<< "PrepTime" << "\t"
-		<< "startTime" << "\t" //repeat of target file: TIME BEGINNING FOR EACH TRIAL SINCE T=0 (1st TTL)
-		<< "startTimeReal" << "\t"; //actual time of the beginning of each trial since T=0
+		<< "PrepTime" << "\t";
 	for (int i = 0; i < MAX_PRESS; i++) {
 		sprintf(header, "press%d", i);
 		out << header << "\t";
@@ -728,34 +693,30 @@ void MyTrial::updateTextDisplay() {
 
 	sprintf(buffer, "State : %d   Trial: %d", state, gExp->theBlock->trialNum);
 	tDisp.setText(buffer, 2, 0);
-	// fMRI, SKim
-	sprintf(buffer, "TotTime: %d", gCounter.readTotTime());
-	tDisp.setText(buffer, 3, 2);
-	// fMRI, SKim
-	sprintf(buffer, "TR: %d", gCounter.readTR());
-	tDisp.setText(buffer, 4, 2);
-	
+
 	sprintf(buffer, "Press:  %d %d %d %d %d", finger[0], finger[1], finger[2], finger[3], finger[4]);
-	tDisp.setText(buffer, 5, 0);
+	tDisp.setText(buffer, 3, 0);
 
 	sprintf(buffer, "sequence Counter: %d ", seqCounter);
-	tDisp.setText(buffer, 6, 0);
+	tDisp.setText(buffer, 4, 0);
 
 	sprintf(buffer, "numNewpress: %d ", numNewpress);
-	tDisp.setText(buffer, 7, 0);
+	tDisp.setText(buffer, 5, 0);
 
 	sprintf(buffer, "released: %d", released);
-	tDisp.setText(buffer, 8, 0);
+	tDisp.setText(buffer, 6, 0);
 
 	sprintf(buffer, "gNumPointsBlock: %d", gNumPointsBlock);
-	tDisp.setText(buffer, 9, 0);
+	tDisp.setText(buffer, 7, 0);
 
+	sprintf(buffer, "Horizon: %d", Horizon);
+	tDisp.setText(buffer, 8, 0);
 
 	//sprintf(buffer,"thresholds : %2.0f %2.0f %2.0f Super: %2.0f %2.0f %2.0f",timeThreshold[0],timeThreshold[1],timeThreshold[2],timeThresholdSuper[0],timeThresholdSuper[1],timeThresholdSuper[2]);
 	//tDisp.setText(buffer,5,0);
 
-//	sprintf(buffer, "trial : %d seqType : %d state : %d", cTrial, seqType, state);
-	//tDisp.setText(buffer, 9, 0);
+	sprintf(buffer, "trial : %d seqType : %d state : %d", cTrial, seqType, state);
+	tDisp.setText(buffer, 9, 0);
 
 
 }
@@ -887,7 +848,7 @@ void MyTrial::updateHaptics() {
 	gTimer.countup();
 	gTimer.countupReal();
 	s626.updateAD(0);
-	gCounter.update();  // SKim, fMRI
+
 	gBox[0].update();
 	gBox[1].update();
 	//gBox[1].update();
@@ -960,39 +921,25 @@ void MyTrial::control() {
 		//the "run X *.tgt" command, and at the begginign
 		//of each trail i that block. basically sets up
 		//recording and clears screen for new trial
-		//gTimer.reset(1); // time for whole trial
-		//gTimer.reset(2); // time for events in the trial
+		gTimer.reset(1); // time for whole trial
+		gTimer.reset(2); // time for events in the trial
 
 
 		for (i = 0; i < NUMDISPLAYLINES; i++) {
 			gs.line[i] = "";
 		} // clear screen
 	
-		state = WAIT_TR;
+		state = START_FIX;
 		break;
 
 	case WAIT_TR:
-		if (gCounter.readTR() > 0 && gCounter.readTotTime() >= startTime) {
-			startTimeReal = gCounter.readTotTime();
-			startTRReal = gCounter.readTR();
-
-			//dataman.startRecording(); // see around line #660
-			gTimer.reset(1);					//time for whole trial
-			gTimer.reset(2);					//time for events in the trial			
-
-			state = START_FIX;
-		}
-		break;
 
 	case START_FIX: //3 as appears in mov
-		// check for time out
-		if (gTimer[1] > (PrepTime + MovTimeLim)) {
-			gs.clearCues();
-			state = WAIT_ITI;
-		}
 
+		//if (released == 5 && gTimer[2] > 2000) { //gTimer[2] > 1500 makes sure that the cross is being shown for 3 secs
 		if (released == 5) { //gTimer[2] > 1500 makes sure that the cross is being shown for 3 secs
 			dataman.startRecording();
+			gTimer.reset(1); // time for whole trial
 			gTimer.reset(2); // time for events in the trial
 			gs.clearCues();
 			for (i = 0; i < seqLength; i++) {
@@ -1064,8 +1011,8 @@ void MyTrial::control() {
 
 		break;
 	case WAIT_END_RELEASE: //6 as appears in mov
-		// check for time out
-		if ((released == 5) || (gTimer[1] > (PrepTime + MovTimeLim))) {
+
+		if (released == 5) {
 
 			MT = gTimer[1] - pressTime[0]; // Calculate total reaction time starting from the first press
 			gTimer.reset(2);
@@ -1103,12 +1050,6 @@ DataRecord::DataRecord(int s) {
 	time = gTimer[1];  //culumn 2 of the .mov file
 	timeReal = gTimer.getRealtime();        //culumn 3 of the .mov file
 
-	// SKim, fMRI
-	TotTime = gCounter.readTotTime(); //internally generated time initiated at first TTL pulse
-	TR = gCounter.readTR(); //counted TR pulse
-	TRtime = gCounter.readTime(); //time since last TR
-	currentSlice = 0;//gCounter.readSlice();
-
 	for (i = 0; i < 5; i++) {
 		force_left[i] = gBox[0].getForce(i);//culumn 4-8 of the .mov file
 		force_right[i] = gBox[1].getForce(i);
@@ -1121,7 +1062,7 @@ DataRecord::DataRecord(int s) {
 // Writes out the data to the *.mov file
 /////////////////////////////////////////////////////////////////////////////////////
 void DataRecord::write(ostream& out) {
-	out << state << "\t" << timeReal << "\t" << time << "\t" << TotTime  << "\t" << TR << "\t"	<< currentSlice << "\t"	
+	out << state << "\t" << timeReal << "\t" << time << "\t"
 		<< force_right[0] << " \t" << force_right[1] << "\t" << force_right[2] << " \t" << force_right[3] << "\t" << force_right[4] << " \t"
 		<< endl;
 }

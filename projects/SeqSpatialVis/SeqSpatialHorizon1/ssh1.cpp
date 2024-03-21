@@ -379,6 +379,17 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 		}
 	}
 
+	// Added by Armin - resizing window - Flip display left-right or up-down 
+	else if (arguments[0] == "resize") {
+		if (numArgs != 2) {
+			tDisp.print("USAGE: resize 0|1");
+		}
+		else {
+			sscanf(arguments[1].c_str(), "%f", &arg[0]);
+			gScreen.setCenter(Vector2D(0, 0));    // In cm //0,2
+			gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));
+		}
+	}
 	else {
 		return false; /// Command not recognized
 	}

@@ -616,7 +616,8 @@ void MyTrial::writeDat(ostream& out) {
 		<< PrepTime << "\t"
 		<< startTime << "\t" //repeat of target file. if 0, training mode
 		<< startTimeReal << "\t" //actual time of the beginning of each trial since T=0
-		;
+		<< startTRReal<< "\t" // number of TR counted when trial started
+		<< startTRtime << "\t" // ms since last TR was sensed 
 	for (int i = 0; i < MAX_PRESS; i++) {
 		out << press[i] << "\t";
 	}
@@ -657,6 +658,8 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "PrepTime" << "\t"
 		<< "startTime" << "\t" //repeat of target file: TIME BEGINNING FOR EACH TRIAL SINCE T=0 (1st TTL)
 		<< "startTimeReal" << "\t"; //actual time of the beginning of each trial since T=0
+		<< "startTR" << "\t"; //actual time of the beginning of each trial since T=0
+		<< "startTRtime" << "\t"; //actual time of the beginning of each trial since T=0
 	for (int i = 0; i < MAX_PRESS; i++) {
 		sprintf(header, "press%d", i);
 		out << header << "\t";
@@ -986,6 +989,7 @@ void MyTrial::control() {
 		if (gCounter.readTR() > 0 && gCounter.readTotTime() >= startTime) {
 			startTimeReal = gCounter.readTotTime();
 			startTRReal = gCounter.readTR();
+			startTRtime = gCounter.readTime();
 
 			//dataman.startRecording(); // see around line #660
 			gTimer.reset(1);					//time for whole trial
@@ -1092,7 +1096,7 @@ void MyTrial::control() {
 
 	case WAIT_ITI:  //9 as appears in mov
 		gTimer.reset(2); // time for events in the trial
-		if (gTimer[1] > TrialTime) { // TrialTime = PrepTime + MovTimeLim + iti
+		if (gTimer[1] > TrialTime) { // TrialTime = PrepTime + MovTimeLim 
 			state = END_TRIAL;
 
 		}

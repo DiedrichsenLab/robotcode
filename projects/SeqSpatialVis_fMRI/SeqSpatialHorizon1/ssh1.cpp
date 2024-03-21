@@ -526,23 +526,23 @@ void MyBlock::giveFeedback() {
 	}
 
 
-//	// print FEEDBACK on the screen, disabled in fMRI experiment
-//	sprintf(buffer, "Error rate: %2.0f%%", ERarray[b]);
-//	gs.line[0] = buffer;
-//	gs.lineColor[0] = 1;
-//
-//
-//	//sprintf(buffer,"MTs: %2.0fs , %2.0fs , %2.0fs, %2.0fs , %2.0fs , %2.0fs",medianMTarray[0][b], medianMTarray[1][b], medianMTarray[2][b], medianMTarray[3][b], medianMTarray[4][b], medianMTarray[5][b]);
-//	sprintf(buffer, "timeThresholdSuper: %2.0fms", timeThresholdSuper[3]);
-//	//	sprintf(buffer, "timeThresholdSuper: %2.0fs , %2.0fs , %2.0fs, %2.0fs", timeThresholdSuper[0], timeThresholdSuper[1], timeThresholdSuper[2], timeThresholdSuper[3]);
-//
-//	gs.line[1] = buffer;
-//	gs.lineColor[1] = 1;
-//
-//	gNumPoints += gNumPointsBlock;
-//	sprintf(buffer, "Point you've got: %d   Total points: %d", gNumPointsBlock, gNumPoints);
-//	gs.line[2] = buffer;
-//	gs.lineColor[2] = 1;
+	// print FEEDBACK on the screen, disabled in fMRI experiment
+	sprintf(buffer, "Error rate: %2.0f%%", ERarray[b]);
+	gs.line[0] = buffer;
+	gs.lineColor[0] = 1;
+
+
+	//sprintf(buffer,"MTs: %2.0fs , %2.0fs , %2.0fs, %2.0fs , %2.0fs , %2.0fs",medianMTarray[0][b], medianMTarray[1][b], medianMTarray[2][b], medianMTarray[3][b], medianMTarray[4][b], medianMTarray[5][b]);
+	sprintf(buffer, "timeThresholdSuper: %2.0fms", timeThresholdSuper[3]);
+	//	sprintf(buffer, "timeThresholdSuper: %2.0fs , %2.0fs , %2.0fs, %2.0fs", timeThresholdSuper[0], timeThresholdSuper[1], timeThresholdSuper[2], timeThresholdSuper[3]);
+
+	gs.line[1] = buffer;
+	gs.lineColor[1] = 1;
+
+	gNumPoints += gNumPointsBlock;
+	sprintf(buffer, "Point you've got: %d   Total points: %d", gNumPointsBlock, gNumPoints);
+	gs.line[2] = buffer;
+	gs.lineColor[2] = 1;
 
 }
 
@@ -569,6 +569,7 @@ MyTrial::MyTrial() {
 
 	startTR = 0; // SKim, fMRI
 	startTRReal = 0; // SKim, fMRI
+	startTRtime = 0; // SKim, fMRI
 	startTime = 0; // SKim, fMRI
 	startTimeReal = 0; // SKim, fMRI
 
@@ -616,8 +617,8 @@ void MyTrial::writeDat(ostream& out) {
 		<< PrepTime << "\t"
 		<< startTime << "\t" //repeat of target file. if 0, training mode
 		<< startTimeReal << "\t" //actual time of the beginning of each trial since T=0
-		<< startTRReal<< "\t" // number of TR counted when trial started
-		<< startTRtime << "\t" // ms since last TR was sensed 
+		<< startTRReal << "\t" // number of TR counted when trial started
+		<< startTRtime << "\t"; // ms since last TR was sensed 
 	for (int i = 0; i < MAX_PRESS; i++) {
 		out << press[i] << "\t";
 	}
@@ -657,8 +658,8 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "Horizon" << "\t"
 		<< "PrepTime" << "\t"
 		<< "startTime" << "\t" //repeat of target file: TIME BEGINNING FOR EACH TRIAL SINCE T=0 (1st TTL)
-		<< "startTimeReal" << "\t"; //actual time of the beginning of each trial since T=0
-		<< "startTR" << "\t"; //actual time of the beginning of each trial since T=0
+		<< "startTimeReal" << "\t" //actual time of the beginning of each trial since T=0
+		<< "startTRReal" << "\t" //actual time of the beginning of each trial since T=0
 		<< "startTRtime" << "\t"; //actual time of the beginning of each trial since T=0
 	for (int i = 0; i < MAX_PRESS; i++) {
 		sprintf(header, "press%d", i);
@@ -813,9 +814,13 @@ void MyTrial::updateGraphics(int what) {
 	//	gScreen.printChar('+', 0, -6, 2*SIZE_CUE);
 	//	
 	//}
+	if (state == WAIT_TRIAL || state == START_TRIAL || state == WAIT_TR || state == START_FIX) {
+		gScreen.setColor(1);  // White fixation cross
+		gScreen.printChar('+', 0, -7, SIZE_CUE);
+	}
 	if (state == WAIT_END_RELEASE || state == WAIT_GOCUE || state == WAIT_PRESS) {
 		if (state == WAIT_END_RELEASE || state == WAIT_GOCUE) {
-			gScreen.setColor(2);  // Red signal, wait for "GO" signal and all fingers are released
+			gScreen.setColor(1);  // Red signal, wait for "GO" signal and all fingers are released
 			gScreen.printChar('+', 0, -7, SIZE_CUE);
 		}
 		else {
@@ -1003,7 +1008,9 @@ void MyTrial::control() {
 		// check for time out
 		if (gTimer[1] > (PrepTime + MovTimeLim)) {
 			gs.clearCues();
+	//		state = END_TRIAL;
 			state = WAIT_ITI;
+
 		}
 
 		if (released == 5) { //gTimer[2] > 1500 makes sure that the cross is being shown for 3 secs
@@ -1020,6 +1027,7 @@ void MyTrial::control() {
 		// check for time out
 		if (gTimer[1] > (PrepTime + MovTimeLim)) {
 			gs.clearCues();
+			//		state = END_TRIAL;
 			state = WAIT_ITI;
 		}
 		if (released == 5 && gTimer[2] > PrepTime) { // Wait for PrepTime, preplanning
@@ -1033,6 +1041,7 @@ void MyTrial::control() {
 		// check for time out
 		if (gTimer[1] > (PrepTime + MovTimeLim)) {
 			gs.clearCues();
+			//		state = END_TRIAL;
 			state = WAIT_ITI;
 		}
 
@@ -1086,7 +1095,8 @@ void MyTrial::control() {
 			gTimer.reset(2);
 			gs.clearCues();
 			//state = WAIT_FEEDBACK;
-			state = WAIT_ITI; // DO not give a feedback for fMRI
+	//		state = END_TRIAL;
+			state = WAIT_ITI;
 		}
 		else {
 			state = WAIT_PRESS;

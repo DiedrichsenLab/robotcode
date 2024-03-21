@@ -199,7 +199,9 @@ private:
 //	string cueS, cueC, cueP; 					///< Visual cues for sequence, chunk, and press
 
 	//variables for fMRI synchronisation, SKim
-	double startTRReal;     			///< Ask if this is used
+	int startTRReal;     			///< Ask if this is used
+	double startTRtime;     			///< Ask if this is used
+
 	int startTR;						///< Starting value for TR count
 	//int startSlice;						///< Starting value for slice no. 
 	//int startSlicereal;					///< Starting value for slice no. 

@@ -541,16 +541,16 @@ void MyTrial::writeDat(ostream& out) {
 		out << pressTime[i] << "\t";
 	}
 
-	out << startTime << "\t"
+	out << tempThres1 << "\t"
+		<< tempThres2 << "\t"
+
+		<< startTime << "\t"
 		<< startTimeReal << "\t"
 		<< trialDur << "\t"
 		<< startTR << "\t"
 		<< startTRtime << "\t"
 		<< useMetronome << "\t"
-		<< isCross << "\t";			//whether pre-movement threshold has been crossed in this trial
-
-	out << tempThres1 << "\t"
-		<< tempThres2 << "\t"
+		<< isCross << "\t"			//whether pre-movement threshold has been crossed in this trial
 		<< endl;
 }
 
@@ -605,10 +605,7 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "startTR" << "\t"
 		<< "startTRtime" << "\t"
 		<< "useMetronome" << "\t"
-		<< "isCross" << "\t";
-
-	out << "timeThreshold" << "\t"
-		<< "timeThresholdSuper" << "\t"
+		<< "isCross" << "\t"
 		<< endl;
 }
 

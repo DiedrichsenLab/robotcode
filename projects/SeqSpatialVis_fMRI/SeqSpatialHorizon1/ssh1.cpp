@@ -67,6 +67,7 @@ int refPointNumX = 0; // Basically, this is 0(central fixation)
 int jumpPointNumX = 1; // Basically, this is fixation jump to rightward
 int refPointNumY = 0; // Basically, this is 0(central fixation)
 int jumpPointNumY = 2; // Basically, this is fixation jump to upward
+FixCross 	fixationCross;
 
 # define TRINUMforMEDIAN 30// 30  ///
 double gSaccadeTimeR[TRINUMforMEDIAN];
@@ -94,7 +95,7 @@ float superThresPercent = 95; ///< 95% of current median MT (previous block)
 //float ERthreshold = 15; ///< Trheshold of 20% of error rate in order to lower MT thresholds
 float ERthreshold = 5; ///< Trheshold of 5% of "finger tapping" error rate in order to lower MT thresholds, SKedited
 
-double medianMTarray[4][100]; ///< Initialise MT array across blocks (never more than 100 blocks)
+double medianMTarray[100]; ///< Initialise MT array across blocks (never more than 100 blocks)
 double ERarray[100]; ///< Initialise ER array across blocks
 int b = 0;
 
@@ -117,10 +118,11 @@ char TEXT[5] = { '1','2','3','4','5' };
 #define CUE_SEQ 6
 #define CUE_CHUNK 4.5
 #define CUE_PRESS 2.3 // the Y position of the presses on the screen
-#define SIZE_CUE 11    // the font size of presses
+#define SIZE_CUE 9    // the font size of presses
 #define WIDTH_CHAR_CUE 2 // the distance between letters
 #define WIDTH_REC_CUE 6 // SKim
 #define HEIGHT_REC_CUE 3 // SKim
+#define FIXCROSS_SIZE		1
 
 // Force Thresholds
 #define STARTTH 0.4 // Threshold for start
@@ -180,6 +182,9 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 
 	gBox[0].filterconst = 0.8;
 	gBox[1].filterconst = 0.8;
+
+
+
 
 	//******************************************************************//
 	gTimer.init();
@@ -459,93 +464,60 @@ void MyBlock::start() {
 /// giveFeedback and put it to the graphic state
 ///////////////////////////////////////////////////////////////
 void MyBlock::giveFeedback() {
-	gCounter.stop(); // SKim
-
 	b = b++;
-	int i, j;
-
-	int n[4] = { 0,0,0,0 };
-	double nn[4] = { 0,0,0,0 };
-	double MTarray[4][200];
-	double medianMT[4] = { 0,0,0,0 };
+	//int i, j;
+	int i;
+	int n = 0;
+	double MTarray[200];
+	double medianMT = 0;
+	//int gType; // groupType
+	int sType; //seqType
 	MyTrial* tpnr;  //MyTrial object --> inherits class Trial in Experiment.h
-
-	for (i = 0; i < 4; i++) {
-		medianMTarray[i][0] = 10000; // Initialise the MT for the 0th block to be 10000 (same as default)
-
-	}
+	medianMTarray[0] = 10000;
+	
 	ERarray[0] = 0; // Initialise the ER for the 0th block to be 0
 
 	for (i = 0; i < trialNum; i++) {
 		tpnr = (MyTrial*)trialVec.at(i);
-		if (tpnr->seqLength == 2) {
-			j = 0;
-		}
-		else if (tpnr->seqLength == 3) {
-			j = 1;
-		}
-		else if (tpnr->seqLength == 4) {
-			j = 2;
-		}
-		else {  // edited by SKim
-			j = 3;
-
-		}
+	
 
 		if (tpnr->isError == 0) {
-			MTarray[j][n[j]] = tpnr->MT; //remember the RT from the correct trials and add them
-			n[j]++; // remember number of trials
+			MTarray[n] = tpnr->MT; //remember the RT from the correct trials and add them
+			n++; // remember number of trials
 		}
-		nn[j]++;
+		sType = tpnr->seqType;
+
+		//nn++;
 	}
 	//ERarray[b] = 100 * ((double)gNumErrors) / (double)(trialNum); // error rate
-	ERarray[b] = 100 * ((double)gNumFingerErrors) / (double)(trialNum *5); // error rate, SKim, seqLength, fMRI
-	for (j = 0; j < 4; j++) {
-		if (n[j] > 0) { // if more than one correct trials for seqlength j
-			medianMTarray[j][b] = median(MTarray[j], n[j]);
+	ERarray[b] = 100 * ((double)gNumFingerErrors) / (double)(trialNum * 14); // error rate, SKim
 
-			if ((ERarray[b] < ERthreshold) && (ERarray[b - 1] > ERthreshold)) { // if ER on previous block > 5% SKim
-				if (medianMTarray[j][b] < (timeThreshold[j] / (timeThresPercent / 100))) { // if MT faster than MT expected by threshold
-					timeThreshold[j] = medianMTarray[j][b] * (timeThresPercent / 100);
-					timeThresholdSuper[j] = medianMTarray[j][b] * (superThresPercent / 100);
-				}
-			}
-			else if ((ERarray[b] < ERthreshold) && (ERarray[b - 1] < ERthreshold)) { // if ER on previous block <5% SKim
-				//if (medianMTarray[b]<medianMTarray[b-1]) { // adjust only if MT of current block faster
-				if (medianMTarray[j][b] < (timeThreshold[j] / (timeThresPercent / 100))) { // adjust only if MT of current block faster than MT expected by threshold
-					timeThreshold[j] = medianMTarray[j][b] * (timeThresPercent / 100);
-					timeThresholdSuper[j] = medianMTarray[j][b] * (superThresPercent / 100);
-				}
-			}
-		}
-		else {
+	//for (j = 0; j < 4; j++) {
+	if (n > 0) { // if more than one correct trials for seqlength j
+		medianMTarray[b] = median(MTarray, n);
 
-			medianMTarray[j][b] = 0;
-
-		}
+	}
+	else {
+		medianMTarray[b] = 0;
 	}
 
+	// print FEEDBACK on the screen
+	sprintf(buffer, "Error rate: %.1f%%", ERarray[b]);
+	gs.line[0] = buffer;
+	gs.lineColor[0] = 1;
 
-//	// print FEEDBACK on the screen, disabled in fMRI experiment
-//	sprintf(buffer, "Error rate: %2.0f%%", ERarray[b]);
-//	gs.line[0] = buffer;
-//	gs.lineColor[0] = 1;
-//
-//
-//	//sprintf(buffer,"MTs: %2.0fs , %2.0fs , %2.0fs, %2.0fs , %2.0fs , %2.0fs",medianMTarray[0][b], medianMTarray[1][b], medianMTarray[2][b], medianMTarray[3][b], medianMTarray[4][b], medianMTarray[5][b]);
-//	sprintf(buffer, "timeThresholdSuper: %2.0fms", timeThresholdSuper[3]);
-//	//	sprintf(buffer, "timeThresholdSuper: %2.0fs , %2.0fs , %2.0fs, %2.0fs", timeThresholdSuper[0], timeThresholdSuper[1], timeThresholdSuper[2], timeThresholdSuper[3]);
-//
-//	gs.line[1] = buffer;
-//	gs.lineColor[1] = 1;
-//
-//	gNumPoints += gNumPointsBlock;
-//	sprintf(buffer, "Point you've got: %d   Total points: %d", gNumPointsBlock, gNumPoints);
-//	gs.line[2] = buffer;
-//	gs.lineColor[2] = 1;
 
+
+	sprintf(buffer,"MTs: %2.0fms",medianMTarray[b], medianMTarray[b]);
+	
+	gs.line[1] = buffer;
+	gs.lineColor[1] = 1;
+
+	gNumPoints += gNumPointsBlock;
+	sprintf(buffer, "Point you've got: %d   Total points: %d", gNumPointsBlock, gNumPoints);
+	gs.line[2] = buffer;
+	gs.lineColor[2] = 1;
 }
-
 ///////////////////////////////////////////////////////////////
 /// My Trial class contains the main info of how a trial in this experiment is run
 ///////////////////////////////////////////////////////////////
@@ -569,6 +541,7 @@ MyTrial::MyTrial() {
 
 	startTR = 0; // SKim, fMRI
 	startTRReal = 0; // SKim, fMRI
+	startTRtime = 0; // SKim, fMRI
 	startTime = 0; // SKim, fMRI
 	startTimeReal = 0; // SKim, fMRI
 	startTime = 0;					///< Time of the start of the trial 
@@ -690,8 +663,8 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "Gain3" << "\t"
 		<< "Gain4" << "\t"
 		<< "Gain5" << "\t" << endl;
-//		<< "StimTimeLim" << "\t" << endl;
-	//_____________________end
+	//		<< "StimTimeLim" << "\t" << endl;
+		//_____________________end
 
 }
 
@@ -742,7 +715,7 @@ void MyTrial::updateTextDisplay() {
 	//sprintf(buffer,"Force:    %2.2f %2.2f %2.2f %2.2f %2.2f",gBox[hand-1].getForce(0),gBox[hand-1].getForce(1),gBox[hand-1].getForce(2),gBox[hand-1].getForce(3),gBox[hand-1].getForce(4));
 	//tDisp.setText(buffer,2,0);
 
-	sprintf(buffer, "State : %d   Trial: %d", state, gExp->theBlock->trialNum);
+	sprintf(buffer, "State : %d   Trial: %d", state, gExp->theBlock->trialNum + 1);
 	tDisp.setText(buffer, 2, 0);
 	// fMRI, SKim
 	sprintf(buffer, "TotTime: %d", gCounter.readTotTime());
@@ -750,7 +723,7 @@ void MyTrial::updateTextDisplay() {
 	// fMRI, SKim
 	sprintf(buffer, "TR: %d", gCounter.readTR());
 	tDisp.setText(buffer, 4, 0);
-	
+
 	sprintf(buffer, "Press:  %d %d %d %d %d", finger[0], finger[1], finger[2], finger[3], finger[4]);
 	tDisp.setText(buffer, 5, 0);
 
@@ -779,27 +752,35 @@ void MyTrial::updateTextDisplay() {
 ///////////////////////////////////////////////////////////////
 /// updateGraphics: Call from ScreenHD
 ///////////////////////////////////////////////////////////////
-#define FINGWIDTH 2
+#define FINGWIDTH 1.6 // 2 -> 1.6
 #define RECWIDTH 1.4
 #define FORCESCALE 2
-#define BASELINE -10  // SKim
+#define BASELINE -8  // SKim
 
 void MyTrial::updateGraphics(int what) {
 	int i;
 	double height;
 	// Finger forces
+//	gScreen.printChar('+', 0, -3, SIZE_CUE);
+//	fixationCross.position = gScreen.getCenter();
+	fixationCross.position = Vector2D(0, -3);
+	fixationCross.size = Vector2D(FIXCROSS_SIZE, FIXCROSS_SIZE);
+	fixationCross.setShape(SHAPE_PLUS);
+
+	fixationCross.setColor(SCR_WHITE);
+	fixationCross.draw();
+
 	if (gs.showLines == 1) {
 		gScreen.setColor(Screen::white); // defines the color of force lines
 		for (i = 0; i < 5; i++) {
 			//reads the forces and determins how high the small bars should jump up
 			height = gBox[hand - 1].getForce(i) * FORCESCALE * fGain[i] + BASELINE;
 			//draws the smaller line for individual finger forces
-			gScreen.drawLine(i * FINGWIDTH - 5.0, height, i * FINGWIDTH - 3.0, height);
+			gScreen.drawLine(i * FINGWIDTH - 4.0, height, i * FINGWIDTH - 2.4, height);
 		}
-		gScreen.drawLine(-5, BASELINE, 5, BASELINE); // the lower line
-		gScreen.drawLine(-5, preTH * FORCESCALE + BASELINE, 5, preTH * FORCESCALE + BASELINE);
-		gScreen.drawLine(-5, relTH * FORCESCALE + BASELINE, 5, relTH * FORCESCALE + BASELINE); // changed by SKim
-
+		gScreen.drawLine(-4, BASELINE, 4, BASELINE); // the lower line
+		gScreen.drawLine(-4, preTH * FORCESCALE + BASELINE, 4, preTH * FORCESCALE + BASELINE);
+		gScreen.drawLine(-4, relTH * FORCESCALE + BASELINE, 4, relTH * FORCESCALE + BASELINE); // changed by SKim
 		// The upper line set at force threshold
 	}
 	// Other letters
@@ -815,19 +796,27 @@ void MyTrial::updateGraphics(int what) {
 	//	gScreen.printChar('+', 0, -6, 2*SIZE_CUE);
 	//	
 	//}
+	//if (state == WAIT_TRIAL || state == START_TRIAL || state == WAIT_TR || state == START_FIX || state==WAIT_ITI || state==END_TRIAL) {
+	//	gScreen.setColor(1);  // White fixation cross
+	//	gScreen.printChar('+', 0, -3, SIZE_CUE);
+	//}
 	if (state == WAIT_END_RELEASE || state == WAIT_GOCUE || state == WAIT_PRESS) {
 		if (state == WAIT_END_RELEASE || state == WAIT_GOCUE) {
-			gScreen.setColor(2);  // Red signal, wait for "GO" signal and all fingers are released
-			gScreen.printChar('+', 0, -7, SIZE_CUE);
+			fixationCross.setColor(SCR_WHITE);
+			fixationCross.draw();
+			//	gScreen.setColor(1);  // White signal, wait for "GO" signal and all fingers are released
+		//	gScreen.printChar('+', 0, -3, SIZE_CUE);
 		}
 		else {
 			if (gTimer[2] < 1000) {
-				gScreen.setColor(3); // Green signal
+				//				gScreen.setColor(3); // Green signal
+				fixationCross.setColor(SCR_GREEN);
 			}
 			else {
-				gScreen.setColor(0); // "GO" signal invisible
+				fixationCross.setColor(SCR_WHITE);
 			}
-			gScreen.printChar('+', 0, -7, SIZE_CUE);
+			fixationCross.draw();
+			//			gScreen.printChar('+', 0, -3, SIZE_CUE);
 		}
 
 		if (state == WAIT_GOCUE || state == WAIT_PRESS) {
@@ -838,18 +827,18 @@ void MyTrial::updateGraphics(int what) {
 				//gHorizon.position = Vector2D(0, 3.5 + Horizon);
 				//gHorizon.size = Vector2D(10, 16 - 2 * Horizon);
 				//gHorizon.draw();
-				gScreen.drawLine(-5, -5, -5, 11);
-				gScreen.drawLine(-3, -5, -3, 11);
-				gScreen.drawLine(-1, -5, -1, 11);
-				gScreen.drawLine(1, -5, 1, 11);
-				gScreen.drawLine(3, -5, 3, 11);
-				gScreen.drawLine(5, -5, 5, 11);
+				gScreen.drawLine(-4, -1, -4, 8);
+				gScreen.drawLine(-2.4, -1, -2.4, 8);
+				gScreen.drawLine(-0.8, -1, -0.8, 8);
+				gScreen.drawLine(0.8, -1, 0.8, 8);
+				gScreen.drawLine(2.4, -1, 2.4, 8);
+				gScreen.drawLine(4, -1, 4, 8);
 
 				for (i = 0; i < min(Horizon, seqLength - seqCounter); i++) {
 					if (gs.cuePress[i] > 0) {
 						double xPos = gs.cuePress[i + seqCounter] - '1';
-						gTarget.position = Vector2D(-4.0 + 2.0 * xPos, -4.0 + i * 1.8);
-						gTarget.size = Vector2D(1.4, 1.4);
+						gTarget.position = Vector2D(-3.2 + 1.6 * xPos, -0.0 + i * 1.6);
+						gTarget.size = Vector2D(1.2, 1.2);
 						gTarget.draw();
 					}
 				}
@@ -862,7 +851,7 @@ void MyTrial::updateGraphics(int what) {
 				for (i = 0; i < min(Horizon, seqLength - seqCounter); i++) {  // Edited by SKim
 					if (gs.cuePress[i] > 0) {
 						//						gScreen.printChar(gs.cuePress[i], (i - 4) * WIDTH_CHAR_CUE, CUE_PRESS, SIZE_CUE);
-						gScreen.printChar(gs.cuePress[i + seqCounter], 0, -4.7 + i * 1.8, SIZE_CUE); // -4.7 is matched to -4.0 for visual target type
+						gScreen.printChar(gs.cuePress[i + seqCounter], 0, -0.7 + i * 1.6, SIZE_CUE); // -4.7 is matched to -4.0 for visual target type
 						// the number 6.5 is usually the seqLength/2 so that the sequence in centered
 					}
 				}
@@ -983,7 +972,7 @@ void MyTrial::control() {
 		for (i = 0; i < NUMDISPLAYLINES; i++) {
 			gs.line[i] = "";
 		} // clear screen
-	
+
 		state = WAIT_TR;
 		break;
 
@@ -1005,7 +994,9 @@ void MyTrial::control() {
 		// check for time out
 		if (gTimer[1] > (PrepTime + MovTimeLim)) {
 			gs.clearCues();
+			//		state = END_TRIAL;
 			state = WAIT_ITI;
+
 		}
 
 		if (released == 5) { //gTimer[2] > 1500 makes sure that the cross is being shown for 3 secs
@@ -1022,6 +1013,7 @@ void MyTrial::control() {
 		// check for time out
 		if (gTimer[1] > (PrepTime + MovTimeLim)) {
 			gs.clearCues();
+			//		state = END_TRIAL;
 			state = WAIT_ITI;
 		}
 		if (released == 5 && gTimer[2] > PrepTime) { // Wait for PrepTime, preplanning
@@ -1035,6 +1027,7 @@ void MyTrial::control() {
 		// check for time out
 		if (gTimer[1] > (PrepTime + MovTimeLim)) {
 			gs.clearCues();
+			//		state = END_TRIAL;
 			state = WAIT_ITI;
 		}
 
@@ -1085,10 +1078,20 @@ void MyTrial::control() {
 		if ((released == 5) || (gTimer[1] > (PrepTime + MovTimeLim))) {
 
 			MT = gTimer[1] - pressTime[0]; // Calculate total reaction time starting from the first press
+			if (isError > 0) {
+				gNumErrors++;
+				gNumFingerErrors += nFingerErrors;
+			}
+			else {
+				critTime = MT;
+				points = 1;
+				gNumPointsBlock += 1;
+			}
 			gTimer.reset(2);
 			gs.clearCues();
 			//state = WAIT_FEEDBACK;
-			state = WAIT_ITI; // DO not give a feedback for fMRI
+	//		state = END_TRIAL;
+			state = WAIT_ITI;
 		}
 		else {
 			state = WAIT_PRESS;
@@ -1098,7 +1101,7 @@ void MyTrial::control() {
 
 	case WAIT_ITI:  //9 as appears in mov
 		gTimer.reset(2); // time for events in the trial
-		if (gTimer[1] > TrialTime) { // TrialTime = PrepTime + MovTimeLim 
+		if (gTimer[1] > (PrepTime+MovTimeLim)) { // TrialTime = PrepTime + MovTimeLim 
 			state = END_TRIAL;
 
 		}
@@ -1138,7 +1141,7 @@ DataRecord::DataRecord(int s) {
 // Writes out the data to the *.mov file
 /////////////////////////////////////////////////////////////////////////////////////
 void DataRecord::write(ostream& out) {
-	out << state << "\t" << timeReal << "\t" << time << "\t" << TotTime  << "\t" << TR << "\t"	<< currentSlice << "\t"	
+	out << state << "\t" << timeReal << "\t" << time << "\t" << TotTime << "\t" << TR << "\t" << currentSlice << "\t"
 		<< force_right[0] << " \t" << force_right[1] << "\t" << force_right[2] << " \t" << force_right[3] << "\t" << force_right[4] << " \t"
 		<< endl;
 }

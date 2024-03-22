@@ -167,7 +167,7 @@ private:
 	int Horizon;                            ///< How mnay digits ahead can you see
 	int StimTimeLim;							///< For how long is the seq/chunk displayed
 	//int subNum;
-	int PrepTime; 
+	int PrepTime;
 	int seqType;							///< Which sequence of finger movments has to be done? 
 	int MovTimeLim;							// Added by SKim for fMRI
 	int TrialTime;							// Added by SKim for fMRI, TrialTime = PrepTime + MovTime + iti
@@ -196,9 +196,9 @@ private:
 	double MT;								///< Overall MT 
 	double RT;								// Reaction Time, added by SKim
 	string cueP;							// edited by SKim, using only press cue	
-//	string cueS, cueC, cueP; 					///< Visual cues for sequence, chunk, and press
+	//	string cueS, cueC, cueP; 					///< Visual cues for sequence, chunk, and press
 
-	//variables for fMRI synchronisation, SKim
+		//variables for fMRI synchronisation, SKim
 	int startTRReal;     			///< Ask if this is used
 	double startTRtime;     			///< Ask if this is used
 
@@ -224,6 +224,20 @@ public:
 	virtual bool parseCommand(string args[], int numArgs);
 
 };
+
+
+//////////////////////////////////////////////////////////////
+class FixCross : public Target {
+public:
+	void draw();
+};
+void FixCross::draw() {
+	//setColor(1);
+	gScreen.setColor(color);
+	gScreen.drawBox(Vector2D(size[0], 0.3), Vector2D(position[0], position[1]));
+	gScreen.drawBox(Vector2D(0.3, size[1]), Vector2D(position[0], position[1]));
+}
+
 
 // computing standard deviation
 double mystd(double array[], int sizeOfArray);

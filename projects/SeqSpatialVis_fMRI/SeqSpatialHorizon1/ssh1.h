@@ -106,7 +106,8 @@ public:
 	int		TR;
 	int		currentSlice;
 	double	TRtime;
-
+	//int startTRReal;
+	//double startTRtime;
 	double force_left[5];
 	double force_right[5];
 	///_______________________Neda add
@@ -171,6 +172,8 @@ private:
 	int seqType;							///< Which sequence of finger movments has to be done? 
 	int MovTimeLim;							// Added by SKim for fMRI
 	int TrialTime;							// Added by SKim for fMRI, TrialTime = PrepTime + MovTime + iti
+	double startTime;					///< Time of the start of the trial 
+	double startTimeReal;				///< Time of the start of the trial 
 	int press[MAX_PRESS];					///< Which digit to press 
 	int fGiven[MAX_PRESS];
 	int feedback;							///< Give Feedback or not? 
@@ -199,7 +202,8 @@ private:
 //	string cueS, cueC, cueP; 					///< Visual cues for sequence, chunk, and press
 
 	//variables for fMRI synchronisation, SKim
-	double startTRReal;     			///< Ask if this is used
+	int startTRReal;     			///< Ask if this is used
+	double startTRtime;
 	int startTR;						///< Starting value for TR count
 	//int startSlice;						///< Starting value for slice no. 
 	//int startSlicereal;					///< Starting value for slice no. 

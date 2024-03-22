@@ -571,7 +571,9 @@ MyTrial::MyTrial() {
 	startTRReal = 0; // SKim, fMRI
 	startTime = 0; // SKim, fMRI
 	startTimeReal = 0; // SKim, fMRI
-
+	startTime = 0;					///< Time of the start of the trial 
+	startTimeReal = 0;				///< Time of the start of the trial 
+	startTRtime = 0;
 	points = 0;
 	int released = 0;
 	for (int i = 0; i < MAX_PRESS; i++) {    // MAX_PRESS = 9 defined in header
@@ -616,8 +618,8 @@ void MyTrial::writeDat(ostream& out) {
 		<< PrepTime << "\t"
 		<< startTime << "\t" //repeat of target file. if 0, training mode
 		<< startTimeReal << "\t" //actual time of the beginning of each trial since T=0
-		<< startTRReal<< "\t" // number of TR counted when trial started
-		<< startTRtime << "\t" // ms since last TR was sensed 
+		<< startTRReal << "\t" // number of TR counted when trial started
+		<< startTRtime << "\t"; // ms since last TR was sensed 
 	for (int i = 0; i < MAX_PRESS; i++) {
 		out << press[i] << "\t";
 	}
@@ -657,8 +659,8 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "Horizon" << "\t"
 		<< "PrepTime" << "\t"
 		<< "startTime" << "\t" //repeat of target file: TIME BEGINNING FOR EACH TRIAL SINCE T=0 (1st TTL)
-		<< "startTimeReal" << "\t"; //actual time of the beginning of each trial since T=0
-		<< "startTR" << "\t"; //actual time of the beginning of each trial since T=0
+		<< "startTimeReal" << "\t" //actual time of the beginning of each trial since T=0
+		<< "startTRReal" << "\t" //actual time of the beginning of each trial since T=0
 		<< "startTRtime" << "\t"; //actual time of the beginning of each trial since T=0
 	for (int i = 0; i < MAX_PRESS; i++) {
 		sprintf(header, "press%d", i);

@@ -544,7 +544,9 @@ MyTrial::MyTrial() {
 	startTRtime = 0; // SKim, fMRI
 	startTime = 0; // SKim, fMRI
 	startTimeReal = 0; // SKim, fMRI
-
+	startTime = 0;					///< Time of the start of the trial 
+	startTimeReal = 0;				///< Time of the start of the trial 
+	startTRtime = 0;
 	points = 0;
 	int released = 0;
 	for (int i = 0; i < MAX_PRESS; i++) {    // MAX_PRESS = 9 defined in header

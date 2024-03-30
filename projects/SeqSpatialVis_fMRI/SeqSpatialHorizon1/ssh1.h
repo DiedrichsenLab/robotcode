@@ -106,7 +106,8 @@ public:
 	int		TR;
 	int		currentSlice;
 	double	TRtime;
-
+	//int startTRReal;
+	//double startTRtime;
 	double force_left[5];
 	double force_right[5];
 	///_______________________Neda add
@@ -167,10 +168,12 @@ private:
 	int Horizon;                            ///< How mnay digits ahead can you see
 	int StimTimeLim;							///< For how long is the seq/chunk displayed
 	//int subNum;
-	int PrepTime;
+	int PrepTime; 
 	int seqType;							///< Which sequence of finger movments has to be done? 
 	int MovTimeLim;							// Added by SKim for fMRI
 	int TrialTime;							// Added by SKim for fMRI, TrialTime = PrepTime + MovTime + iti
+	double startTime;					///< Time of the start of the trial 
+	double startTimeReal;				///< Time of the start of the trial 
 	int press[MAX_PRESS];					///< Which digit to press 
 	int fGiven[MAX_PRESS];
 	int feedback;							///< Give Feedback or not? 
@@ -196,12 +199,11 @@ private:
 	double MT;								///< Overall MT 
 	double RT;								// Reaction Time, added by SKim
 	string cueP;							// edited by SKim, using only press cue	
-	//	string cueS, cueC, cueP; 					///< Visual cues for sequence, chunk, and press
+//	string cueS, cueC, cueP; 					///< Visual cues for sequence, chunk, and press
 
-		//variables for fMRI synchronisation, SKim
+	//variables for fMRI synchronisation, SKim
 	int startTRReal;     			///< Ask if this is used
-	double startTRtime;     			///< Ask if this is used
-
+	double startTRtime;
 	int startTR;						///< Starting value for TR count
 	//int startSlice;						///< Starting value for slice no. 
 	//int startSlicereal;					///< Starting value for slice no. 
@@ -224,20 +226,6 @@ public:
 	virtual bool parseCommand(string args[], int numArgs);
 
 };
-
-
-//////////////////////////////////////////////////////////////
-class FixCross : public Target {
-public:
-	void draw();
-};
-void FixCross::draw() {
-	//setColor(1);
-	gScreen.setColor(color);
-	gScreen.drawBox(Vector2D(size[0], 0.3), Vector2D(position[0], position[1]));
-	gScreen.drawBox(Vector2D(0.3, size[1]), Vector2D(position[0], position[1]));
-}
-
 
 // computing standard deviation
 double mystd(double array[], int sizeOfArray);

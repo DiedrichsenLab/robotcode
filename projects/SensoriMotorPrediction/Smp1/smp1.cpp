@@ -24,6 +24,7 @@ HINSTANCE gThisInst;			///< Instance of Windows application
 Experiment* gExp;				///< Pointer to myExperiment 
 Trial* currentTrial;			///< Pointer to current Trial 
 #define DAC_VSCALAR 819.1       ///< Binary-to-volts scalar for DAC.
+Matrix2D 	TransforMatrix(1, 0, 0, 1);	///< adjusts for the fact that subject screen is flipped. used in angles (0,1,1,0)
 
 double baselineCorrection = -0.35;//-0.8; //-1.7;    // move force cursor away from baseline area at rest (Marco)
 //bool maxF = 0;					///< 0>Task 1>Max Voluntary Force Measurament (Marco)
@@ -33,6 +34,8 @@ double maxForce[5] = { 0, 0, 0 ,0, 0 };  // max force recorded from each finger
 bool showCue = 0;
 int hrfTime = 0;
 string probCue;
+
+bool flipscreen = false;
 
 string session = "scanning";
 
@@ -117,7 +120,8 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	tDisp.init(gThisInst, 0, 0, 1000, 30, 9, 2, &(::parseCommand));		// Default setting for the Windows 10 PC
 	tDisp.setText("Subj", 0, 0);
 	//gScreen.init(gThisInst, 1920, 0, 1920, 1080, &(::updateGraphics));	// Default setting for the Windows 10 PC
-	gScreen.init(gThisInst, 1280, 0, 1024, 768, &(::updateGraphics));
+	//gScreen.init(gThisInst, 1280, 0, 1024, 768, &(::updateGraphics));
+	gScreen.init(gThisInst, 1920, 0, 1680, 1080, &(::updateGraphics));
 	gScreen.setCenter(Vector2D(0, 0)); // This set the center of the screen where forces are calibrated with zero force // In cm //0,2
 	gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));					// cm/pixel
 
@@ -281,6 +285,19 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 
 		else {
 			session = arguments[1];
+		}
+	}
+
+	else if (arguments[0] == "flipscreen" || arguments[0] == "FLIPSCREEN") {
+		if (!flipscreen) {
+			TransforMatrix = Matrix2D(0, 1, 1, 0);
+			gScreen.setScale(Vector2D(-SCR_SCALE, SCR_SCALE));
+			flipscreen = true;
+		}
+		else { // flipscreen is true, is in mri mode, going to training mode
+			TransforMatrix = Matrix2D(1, 0, 0, 1);
+			gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));
+			flipscreen = false;
 		}
 	}
 
@@ -552,7 +569,7 @@ void MyTrial::writeDat(ostream& out) {
 void MyTrial::writeHeader(ostream& out) {
 	char header[200];
 	out << "subNum" << "\t"
-		<< "chordID" << "\t"
+		<< "cue" << "\t"
 		<< "stimFinger" << "\t"
 		<< "planTime" << "\t"
 		<< "execMaxTime" << "\t"

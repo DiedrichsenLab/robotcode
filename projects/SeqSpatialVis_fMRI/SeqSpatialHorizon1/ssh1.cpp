@@ -160,7 +160,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	tDisp.init(gThisInst, 100, 0, 400, 20, 5, 2, &(::parseCommand));  // the white interactive window
 	tDisp.setText("Subj:", 0, 0);
 
-	gScreen.init(gThisInst, 1920, 0, 1920, 1080, &(::updateGraphics)); // the black feedback window
+	gScreen.init(gThisInst, 1280, 0, 1024, 768, &(::updateGraphics)); // the black feedback window
 	gScreen.setCenter(Vector2D(0, 0)); // In cm //0,2
 	gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE)); // cm/pixel
 
@@ -544,9 +544,7 @@ MyTrial::MyTrial() {
 	startTRtime = 0; // SKim, fMRI
 	startTime = 0; // SKim, fMRI
 	startTimeReal = 0; // SKim, fMRI
-	startTime = 0;					///< Time of the start of the trial 
-	startTimeReal = 0;				///< Time of the start of the trial 
-	startTRtime = 0;
+
 	points = 0;
 	int released = 0;
 	for (int i = 0; i < MAX_PRESS; i++) {    // MAX_PRESS = 9 defined in header

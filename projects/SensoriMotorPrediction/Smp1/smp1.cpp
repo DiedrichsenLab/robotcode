@@ -120,8 +120,8 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	tDisp.init(gThisInst, 0, 0, 1000, 30, 9, 2, &(::parseCommand));		// Default setting for the Windows 10 PC
 	tDisp.setText("Subj", 0, 0);
 	//gScreen.init(gThisInst, 1920, 0, 1920, 1080, &(::updateGraphics));	// Default setting for the Windows 10 PC
-	//gScreen.init(gThisInst, 1280, 0, 1024, 768, &(::updateGraphics));
-	gScreen.init(gThisInst, 1920, 0, 1680, 1080, &(::updateGraphics));
+	gScreen.init(gThisInst, 1280, 0, 1024, 768, &(::updateGraphics));
+	//gScreen.init(gThisInst, 1920, 0, 1680, 1080, &(::updateGraphics));
 	gScreen.setCenter(Vector2D(0, 0)); // This set the center of the screen where forces are calibrated with zero force // In cm //0,2
 	gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));					// cm/pixel
 
@@ -657,7 +657,7 @@ void MyTrial::updateTextDisplay() {
 
 	tDisp.setText("Condition: " + trialLabel, 5, 0);
 
-	sprintf(buffer, "fingerVolt : %d", fingerVolt);
+	sprintf(buffer, "fingerVolt : %2.2f", fingerVolt);
 	tDisp.setText(buffer, 5, 1);
 
 	// display forces

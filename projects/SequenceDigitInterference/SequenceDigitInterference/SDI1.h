@@ -131,7 +131,9 @@ private:
 	int planTime;
 	int execTime;
 	int iti;
+	int precueTime;
 	string chunkSize;
+	string windowSize;
 	int digitChangePos;
 	char digitChangeValue;
 	int press[MAX_PRESS];					///< Which digit to press (in intrinsic coordinates 1:thumb 5: pinkie) 

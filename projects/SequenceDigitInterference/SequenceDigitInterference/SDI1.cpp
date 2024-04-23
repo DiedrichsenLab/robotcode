@@ -92,7 +92,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	LPSTR kposzArgs, int nWinMode)
 {
 	gThisInst = hThisInst;
-	gExp = new MyExperiment("ChunkInterference", "ChunkInterference", "C:/data/ChunkInterference/CI1");
+	gExp = new MyExperiment("SequenceDigitInterference", "SequenceDigitInterference", "C:/data/SequenceDigitInterference/SDI1/");
 	//auto start = std::chrono::high_resolution_clock::now();
 	gExp->redirectIOToConsole();
 	//auto end = std::chrono::high_resolution_clock::now();
@@ -496,6 +496,7 @@ MyTrial::MyTrial() {
 	stimOnsetTime = 100;					// stimulus onset time in free-RT task
 	timeStamp = 0;						// when was the pre-movement threshold crossed?
 	useMetronome = 1;//0;
+	startTime = 0;
 	seq = "0";
 	for (int i = 0; i < MAX_PRESS; i++) {
 		response[i] = 0;					// finger response
@@ -512,7 +513,7 @@ MyTrial::MyTrial() {
 ///////////////////////////////////////////////////////////////
 void MyTrial::read(istream& in) {
 	// read from .tgt file
-	in >> subNum>> group >> hand >> isTrain >> seq >> planTime >> execTime >> iti >> chunkSize >> digitChangePos >> digitChangeValue;
+	in >> subNum>> group >> hand >> isTrain >> seq >> planTime >> execTime >> iti >> chunkSize >> digitChangePos >> digitChangeValue >> windowSize >> precueTime;
 	//cout << seq << "\n";
 	seqLength = seq.length(); //get seqLength	 
 	//cout << "seq Length " << seqLength << "\n";
@@ -523,7 +524,8 @@ void MyTrial::read(istream& in) {
 ///////////////////////////////////////////////////////////////
 void MyTrial::writeDat(ostream& out) {
 	// write to .dat file
-	out << subNum << "\t" << group << "\t" << hand << "\t" << isTrain << "\t" << seq << "\t" << chunkSize << "\t" << digitChangePos << "\t" << digitChangeValue << "\t";
+	out << subNum << "\t" << group << "\t" << hand << "\t" << isTrain << "\t" << seq << "\t" << chunkSize << "\t" << digitChangePos << "\t" << digitChangeValue << "\t" <<
+		windowSize << precueTime;
 	int i;
 
 	for (i = 0; i < MAX_PRESS; i++) {
@@ -559,6 +561,7 @@ void MyTrial::writeDat(ostream& out) {
 		<< startTRtime << "\t"
 		<< useMetronome << "\t"
 		<< isCross << "\t"			//whether pre-movement threshold has been crossed in this trial
+		<< timeStamp << "\t"
 		<< endl;
 }
 
@@ -568,7 +571,8 @@ void MyTrial::writeDat(ostream& out) {
 void MyTrial::writeHeader(ostream& out) {
 	char header[200];
 
-	out << "SubNum" << "\t" << "group" << "\t" << "hand" << "\t" << "isTrain" << "\t" << "seq" << "\t" << "ChunkSize" << "\t" << "digitChangePos" << "\t" << "digitChangeValue" << "\t";
+	out << "SubNum" << "\t" << "group" << "\t" << "hand" << "\t" << "isTrain" << "\t" << "seq" << "\t" << "ChunkSize" << "\t" << "digitChangePos" << "\t" << "digitChangeValue" << "\t" <<
+		"windowSize" << "\t" << "precueTime" << "\t";
 
 	//out << "SubNum" << "\t" << "isTrain" << "\t" << "seq" << "\t" << "ChunkSize" << "\t" << "digitChangePos" << "\t" << "digitChangeValue" << "\t" << "exeType" << "\t" << "cueType" << "\t"
 	//	<< "seqNum" << "\t" << "cuePress" << "\t" << "isExtrinsic" << "\t" << "isIntrinsic" << "\t" << "isRepetition" << "\t" << "handTrans" << "\t"
@@ -614,6 +618,7 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "startTRtime" << "\t"
 		<< "useMetronome" << "\t"
 		<< "isCross" << "\t"
+		<< "crossTime" << "\t"
 		<< endl;
 }
 
@@ -723,7 +728,7 @@ double fGain[5] = { 1.0,1.0,1.0,1.0,1.0 };
 #define FORCESCALE 2
 #define BASELINE_X1 -(FINGWIDTH*N_FINGERS/2)
 #define BASELINE_X2 +(FINGWIDTH*N_FINGERS/2)
-#define BASELINE_Y1 0
+#define BASELINE_Y1 -3
 #define BASELINE_Y2 BASELINE_Y1
 
 // text
@@ -755,7 +760,7 @@ void MyTrial::updateGraphics(int what) {
 			// Baseline box
 			gScreen.setColor(Screen::darkred);
 			// right
-			gScreen.drawBox(FINGWIDTH * N_FINGERS, (baseTHhi - baseTHlow) * FORCESCALE, -0 * FINGWIDTH * N_FINGERS, (baseTHlow * FORCESCALE) + ((baseTHhi - baseTHlow) * FORCESCALE) / 2);
+			gScreen.drawBox(FINGWIDTH * N_FINGERS, (baseTHhi - baseTHlow) * FORCESCALE, -0 * FINGWIDTH * N_FINGERS, (baseTHlow * FORCESCALE) + ((baseTHhi - baseTHlow) * FORCESCALE) / 2 + BASELINE_Y2);
 			// left
 			//gScreen.drawBox(FINGWIDTH*N_FINGERS, (baseTHhi-baseTHlow)*FORCESCALE, -0.75*FINGWIDTH*N_FINGERS, (baseTHlow*FORCESCALE)+((baseTHhi-baseTHlow)*FORCESCALE)/2);
 
@@ -764,18 +769,18 @@ void MyTrial::updateGraphics(int what) {
 			// right Hi
 			//gScreen.drawLine(BASELINE_X1-0.75*(FINGWIDTH*N_FINGERS), baseTHhi*FORCESCALE, BASELINE_X2-0.75*(FINGWIDTH*N_FINGERS), baseTHhi*FORCESCALE);
 			// left Hi
-			gScreen.drawLine(BASELINE_X1 + 0 * (FINGWIDTH * N_FINGERS), baseTHhi * FORCESCALE, BASELINE_X2 + 0 * (FINGWIDTH * N_FINGERS), baseTHhi * FORCESCALE);
+			gScreen.drawLine(BASELINE_X1 + 0 * (FINGWIDTH * N_FINGERS), baseTHhi * FORCESCALE + BASELINE_Y1, BASELINE_X2 + 0 * (FINGWIDTH * N_FINGERS), baseTHhi * FORCESCALE + BASELINE_Y2);
 
 
 			// right Lo
 			//gScreen.drawLine(BASELINE_X1-0.75*(FINGWIDTH*N_FINGERS), baseTHlow*FORCESCALE, BASELINE_X2-0.75*(FINGWIDTH*N_FINGERS), baseTHlow*FORCESCALE);
 			// left Lo
-			gScreen.drawLine(BASELINE_X1 + 0. * (FINGWIDTH * N_FINGERS), baseTHlow * FORCESCALE, BASELINE_X2 + 0 * (FINGWIDTH * N_FINGERS), baseTHlow * FORCESCALE);
+			gScreen.drawLine(BASELINE_X1 + 0. * (FINGWIDTH * N_FINGERS), baseTHlow * FORCESCALE + BASELINE_Y1, BASELINE_X2 + 0 * (FINGWIDTH * N_FINGERS), baseTHlow * FORCESCALE + BASELINE_Y2);
 
 
 			// Force threshold		
 			gScreen.setColor(Screen::grey);
-			gScreen.drawLine(1. * BASELINE_X1, preTH * FORCESCALE + BASELINE_Y1, 1. * BASELINE_X2, preTH * FORCESCALE + BASELINE_Y2);
+			gScreen.drawLine(1. * BASELINE_X1, preTH * FORCESCALE + BASELINE_Y1, 1. * BASELINE_X2 , preTH * FORCESCALE + BASELINE_Y2);
 
 			// Finger forces (right)
 			for (i = 0; i < 5; i++) {
@@ -806,17 +811,17 @@ void MyTrial::updateGraphics(int what) {
 	for (i = 0; i < MAX_PRESS; i++) {
 		if (gs.seqMask[i] > 0) { // Mask (asterisk)
 			gScreen.setColor(responseArray[i]);
-			gScreen.printChar(gs.seqMask[i], ((i+1) - ((double)((MAX_PRESS+ 0.5) / 2))) * WIDTH_CHAR_CUE + WIDTH_CHAR_CUE * ((double)(MAX_PRESS - seqLength) / 2), CUE_PRESS_yPOS, SIZE_CUE);
+			gScreen.printChar(gs.seqMask[i], ((i+1) - ((double)((MAX_PRESS + 1) / 2) - 0.5)) * WIDTH_CHAR_CUE + WIDTH_CHAR_CUE * ((double)(MAX_PRESS - seqLength) / 2), CUE_PRESS_yPOS, SIZE_CUE);
 		}
 
 		else if (gs.seq[i] > 0) { // Numbers
 			gScreen.setColor(responseArray[i]);
-			gScreen.printChar(gs.seq[i], ((i + 1) - ((double)((MAX_PRESS + 0.5) / 2) )) * WIDTH_CHAR_CUE + WIDTH_CHAR_CUE * ((double)(MAX_PRESS - seqLength) / 2), CUE_PRESS_yPOS, SIZE_CUE);
+			gScreen.printChar(gs.seq[i], ((i + 1) - ((double)((MAX_PRESS + 1) / 2) - 0.5 )) * WIDTH_CHAR_CUE + WIDTH_CHAR_CUE * ((double)(MAX_PRESS - seqLength) / 2), CUE_PRESS_yPOS, SIZE_CUE);
 		}
 	}
 
 	gScreen.setColor(crossColor);
-	gScreen.printChar('1', (0 - ((double)((MAX_PRESS + 0.5) / 2))) * WIDTH_CHAR_CUE + WIDTH_CHAR_CUE * ((double)(MAX_PRESS - seqLength) / 2), CUE_PRESS_yPOS, SIZE_CUE);
+	gScreen.printChar(gs.cross, (0 - ((double)((MAX_PRESS + 1) / 2) - 0.5)) * WIDTH_CHAR_CUE + WIDTH_CHAR_CUE * ((double)(MAX_PRESS - seqLength) / 2), CUE_PRESS_yPOS, SIZE_CUE);
 
 
 
@@ -987,6 +992,10 @@ void MyTrial::control() {
 				finger[f] = 0;
 				released++;
 			}
+
+			if (force >= BASE_THRESHOLD_HI[0][f - 5]) {
+				numNewThresCross++;
+			}
 		//}
 	}
 
@@ -1043,14 +1052,14 @@ void MyTrial::control() {
 							press[i] = seq.at(i) - '0';
 							gs.seq[i] = seq.at(i);
 						}
-						if (isTrain) {
-							if (i < maskCounter + (chunkSize[chunkIndex] - '0')) {
-								gs.seqMask[i] = 0;
-							}
-							else {
-								gs.seqMask[i] = '*';
-							}
+
+						if (i < maskCounter + stoi(windowSize)) {
+							gs.seqMask[i] = 0;
 						}
+						else {
+							gs.seqMask[i] = '*';
+						}
+
 						cout <<"hand" <<  hand << '\n';
 						if (show == 1) {
 							if (hand == 2) {
@@ -1079,14 +1088,13 @@ void MyTrial::control() {
 							gs.seq[i] = seq.at(i);
 						}
 
-						if (isTrain) {
-							if (i < maskCounter + (chunkSize[chunkIndex] - '0')) {
-								gs.seqMask[i] = 0;
-							}
-							else {
-								gs.seqMask[i] = '*';
-							}
+						if (i < maskCounter + stoi(windowSize)) {
+							gs.seqMask[i] = 0;
 						}
+						else {
+							gs.seqMask[i] = '*';
+						}
+
 						if (show == 1) {
 							if (hand == 2) {
 								responseArray[i] = 6; // orange for the right
@@ -1140,10 +1148,11 @@ void MyTrial::control() {
 	case WAIT_PREP: //3 
 		//----------------------------------
 		// CHECK FOR BASELINE FINGER FORCES
-		if (numNewThresCross > 0 && gTimer[1] < (1000)) { // check for pre-movement finger presses
+		if (numNewThresCross > 0 && gTimer[1] < precueTime) { // check for pre-movement finger presses
 			timeStamp = gTimer[1];
 			isCross = 1;
-			if (startTime < 0) { // display warning message (practice blocks only)
+
+			if (startTime == 0) { // display warning message (practice blocks only)
 				sprintf(buffer, "Please remain within the red area");
 				gs.lineColor[0] = 1;
 				gs.line[0] = buffer;
@@ -1151,7 +1160,7 @@ void MyTrial::control() {
 			}
 		}
 		
-		if (gTimer[1]>timeStamp+500) {
+		if (gTimer[1]>timeStamp + 500) {
 		sprintf(buffer,"");
 		gs.lineColor[0] = 1;
 		gs.line[0] = buffer;
@@ -1188,7 +1197,7 @@ void MyTrial::control() {
 		//	}
 		//}
 
-		if (gTimer[1] >= (1000)) { // give go/nogo signal
+		if (gTimer[1] >= precueTime) { // give go/nogo signal
 
 			sprintf(buffer, "");
 			gs.lineColor[0] = 1;
@@ -1213,6 +1222,7 @@ void MyTrial::control() {
 			//	gTimer.reset(2);
 			//	state = WAIT_PRESS;
 			//}
+			crossColor = 3; //green
 
 			PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
 			gTimer.reset(2);
@@ -1255,17 +1265,25 @@ void MyTrial::control() {
 			else { // error: wrong key pressed
 				responseArray[seqCounter] = 2; // red
 				isError = 1;
-			};
-			if (isTrain == 1) {
-				if ((seqCounter >= maskCounter + (chunkSize[chunkIndex] - '0') - 1) && seqCounter != (seqLength - 1)) {
-					maskCounter += chunkSize[chunkIndex] - '0';
-					chunkIndex++;
-					cout << "chunkIndex" << chunkIndex << "\n";
-					for (i = 0; i < chunkSize[chunkIndex] - '0'; i++) {
-						gs.seqMask[i + maskCounter] = 0;
-					}
-				}
 			}
+
+			//if (isTrain == 1) {
+			//	if ((seqCounter >= maskCounter + (chunkSize[chunkIndex] - '0') - 1) && seqCounter != (seqLength - 1)) {
+			//		maskCounter += chunkSize[chunkIndex] - '0';
+			//		chunkIndex++;
+			//		cout << "chunkIndex" << chunkIndex << "\n";
+			//		for (i = 0; i < chunkSize[chunkIndex] - '0'; i++) {
+			//			gs.seqMask[i + maskCounter] = 0;
+			//		}
+			//	}
+			//}
+
+			if (seqCounter + stoi(windowSize) < seqLength) {
+				gs.seqMask[seqCounter + stoi(windowSize)] = 0;
+			}
+
+
+
 			seqCounter++;
 		}
 
@@ -1388,6 +1406,8 @@ void MyTrial::control() {
 		for (i = 0; i < MAX_PRESS; i++) {
 			responseArray[i] = 1; // white
 		}
+
+		crossColor = 1;
 
 		// Wait for feedback time, keep count of ponits
 		if (gTimer[2] > FEEDBACKTIME) {

@@ -696,7 +696,7 @@ void MyTrial::updateTextDisplay() {
 	sprintf(buffer, "press RH: %d %d %d %d %d    force RH: %2.2f %2.2f %2.2f %2.2f %2.2f", finger[5], finger[6], finger[7], finger[8], finger[9], gBox[1].getForce(0), gBox[1].getForce(1), gBox[1].getForce(2), gBox[1].getForce(3), gBox[1].getForce(4));
 	tDisp.setText(buffer, 6, 0);
 
-	sprintf(buffer, "pressTime1: %2.0f   pressTime2: %2.0f   pressTime3   pressTime4: %2.0f   pressTime5: %2.0f", pressTime[0], pressTime[1], pressTime[2], pressTime[3], pressTime[4]);
+	sprintf(buffer, "pressTime1: %2.0f   pressTime2: %2.0f   pressTime3: %2.0f   pressTime4: %2.0f   pressTime5: %2.0f", pressTime[0], pressTime[1], pressTime[2], pressTime[3], pressTime[4]);
 	tDisp.setText(buffer, 7, 0);
 
 

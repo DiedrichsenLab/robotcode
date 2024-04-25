@@ -454,8 +454,13 @@ void MyBlock::giveFeedback() {
 
 
 
+	gs.cross = 0;
+
+
 	// print FEEDBACK on the screen 
-	sprintf(buffer, "ER %3.1f%%           MT %2.0fms", ERarray[b], medianMTarray[b]);
+	sprintf(buffer, "Acc %3.1f%%           MT %2.0fms", 100 - ERarray[b], medianMTarray[b]);
+	// 
+	//sprintf(buffer, "ER %3.1f%%           MT %2.0fms", ERarray[b], medianMTarray[b]);
 	//sprintf(buffer,"ER %3.1f%%", 0);
 	gs.line[1] = buffer;
 	gs.lineColor[1] = 1;
@@ -490,7 +495,6 @@ MyTrial::MyTrial() {
 	timingError = 0;						// init timing error flag
 	seqCounter = 0;						// init the sequence index variable
 	maskCounter = 0;
-	chunkIndex = 0;
 	norm_MT = 0;						// init normalized MT = (RT + ET)/seqLength
 	RT = 0;								// init reaction time
 	ET = 0;								// init sequence execution time
@@ -731,7 +735,7 @@ double fGain[5] = { 1.0,1.0,1.0,1.0,1.0 };
 #define FORCESCALE 2
 #define BASELINE_X1 -(FINGWIDTH*N_FINGERS/2)
 #define BASELINE_X2 +(FINGWIDTH*N_FINGERS/2)
-#define BASELINE_Y1 -3
+#define BASELINE_Y1 -5
 #define BASELINE_Y2 BASELINE_Y1
 
 // text
@@ -739,13 +743,13 @@ char TEXT[5] = { '1','2','3','4','5' };
 #define CUE_PRESS_yPOS 5
 #define SIZE_CUE 15
 //#define SIZE_CUE 5 
-#define WIDTH_CHAR_CUE 2
-//#define WIDTH_CHAR_CUE 1
+//#define WIDTH_CHAR_CUE 2
+#define WIDTH_CHAR_CUE 1.5
 #define OTHER_LETTERS_SIZE 1.5
 
 // cuePress rectangle 
 #define RECWIDTH_X WIDTH_CHAR_CUE*(MAX_PRESS + 1)
-#define RECWIDTH_Y WIDTH_CHAR_CUE 
+#define RECWIDTH_Y WIDTH_CHAR_CUE * 4 /3  
 #define REC_xPOS 0
 #define REC_yPOS CUE_PRESS_yPOS + 0.75
 //#define REC_yPOS CUE_PRESS_yPOS + 0.25
@@ -835,9 +839,9 @@ void MyTrial::updateGraphics(int what) {
 
 	Vector2D recSize, recPos;
 	// press rectangle
-	//if ((state >= 0 && state <= 6) || state == 7) {
-	//	gScreen.setColor(Screen::grey);
-	//	gScreen.drawRect(RECWIDTH_X, RECWIDTH_Y, REC_xPOS, REC_yPOS);
+	if ((state >= 0 && state <= 6) || state == 7) {
+		gScreen.setColor(Screen::grey);
+		gScreen.drawRect(RECWIDTH_X, RECWIDTH_Y, REC_xPOS, REC_yPOS);
 
 	//	//----------------------------------
 	//	// DELAYED-MOVEMENT GO-NOGO PARADIGM
@@ -856,7 +860,7 @@ void MyTrial::updateGraphics(int what) {
 	//	//		gScreen.setColor(Screen::white);
 	//	//	}
 	//	//}
-	//}
+	}
 
 	if (useMetronome == 1 && state == 3 && timeMet == 0) {
 		gScreen.setColor(Screen::white);

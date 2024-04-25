@@ -103,12 +103,17 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 
 	//tDisp.init(gThisInst,100,200,600,30,9,2,&(::parseCommand)); // STARK
 	tDisp.init(gThisInst, 0, 0, 400, 20, 9, 2, &(::parseCommand));
+
 	tDisp.setText("Subj", 0, 0);
 
 	//gScreen.init(gThisInst, -1024, 0, 1920, 1024, &(::updateGraphics)); // CHOMSKY
-	gScreen.init(gThisInst, 1920, 0, 1920, 1080, &(::updateGraphics)); // Windows 10 PC
+	//gScreen.init(gThisInst, 1920, 0, 1920, 1080, &(::updateGraphics)); // Windows 10 PC
+
+
+	gScreen.init(gThisInst, 1920, 0, 1440, 900, &(::updateGraphics)); // Windows 10 PC Ali
+
 	//gScreen.init(gThisInst, 2200, 0, 1366, 768, &(::updateGraphics)); // Windows 10 PC
-	//gScreen.init(gThisInst,1280,0,1280,1024,&(::updateGraphics)); // STARK
+	gScreen.init(gThisInst, 1920, 0, 1680, 1050, &(::updateGraphics)); ///< Display for subject
 	gScreen.setCenter(Vector2D(0, 0));    // In cm //0,2
 	gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE)); // cm/pixel
 
@@ -123,7 +128,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 
 	// high force 1
 //gBox[0].init(BOX_LEFT,"c:/robotcode/calib/Flatbox1_highforce_LEFT_07-Jun-2017.txt");
- gBox[1].init(BOX_RIGHT,"c:/robotcode/calib/Flatbox1_highforce_RIGHT_31-July-2017.txt"); //todo: check this with Jorn
+ //gBox[1].init(BOX_RIGHT,"c:/robotcode/calib/Flatbox1_highforce_RIGHT_31-July-2017.txt"); //todo: check this with Jorn
 
 // high force 2
 //gBox[0].init(BOX_LEFT,"c:/robotcode/calib/Flatbox1_highforce2_LEFT_03-Dec-2021.txt");
@@ -155,7 +160,12 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 
 	// low force
 	//gBox[0].init(BOX_LEFT,"c:/robot/calib/flatbox2_lowforce_LEFT_03-Mar-2017.txt");
-	//gBox[1].init(BOX_RIGHT,"c:/robot/calib/flatbox2_lowforce_RIGHT_06-Jul-2017.txt");
+	gBox[1].init(BOX_RIGHT,"c:/robotcode/calib/flatbox2_lowforce_RIGHT_06-Jul-2017.txt");
+
+
+//High force Ali
+ //gBox[0].init(BOX_LEFT, "c:/robotcode/calib/Flatbox1_highforce2_LEFT_12-Feb-2022.txt");
+	//gBox[1].init(BOX_RIGHT, "c:/robotcode/calib/Flatbox1_highforce2_RIGHT_03-Dec-2021.txt");
 
 	gBox[0].filterconst = 0.8;
 	gBox[1].filterconst = 0.8;

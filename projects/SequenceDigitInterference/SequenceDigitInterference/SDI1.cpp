@@ -520,7 +520,7 @@ MyTrial::MyTrial() {
 ///////////////////////////////////////////////////////////////
 void MyTrial::read(istream& in) {
 	// read from .tgt file
-	in >> subNum>> group >> hand >> isTrain >> seq >> execTime >> iti >> digitChangePos >> digitChangeValue >> precueTime >> windowSize;
+	in >> subNum >> group >> hand >> isTrain >> seq >> execTime >> iti >> digitChangePos >> digitChangeValue >> precueTime >> windowSize;
 	//cout << seq << "\n";
 	seqLength = seq.length(); //get seqLength	 
 	//cout << "seq Length " << seqLength << "\n";
@@ -532,7 +532,7 @@ void MyTrial::read(istream& in) {
 void MyTrial::writeDat(ostream& out) {
 	// write to .dat file
 	out << subNum << "\t" << group << "\t" << hand << "\t" << isTrain << "\t" << seq << "\t" << digitChangePos << "\t" << digitChangeValue << "\t" <<
-		precueTime << windowSize;
+		precueTime << "\t" << windowSize << "\t";
 	int i;
 
 	for (i = 0; i < MAX_PRESS; i++) {
@@ -1344,70 +1344,70 @@ void MyTrial::control() {
 		// Wait for the release of all keys, assign points
 		if (released == NUMFINGERS) {
 
-			if (isTrain == 1) { // GO
+			//if (isTrain == 1 ) { // GO
 
-				if (isError == 0) {
+			if (isError == 0) {
 
-					// assign points
-					//norm_MT = (RT + ET);
+				// assign points
+				//norm_MT = (RT + ET);
 
-					if (norm_MT < timeThresholdSuper) {
-						points = 3;
-					}
-					else if (norm_MT < timeThreshold) {
-						points = 2;
-					}
-					else {
-						points = 1;
-					}
-
-					gs.clearCues();
-					sprintf(buffer, "+%d", points);
-					gs.lineColor[1] = 1; // white
-					gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
-
-
+				if (norm_MT < timeThresholdSuper) {
+					points = 3;
 				}
-				else if (isError == 1 && timingError == 0) {
-					points = 0;
-					// PLAY SOUND 
-					PlaySound(TASKSOUNDS[5].c_str(), NULL, SND_ASYNC);
-					gs.clearCues(); sprintf(buffer, "%d", points);
-					gs.lineColor[1] = 1; // white
-					gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
-				}
-				else if (isError == 1 && timingError == 1) {
-					points = -1;
-					// PLAY SOUND 
-					PlaySound(TASKSOUNDS[6].c_str(), NULL, SND_ASYNC);
-					gs.clearCues(); sprintf(buffer, "%d", points);
-					gs.lineColor[1] = 1; // white
-					gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
-				}
-				gTimer.reset(2);
-				state = WAIT_FEEDBACK;
-			}
-
-			else if (isTrain == 0) { // NO-GO
-
-				if (isError == 0) {
-					points = 1;
-					gs.clearCues(); sprintf(buffer, "+%d", points);
-					gs.lineColor[1] = 1; // white
-					gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
+				else if (norm_MT < timeThreshold) {
+					points = 2;
 				}
 				else {
-					points = -1;
-					// PLAY SOUND 
-					PlaySound(TASKSOUNDS[5].c_str(), NULL, SND_ASYNC);
-					gs.clearCues(); sprintf(buffer, "%d", points);
-					gs.lineColor[1] = 1; // white
-					gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
+					points = 1;
 				}
 
-				gTimer.reset(2);
-				state = WAIT_FEEDBACK;
+				gs.clearCues();
+				sprintf(buffer, "+%d", points);
+				gs.lineColor[1] = 1; // white
+				gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
+
+
 			}
+			else if (isError == 1 && timingError == 0) {
+				points = 0;
+				// PLAY SOUND 
+				PlaySound(TASKSOUNDS[5].c_str(), NULL, SND_ASYNC);
+				gs.clearCues(); sprintf(buffer, "%d", points);
+				gs.lineColor[1] = 1; // white
+				gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
+			}
+			else if (isError == 1 && timingError == 1) {
+				points = -1;
+				// PLAY SOUND 
+				PlaySound(TASKSOUNDS[6].c_str(), NULL, SND_ASYNC);
+				gs.clearCues(); sprintf(buffer, "%d", points);
+				gs.lineColor[1] = 1; // white
+				gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
+			}
+			gTimer.reset(2);
+			state = WAIT_FEEDBACK;
+			//}
+
+			//else if (isTrain == 0) { // NO-GO
+
+			//	if (isError == 0) {
+			//		points = 1;
+			//		gs.clearCues(); sprintf(buffer, "+%d", points);
+			//		gs.lineColor[1] = 1; // white
+			//		gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
+			//	}
+			//	else {
+			//		points = -1;
+			//		// PLAY SOUND 
+			//		PlaySound(TASKSOUNDS[5].c_str(), NULL, SND_ASYNC);
+			//		gs.clearCues(); sprintf(buffer, "%d", points);
+			//		gs.lineColor[1] = 1; // white
+			//		gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
+			//	}
+
+			//	gTimer.reset(2);
+			//	state = WAIT_FEEDBACK;
+			//}
 
 		}
 		break;

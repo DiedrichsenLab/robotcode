@@ -152,10 +152,11 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 
 	//gExp->redirectIOToConsole();
 
-	tDisp.init(gThisInst, 100, 0, 400, 20, 5, 2, &(::parseCommand));  // the white interactive window
+	// tDisp.init(gThisInst, 100, 0, 400, 20, 5, 2, &(::parseCommand));  // the white interactive window
+	tDisp.init(gThisInst, 0, 0, 600, 20, 9, 2, &(::parseCommand));  // the white interactive window
 	tDisp.setText("Subj:", 0, 0);
 
-	gScreen.init(gThisInst, 1920, 0, 1920, 1080, &(::updateGraphics)); // the black feedback window
+	gScreen.init(gThisInst, 1920, 0, 1440, 900, &(::updateGraphics)); // the black feedback window
 	gScreen.setCenter(Vector2D(0, 0)); // In cm //0,2
 	gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE)); // cm/pixel
 
@@ -170,9 +171,11 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	// initialize stimulation box
 
 	//gBox[0].init(BOX_LEFT,"c:/robot/calib/flatbox2_lowforce_LEFT_03-Mar-2017.txt");
-	//gBox[1].init(BOX_RIGHT,"c:/robot/calib/flatbox2_lowforce_RIGHT_06-Jul-2017.txt");
+	//gBox[1].init(BOX_RIGHT,"c:/robot/calib/flatbox2_highforce2_RIGHT_27-May-2018.txt");
 
-	gBox[1].init(BOX_RIGHT, "c:/robotcode/calib/Flatbox1_highforce_RIGHT_31-July-2017.txt");
+
+	gBox[1].init(BOX_RIGHT, "c:/robotcode/calib/flatbox2_lowforce_RIGHT_06-Jul-2017.txt");
+
 
 
 	gBox[0].filterconst = 0.8;

@@ -132,6 +132,7 @@ private:
 	int execTime;
 	int iti;
 	int precueTime;
+	string chunkSize;
 	string windowSize;
 	int digitChangePos;
 	char digitChangeValue;

@@ -1346,46 +1346,46 @@ void MyTrial::control() {
 
 			//if (isTrain == 1 ) { // GO
 
-			if (isError == 0) {
+				if (isError == 0) {
 
-				// assign points
-				//norm_MT = (RT + ET);
+					// assign points
+					//norm_MT = (RT + ET);
 
-				if (norm_MT < timeThresholdSuper) {
-					points = 3;
+					if (norm_MT < timeThresholdSuper) {
+						points = 3;
+					}
+					else if (norm_MT < timeThreshold) {
+						points = 2;
+					}
+					else {
+						points = 1;
+					}
+
+					gs.clearCues();
+					sprintf(buffer, "+%d", points);
+					gs.lineColor[1] = 1; // white
+					gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
+
+
 				}
-				else if (norm_MT < timeThreshold) {
-					points = 2;
+				else if (isError == 1 && timingError == 0) {
+					points = 0;
+					// PLAY SOUND 
+					PlaySound(TASKSOUNDS[5].c_str(), NULL, SND_ASYNC);
+					gs.clearCues(); sprintf(buffer, "%d", points);
+					gs.lineColor[1] = 1; // white
+					gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
 				}
-				else {
-					points = 1;
+				else if (isError == 1 && timingError == 1) {
+					points = -1;
+					// PLAY SOUND 
+					PlaySound(TASKSOUNDS[6].c_str(), NULL, SND_ASYNC);
+					gs.clearCues(); sprintf(buffer, "%d", points);
+					gs.lineColor[1] = 1; // white
+					gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
 				}
-
-				gs.clearCues();
-				sprintf(buffer, "+%d", points);
-				gs.lineColor[1] = 1; // white
-				gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
-
-
-			}
-			else if (isError == 1 && timingError == 0) {
-				points = 0;
-				// PLAY SOUND 
-				PlaySound(TASKSOUNDS[5].c_str(), NULL, SND_ASYNC);
-				gs.clearCues(); sprintf(buffer, "%d", points);
-				gs.lineColor[1] = 1; // white
-				gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
-			}
-			else if (isError == 1 && timingError == 1) {
-				points = -1;
-				// PLAY SOUND 
-				PlaySound(TASKSOUNDS[6].c_str(), NULL, SND_ASYNC);
-				gs.clearCues(); sprintf(buffer, "%d", points);
-				gs.lineColor[1] = 1; // white
-				gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
-			}
-			gTimer.reset(2);
-			state = WAIT_FEEDBACK;
+				gTimer.reset(2);
+				state = WAIT_FEEDBACK;
 			//}
 
 			//else if (isTrain == 0) { // NO-GO

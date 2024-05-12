@@ -326,6 +326,17 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 		}
 	}
 
+	else if (arguments[0] == "execAccTime") {
+		if (numArgs != 2) {
+			tDisp.print("USAGE: execAccTime <time in milliseconds>");
+		}
+		else {
+			sscanf(arguments[1].c_str(), "%f", &arg[0]);
+			execAccTime = arg[0];
+			
+		}
+	}
+
 	else {
 		return false; /// Command not recognized
 	}
@@ -593,7 +604,7 @@ void MyTrial::updateTextDisplay() {
 	tDisp.setText(buffer, 9, 0);
 	
 	// force gains
-	sprintf(buffer, "GlobalGain = %1.1f     forceGain = %1.1f %1.1f %1.1f %1.1f %1.1f", forceGain, fGain[0], fGain[1], fGain[2], fGain[3], fGain[4]);
+	sprintf(buffer, "GlobalGain = %1.1f     forceGain = %1.1f %1.1f %1.1f %1.1f %1.1f    execAccTime = %f", forceGain, fGain[0], fGain[1], fGain[2], fGain[3], fGain[4], execAccTime);
 	tDisp.setText(buffer, 10, 0);
 }
 

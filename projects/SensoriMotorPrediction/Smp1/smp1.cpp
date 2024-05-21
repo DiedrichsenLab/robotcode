@@ -279,8 +279,11 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 	}
 
 	else if (arguments[0] == "session") {
+		// Difference between training and scanning is that in scanning the 
+		// baseline area doesn't become red when subject goes outside of it
+
 		if (numArgs != 2) {
-			tDisp.print("USAGE: session <value>");
+			tDisp.print("USAGE: session <value (training or scanning)>");
 		}
 
 		else {
@@ -289,6 +292,7 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 	}
 
 	else if (arguments[0] == "flipscreen" || arguments[0] == "FLIPSCREEN") {
+
 		if (!flipscreen) {
 			TransforMatrix = Matrix2D(0, 1, 1, 0);
 			gScreen.setScale(Vector2D(-SCR_SCALE, SCR_SCALE));
@@ -533,7 +537,7 @@ void MyTrial::read(istream& in) {
 ///////////////////////////////////////////////////////////////
 void MyTrial::writeDat(ostream& out) {
 	// write to .dat file
-	// name of file is: smp0_<name of subject>_<session number>.dat
+	// name of file is: smp1_<name of subject>_<session number>.dat
 	out << subNum << "\t"
 		<< cueID << "\t"
 		<< stimFinger << "\t"

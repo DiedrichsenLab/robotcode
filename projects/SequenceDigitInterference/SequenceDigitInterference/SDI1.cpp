@@ -2,7 +2,7 @@
 /// WorkingMemoryPlanning - ....
 ///////////////////////////////////////////////////////////////
 
-#include "CI1.h" 
+#include "SDI1.h" 
 #include "StimulatorBox.h"
 
 #include <string>
@@ -50,6 +50,7 @@ double timeThresholdSuper = 2940;		///< Time threshold for super points (+3)
 double tempThres1 = timeThreshold;
 double tempThres2 = timeThresholdSuper;
 double responseArray[11] = { 1,1,1,1,1,1,1,1,1,1,1 };
+int crossColor = 1;
 
 
 double medianMTarray[50];			///< 24 blocks per subject, preallocate array to keep track of MTs within session
@@ -91,7 +92,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	LPSTR kposzArgs, int nWinMode)
 {
 	gThisInst = hThisInst;
-	gExp = new MyExperiment("ChunkInterference", "ChunkInterference", "C:/data/ChunkInterference/CI1");
+	gExp = new MyExperiment("SequenceDigitInterference", "SequenceDigitInterference", "C:/data/SequenceDigitInterference/SDI1/");
 	//auto start = std::chrono::high_resolution_clock::now();
 	gExp->redirectIOToConsole();
 	//auto end = std::chrono::high_resolution_clock::now();
@@ -108,12 +109,12 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 
 	//gScreen.init(gThisInst, -1024, 0, 1920, 1024, &(::updateGraphics)); // CHOMSKY
 	//gScreen.init(gThisInst, 1920, 0, 1920, 1080, &(::updateGraphics)); // Windows 10 PC
-
-
-	gScreen.init(gThisInst, 1920, 0, 1440, 900, &(::updateGraphics)); // Windows 10 PC Ali
-
+	//gScreen.init(gThisInst, 1920, 0, 1440, 900, &(::updateGraphics)); // Windows 10 PC Ali
 	//gScreen.init(gThisInst, 2200, 0, 1366, 768, &(::updateGraphics)); // Windows 10 PC
+	//gScreen.init(gThisInst,1280,0,1280,1024,&(::updateGraphics)); // STARK
 	gScreen.init(gThisInst, 1920, 0, 1680, 1050, &(::updateGraphics)); ///< Display for subject
+
+
 	gScreen.setCenter(Vector2D(0, 0));    // In cm //0,2
 	gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE)); // cm/pixel
 
@@ -128,7 +129,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 
 	// high force 1
 //gBox[0].init(BOX_LEFT,"c:/robotcode/calib/Flatbox1_highforce_LEFT_07-Jun-2017.txt");
- //gBox[1].init(BOX_RIGHT,"c:/robotcode/calib/Flatbox1_highforce_RIGHT_31-July-2017.txt"); //todo: check this with Jorn
+ gBox[1].init(BOX_RIGHT,"c:/robotcode/calib/Flatbox1_highforce_RIGHT_31-July-2017.txt"); //todo: check this with Jorn
 
 // high force 2
 //gBox[0].init(BOX_LEFT,"c:/robotcode/calib/Flatbox1_highforce2_LEFT_03-Dec-2021.txt");
@@ -160,7 +161,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 
 	// low force
 	//gBox[0].init(BOX_LEFT,"c:/robot/calib/flatbox2_lowforce_LEFT_03-Mar-2017.txt");
-	gBox[1].init(BOX_RIGHT,"c:/robotcode/calib/flatbox2_lowforce_RIGHT_06-Jul-2017.txt");
+	//gBox[1].init(BOX_RIGHT,"c:/robotcode/calib/flatbox2_lowforce_RIGHT_06-Jul-2017.txt");
 
 
 //High force Ali
@@ -453,8 +454,13 @@ void MyBlock::giveFeedback() {
 
 
 
+	gs.cross = 0;
+
+
 	// print FEEDBACK on the screen 
-	sprintf(buffer, "ER %3.1f%%           MT %2.0fms", ERarray[b], medianMTarray[b]);
+	sprintf(buffer, "Acc %3.1f%%           MT %2.0fms", 100 - ERarray[b], medianMTarray[b]);
+	// 
+	//sprintf(buffer, "ER %3.1f%%           MT %2.0fms", ERarray[b], medianMTarray[b]);
 	//sprintf(buffer,"ER %3.1f%%", 0);
 	gs.line[1] = buffer;
 	gs.lineColor[1] = 1;
@@ -489,7 +495,6 @@ MyTrial::MyTrial() {
 	timingError = 0;						// init timing error flag
 	seqCounter = 0;						// init the sequence index variable
 	maskCounter = 0;
-	chunkIndex = 0;
 	norm_MT = 0;						// init normalized MT = (RT + ET)/seqLength
 	RT = 0;								// init reaction time
 	ET = 0;								// init sequence execution time
@@ -498,6 +503,7 @@ MyTrial::MyTrial() {
 	stimOnsetTime = 100;					// stimulus onset time in free-RT task
 	timeStamp = 0;						// when was the pre-movement threshold crossed?
 	useMetronome = 1;//0;
+	startTime = 0;
 	seq = "0";
 	for (int i = 0; i < MAX_PRESS; i++) {
 		response[i] = 0;					// finger response
@@ -514,7 +520,7 @@ MyTrial::MyTrial() {
 ///////////////////////////////////////////////////////////////
 void MyTrial::read(istream& in) {
 	// read from .tgt file
-	in >> subNum>> group >> hand >> isTrain >> seq >> planTime >> execTime >> iti >> chunkSize >> digitChangePos >> digitChangeValue;
+	in >> subNum >> group >> hand >> isTrain >> seq >> execTime >> iti >> digitChangePos >> digitChangeValue >> precueTime >> windowSize;
 	//cout << seq << "\n";
 	seqLength = seq.length(); //get seqLength	 
 	//cout << "seq Length " << seqLength << "\n";
@@ -525,7 +531,8 @@ void MyTrial::read(istream& in) {
 ///////////////////////////////////////////////////////////////
 void MyTrial::writeDat(ostream& out) {
 	// write to .dat file
-	out << subNum << "\t" << group << "\t" << hand << "\t" << isTrain << "\t" << seq << "\t" << chunkSize << "\t" << digitChangePos << "\t" << digitChangeValue << "\t";
+	out << subNum << "\t" << group << "\t" << hand << "\t" << isTrain << "\t" << seq << "\t" << digitChangePos << "\t" << digitChangeValue << "\t" <<
+		precueTime << "\t" << windowSize << "\t";
 	int i;
 
 	for (i = 0; i < MAX_PRESS; i++) {
@@ -561,6 +568,7 @@ void MyTrial::writeDat(ostream& out) {
 		<< startTRtime << "\t"
 		<< useMetronome << "\t"
 		<< isCross << "\t"			//whether pre-movement threshold has been crossed in this trial
+		<< timeStamp << "\t"
 		<< endl;
 }
 
@@ -570,7 +578,8 @@ void MyTrial::writeDat(ostream& out) {
 void MyTrial::writeHeader(ostream& out) {
 	char header[200];
 
-	out << "SubNum" << "\t" << "group" << "\t" << "hand" << "\t" << "isTrain" << "\t" << "seq" << "\t" << "ChunkSize" << "\t" << "digitChangePos" << "\t" << "digitChangeValue" << "\t";
+	out << "SubNum" << "\t" << "group" << "\t" << "hand" << "\t" << "isTrain" << "\t" << "seq" << "\t" << "digitChangePos" << "\t" << "digitChangeValue" << "\t" <<
+		"precueTime" << "\t" << "windowSize" << "\t";
 
 	//out << "SubNum" << "\t" << "isTrain" << "\t" << "seq" << "\t" << "ChunkSize" << "\t" << "digitChangePos" << "\t" << "digitChangeValue" << "\t" << "exeType" << "\t" << "cueType" << "\t"
 	//	<< "seqNum" << "\t" << "cuePress" << "\t" << "isExtrinsic" << "\t" << "isIntrinsic" << "\t" << "isRepetition" << "\t" << "handTrans" << "\t"
@@ -616,6 +625,7 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "startTRtime" << "\t"
 		<< "useMetronome" << "\t"
 		<< "isCross" << "\t"
+		<< "crossTime" << "\t"
 		<< endl;
 }
 
@@ -686,7 +696,7 @@ void MyTrial::updateTextDisplay() {
 	sprintf(buffer, "press RH: %d %d %d %d %d    force RH: %2.2f %2.2f %2.2f %2.2f %2.2f", finger[5], finger[6], finger[7], finger[8], finger[9], gBox[1].getForce(0), gBox[1].getForce(1), gBox[1].getForce(2), gBox[1].getForce(3), gBox[1].getForce(4));
 	tDisp.setText(buffer, 6, 0);
 
-	sprintf(buffer, "pressTime1: %2.0f   pressTime2: %2.0f   pressTime3   pressTime4: %2.0f   pressTime5: %2.0f", pressTime[0], pressTime[1], pressTime[2], pressTime[3], pressTime[4]);
+	sprintf(buffer, "pressTime1: %2.0f   pressTime2: %2.0f   pressTime3: %2.0f   pressTime4: %2.0f   pressTime5: %2.0f", pressTime[0], pressTime[1], pressTime[2], pressTime[3], pressTime[4]);
 	tDisp.setText(buffer, 7, 0);
 
 
@@ -725,21 +735,25 @@ double fGain[5] = { 1.0,1.0,1.0,1.0,1.0 };
 #define FORCESCALE 2
 #define BASELINE_X1 -(FINGWIDTH*N_FINGERS/2)
 #define BASELINE_X2 +(FINGWIDTH*N_FINGERS/2)
-#define BASELINE_Y1 0
+#define BASELINE_Y1 -5
 #define BASELINE_Y2 BASELINE_Y1
 
 // text
 char TEXT[5] = { '1','2','3','4','5' };
 #define CUE_PRESS_yPOS 5
 #define SIZE_CUE 15
-#define WIDTH_CHAR_CUE 2
+//#define SIZE_CUE 5 
+//#define WIDTH_CHAR_CUE 2
+#define WIDTH_CHAR_CUE 1.5
 #define OTHER_LETTERS_SIZE 1.5
 
 // cuePress rectangle 
-#define RECWIDTH_X WIDTH_CHAR_CUE*(MAX_PRESS)
-#define RECWIDTH_Y WIDTH_CHAR_CUE
+#define RECWIDTH_X WIDTH_CHAR_CUE*(MAX_PRESS + 1)
+#define RECWIDTH_Y WIDTH_CHAR_CUE * 4 /3  
 #define REC_xPOS 0
 #define REC_yPOS CUE_PRESS_yPOS + 0.75
+//#define REC_yPOS CUE_PRESS_yPOS + 0.25
+
 
 // metronome line
 #define MET_LINE_X1 -(MAX_PRESS/2) * WIDTH_CHAR_CUE
@@ -757,7 +771,7 @@ void MyTrial::updateGraphics(int what) {
 			// Baseline box
 			gScreen.setColor(Screen::darkred);
 			// right
-			gScreen.drawBox(FINGWIDTH * N_FINGERS, (baseTHhi - baseTHlow) * FORCESCALE, -0 * FINGWIDTH * N_FINGERS, (baseTHlow * FORCESCALE) + ((baseTHhi - baseTHlow) * FORCESCALE) / 2);
+			gScreen.drawBox(FINGWIDTH * N_FINGERS, (baseTHhi - baseTHlow) * FORCESCALE, -0 * FINGWIDTH * N_FINGERS, (baseTHlow * FORCESCALE) + ((baseTHhi - baseTHlow) * FORCESCALE) / 2 + BASELINE_Y2);
 			// left
 			//gScreen.drawBox(FINGWIDTH*N_FINGERS, (baseTHhi-baseTHlow)*FORCESCALE, -0.75*FINGWIDTH*N_FINGERS, (baseTHlow*FORCESCALE)+((baseTHhi-baseTHlow)*FORCESCALE)/2);
 
@@ -766,18 +780,18 @@ void MyTrial::updateGraphics(int what) {
 			// right Hi
 			//gScreen.drawLine(BASELINE_X1-0.75*(FINGWIDTH*N_FINGERS), baseTHhi*FORCESCALE, BASELINE_X2-0.75*(FINGWIDTH*N_FINGERS), baseTHhi*FORCESCALE);
 			// left Hi
-			gScreen.drawLine(BASELINE_X1 + 0 * (FINGWIDTH * N_FINGERS), baseTHhi * FORCESCALE, BASELINE_X2 + 0 * (FINGWIDTH * N_FINGERS), baseTHhi * FORCESCALE);
+			gScreen.drawLine(BASELINE_X1 + 0 * (FINGWIDTH * N_FINGERS), baseTHhi * FORCESCALE + BASELINE_Y1, BASELINE_X2 + 0 * (FINGWIDTH * N_FINGERS), baseTHhi * FORCESCALE + BASELINE_Y2);
 
 
 			// right Lo
 			//gScreen.drawLine(BASELINE_X1-0.75*(FINGWIDTH*N_FINGERS), baseTHlow*FORCESCALE, BASELINE_X2-0.75*(FINGWIDTH*N_FINGERS), baseTHlow*FORCESCALE);
 			// left Lo
-			gScreen.drawLine(BASELINE_X1 + 0. * (FINGWIDTH * N_FINGERS), baseTHlow * FORCESCALE, BASELINE_X2 + 0 * (FINGWIDTH * N_FINGERS), baseTHlow * FORCESCALE);
+			gScreen.drawLine(BASELINE_X1 + 0. * (FINGWIDTH * N_FINGERS), baseTHlow * FORCESCALE + BASELINE_Y1, BASELINE_X2 + 0 * (FINGWIDTH * N_FINGERS), baseTHlow * FORCESCALE + BASELINE_Y2);
 
 
 			// Force threshold		
 			gScreen.setColor(Screen::grey);
-			gScreen.drawLine(1. * BASELINE_X1, preTH * FORCESCALE + BASELINE_Y1, 1. * BASELINE_X2, preTH * FORCESCALE + BASELINE_Y2);
+			gScreen.drawLine(1. * BASELINE_X1, preTH * FORCESCALE + BASELINE_Y1, 1. * BASELINE_X2 , preTH * FORCESCALE + BASELINE_Y2);
 
 			// Finger forces (right)
 			for (i = 0; i < 5; i++) {
@@ -808,14 +822,20 @@ void MyTrial::updateGraphics(int what) {
 	for (i = 0; i < MAX_PRESS; i++) {
 		if (gs.seqMask[i] > 0) { // Mask (asterisk)
 			gScreen.setColor(responseArray[i]);
-			gScreen.printChar(gs.seqMask[i], (i - ((double)(MAX_PRESS / 2))) * WIDTH_CHAR_CUE + WIDTH_CHAR_CUE * ((double)(MAX_PRESS - seqLength) / 2), CUE_PRESS_yPOS, SIZE_CUE);
+			gScreen.printChar(gs.seqMask[i], ((i+1) - ((double)((MAX_PRESS + 1) / 2) - 0.5)) * WIDTH_CHAR_CUE + WIDTH_CHAR_CUE * ((double)(MAX_PRESS - seqLength) / 2), CUE_PRESS_yPOS, SIZE_CUE);
 		}
 
 		else if (gs.seq[i] > 0) { // Numbers
 			gScreen.setColor(responseArray[i]);
-			gScreen.printChar(gs.seq[i], (i - ((double)(MAX_PRESS / 2) )) * WIDTH_CHAR_CUE + WIDTH_CHAR_CUE * ((double)(MAX_PRESS - seqLength) / 2), CUE_PRESS_yPOS, SIZE_CUE);
+			gScreen.printChar(gs.seq[i], ((i + 1) - ((double)((MAX_PRESS + 1) / 2) - 0.5 )) * WIDTH_CHAR_CUE + WIDTH_CHAR_CUE * ((double)(MAX_PRESS - seqLength) / 2), CUE_PRESS_yPOS, SIZE_CUE);
 		}
 	}
+
+	gScreen.setColor(crossColor);
+	gScreen.printChar(gs.cross, (0 - ((double)((MAX_PRESS + 1) / 2) - 0.5)) * WIDTH_CHAR_CUE + WIDTH_CHAR_CUE * ((double)(MAX_PRESS - seqLength) / 2), CUE_PRESS_yPOS, SIZE_CUE);
+
+
+
 
 	Vector2D recSize, recPos;
 	// press rectangle
@@ -823,23 +843,23 @@ void MyTrial::updateGraphics(int what) {
 		gScreen.setColor(Screen::grey);
 		gScreen.drawRect(RECWIDTH_X, RECWIDTH_Y, REC_xPOS, REC_yPOS);
 
-		//----------------------------------
-		// DELAYED-MOVEMENT GO-NOGO PARADIGM
-		//if ((state >= 3 && state <= 5) && gTimer[1] >= (prepTime + cueTime)) { // go/nogo after preparatory period defined by prepTime
+	//	//----------------------------------
+	//	// DELAYED-MOVEMENT GO-NOGO PARADIGM
+	//	//if ((state >= 3 && state <= 5) && gTimer[1] >= (prepTime + cueTime)) { // go/nogo after preparatory period defined by prepTime
 
-		//	if (exeType == 1) { // GO 
-		//		//gScreen.setColor(Screen::oceanblue);
-		//		//gScreen.drawRect(RECWIDTH_X + 0.3, RECWIDTH_Y + 0.3, REC_xPOS, REC_yPOS);
-		//		gScreen.setColor(Screen::black);
-		//		gScreen.drawRect(RECWIDTH_X, RECWIDTH_Y, REC_xPOS, REC_yPOS);
-		//		gScreen.setColor(Screen::white);
-		//	}
-		//	else if (exeType == 0) { // NO-GO
-		//		gScreen.setColor(Screen::darkorange);
-		//		gScreen.drawRect(RECWIDTH_X + 0.3, RECWIDTH_Y + 0.3, REC_xPOS, REC_yPOS);
-		//		gScreen.setColor(Screen::white);
-		//	}
-		//}
+	//	//	if (exeType == 1) { // GO 
+	//	//		//gScreen.setColor(Screen::oceanblue);
+	//	//		//gScreen.drawRect(RECWIDTH_X + 0.3, RECWIDTH_Y + 0.3, REC_xPOS, REC_yPOS);
+	//	//		gScreen.setColor(Screen::black);
+	//	//		gScreen.drawRect(RECWIDTH_X, RECWIDTH_Y, REC_xPOS, REC_yPOS);
+	//	//		gScreen.setColor(Screen::white);
+	//	//	}
+	//	//	else if (exeType == 0) { // NO-GO
+	//	//		gScreen.setColor(Screen::darkorange);
+	//	//		gScreen.drawRect(RECWIDTH_X + 0.3, RECWIDTH_Y + 0.3, REC_xPOS, REC_yPOS);
+	//	//		gScreen.setColor(Screen::white);
+	//	//	}
+	//	//}
 	}
 
 	if (useMetronome == 1 && state == 3 && timeMet == 0) {
@@ -983,6 +1003,10 @@ void MyTrial::control() {
 				finger[f] = 0;
 				released++;
 			}
+
+			if (force >= BASE_THRESHOLD_HI[0][f - 5]) {
+				numNewThresCross++;
+			}
 		//}
 	}
 
@@ -1039,14 +1063,14 @@ void MyTrial::control() {
 							press[i] = seq.at(i) - '0';
 							gs.seq[i] = seq.at(i);
 						}
-						if (isTrain) {
-							if (i < maskCounter + (chunkSize[chunkIndex] - '0')) {
-								gs.seqMask[i] = 0;
-							}
-							else {
-								gs.seqMask[i] = '*';
-							}
+
+						if (i < maskCounter + stoi(windowSize)) {
+							gs.seqMask[i] = 0;
 						}
+						else {
+							gs.seqMask[i] = '*';
+						}
+
 						cout <<"hand" <<  hand << '\n';
 						if (show == 1) {
 							if (hand == 2) {
@@ -1057,6 +1081,7 @@ void MyTrial::control() {
 							}
 						}
 					}
+					gs.cross = '+';
 					gTimer.reset(1); gTimer.reset(2); gTimer.reset(5);
 					dataman.startRecording();
 					state = WAIT_PREP;
@@ -1074,14 +1099,13 @@ void MyTrial::control() {
 							gs.seq[i] = seq.at(i);
 						}
 
-						if (isTrain) {
-							if (i < maskCounter + (chunkSize[chunkIndex] - '0')) {
-								gs.seqMask[i] = 0;
-							}
-							else {
-								gs.seqMask[i] = '*';
-							}
+						if (i < maskCounter + stoi(windowSize)) {
+							gs.seqMask[i] = 0;
 						}
+						else {
+							gs.seqMask[i] = '*';
+						}
+
 						if (show == 1) {
 							if (hand == 2) {
 								responseArray[i] = 6; // orange for the right
@@ -1091,6 +1115,7 @@ void MyTrial::control() {
 							}
 						}
 					}
+					gs.cross = '+';
 					gTimer.reset(1); gTimer.reset(2); gTimer.reset(5);
 					dataman.startRecording();
 					state = WAIT_PREP;
@@ -1109,7 +1134,7 @@ void MyTrial::control() {
 				press[i] = seq.at(i) - '0';
 				gs.seq[i] = seq.at(i);
 				if (isTrain) {
-					if (i < maskCounter + (chunkSize[chunkIndex] - '0')) {
+					if (i < maskCounter + stoi(windowSize)) {
 						gs.seqMask[i] = 0;
 					}
 					else {
@@ -1134,24 +1159,25 @@ void MyTrial::control() {
 	case WAIT_PREP: //3 
 		//----------------------------------
 		// CHECK FOR BASELINE FINGER FORCES
-		//if (numNewThresCross > 0 && gTimer[1] < (cueTime + prepTime)) { // check for pre-movement finger presses
-		//	timeStamp = gTimer[1];
-		//	isCross = 1;
-		//	if (startTime < 0) { // display warning message (practice blocks only)
-		//		sprintf(buffer, "Please remain within the red area");
-		//		gs.lineColor[0] = 1;
-		//		gs.line[0] = buffer;
-		//		gs.lineYpos[0] = 8;
-		//	}
-		//}
-		/*
-		if (gTimer[1]>timeStamp+500) {
+		if (numNewThresCross > 0 && gTimer[1] < precueTime) { // check for pre-movement finger presses
+			timeStamp = gTimer[1];
+			isCross = 1;
+
+			if (startTime == 0) { // display warning message (practice blocks only)
+				sprintf(buffer, "Please remain within the red area");
+				gs.lineColor[0] = 1;
+				gs.line[0] = buffer;
+				gs.lineYpos[0] = 8;
+			}
+		}
+		
+		if (gTimer[1]>timeStamp + 500) {
 		sprintf(buffer,"");
 		gs.lineColor[0] = 1;
 		gs.line[0] = buffer;
 		gs.lineYpos[0] = 8;
 		}
-		//*/
+		//
 
 		// DELAYED-MOVEMENT GO-NOGO PARADIGM
 		//if (newPress > 0 && gTimer[1] < (cueTime + prepTime)) { // check for error: go cue anticipation
@@ -1170,7 +1196,7 @@ void MyTrial::control() {
 		//	gs.lineYpos[0] = 8;
 		//	isError = 1;
 		//	timingError = 1;
-		//	responseArray[seqCounter] = 2; // red
+		//	 [seqCounter] = 2; // red
 		//	seqCounter++;
 		//	state = WAIT_RELEASE;
 		//}
@@ -1182,36 +1208,38 @@ void MyTrial::control() {
 		//	}
 		//}
 
-		//if (gTimer[1] >= (cueTime + prepTime)) { // give go/nogo signal
+		if (gTimer[1] >= precueTime) { // give go/nogo signal
 
-		//	sprintf(buffer, "");
-		//	gs.lineColor[0] = 1;
-		//	gs.line[0] = buffer;
-		//	gs.lineYpos[0] = 8;
+			sprintf(buffer, "");
+			gs.lineColor[0] = 1;
+			gs.line[0] = buffer;
+			gs.lineYpos[0] = 8;
 
-		//	if (mask == 2) {      // only mask at Go time
-		//		gs.clearCues();
-		//		for (i = 0; i < seqLength; i++) {
-		//			gs.cueMask[i] = cueMask.at(i);
-		//		}
-		//	}
+			//	if (mask == 2) {      // only mask at Go time
+			//		gs.clearCues();
+			//		for (i = 0; i < seqLength; i++) {
+			//			gs.cueMask[i] = cueMask.at(i);
+			//		}
+			//	}
 
-		//	if (exeType == 1) { // GO 
-		//		// PLAY SOUND
-		//		PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
-		//	}
-		//	else if (exeType == 0) { // NO-GO
-		//		// PLAY SOUND
-		//		//PlaySound(TASKSOUNDS[7].c_str(), NULL, SND_ASYNC);
-		//	}
-		//	gTimer.reset(2);
-		//	state = WAIT_PRESS;
-		//}
+			//	if (exeType == 1) { // GO 
+			//		// PLAY SOUND
+			//		PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
+			//	}
+			//	else if (exeType == 0) { // NO-GO
+			//		// PLAY SOUND
+			//		//PlaySound(TASKSOUNDS[7].c_str(), NULL, SND_ASYNC);
+			//	}
+			//	gTimer.reset(2);
+			//	state = WAIT_PRESS;
+			//}
+			crossColor = 3; //green
 
-		PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
-		gTimer.reset(2);
+			PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
+			gTimer.reset(2);
 
-		state = WAIT_PRESS;
+			state = WAIT_PRESS;
+		}
 		break;
 
 	case WAIT_PRESS: //4
@@ -1248,17 +1276,25 @@ void MyTrial::control() {
 			else { // error: wrong key pressed
 				responseArray[seqCounter] = 2; // red
 				isError = 1;
-			};
-			if (isTrain == 1) {
-				if ((seqCounter >= maskCounter + (chunkSize[chunkIndex] - '0') - 1) && seqCounter != (seqLength - 1)) {
-					maskCounter += chunkSize[chunkIndex] - '0';
-					chunkIndex++;
-					cout << "chunkIndex" << chunkIndex << "\n";
-					for (i = 0; i < chunkSize[chunkIndex] - '0'; i++) {
-						gs.seqMask[i + maskCounter] = 0;
-					}
-				}
 			}
+
+			//if (isTrain == 1) {
+			//	if ((seqCounter >= maskCounter + (chunkSize[chunkIndex] - '0') - 1) && seqCounter != (seqLength - 1)) {
+			//		maskCounter += chunkSize[chunkIndex] - '0';
+			//		chunkIndex++;
+			//		cout << "chunkIndex" << chunkIndex << "\n";
+			//		for (i = 0; i < chunkSize[chunkIndex] - '0'; i++) {
+			//			gs.seqMask[i + maskCounter] = 0;
+			//		}
+			//	}
+			//}
+
+			if (seqCounter + stoi(windowSize) < seqLength) {
+				gs.seqMask[seqCounter + stoi(windowSize)] = 0;
+			}
+
+
+
 			seqCounter++;
 		}
 
@@ -1308,7 +1344,7 @@ void MyTrial::control() {
 		// Wait for the release of all keys, assign points
 		if (released == NUMFINGERS) {
 
-			if (isTrain == 1) { // GO
+			//if (isTrain == 1 ) { // GO
 
 				if (isError == 0) {
 
@@ -1350,28 +1386,28 @@ void MyTrial::control() {
 				}
 				gTimer.reset(2);
 				state = WAIT_FEEDBACK;
-			}
+			//}
 
-			else if (isTrain == 0) { // NO-GO
+			//else if (isTrain == 0) { // NO-GO
 
-				if (isError == 0) {
-					points = 1;
-					gs.clearCues(); sprintf(buffer, "+%d", points);
-					gs.lineColor[1] = 1; // white
-					gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
-				}
-				else {
-					points = -1;
-					// PLAY SOUND 
-					PlaySound(TASKSOUNDS[5].c_str(), NULL, SND_ASYNC);
-					gs.clearCues(); sprintf(buffer, "%d", points);
-					gs.lineColor[1] = 1; // white
-					gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
-				}
+			//	if (isError == 0) {
+			//		points = 1;
+			//		gs.clearCues(); sprintf(buffer, "+%d", points);
+			//		gs.lineColor[1] = 1; // white
+			//		gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
+			//	}
+			//	else {
+			//		points = -1;
+			//		// PLAY SOUND 
+			//		PlaySound(TASKSOUNDS[5].c_str(), NULL, SND_ASYNC);
+			//		gs.clearCues(); sprintf(buffer, "%d", points);
+			//		gs.lineColor[1] = 1; // white
+			//		gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
+			//	}
 
-				gTimer.reset(2);
-				state = WAIT_FEEDBACK;
-			}
+			//	gTimer.reset(2);
+			//	state = WAIT_FEEDBACK;
+			//}
 
 		}
 		break;
@@ -1381,6 +1417,8 @@ void MyTrial::control() {
 		for (i = 0; i < MAX_PRESS; i++) {
 			responseArray[i] = 1; // white
 		}
+
+		crossColor = 1;
 
 		// Wait for feedback time, keep count of ponits
 		if (gTimer[2] > FEEDBACKTIME) {
@@ -1486,6 +1524,7 @@ void GraphicState::clearCues(void) {
 	for (i = 0; i < MAX_PRESS; i++) {
 		seq[i] = 0;
 		seqMask[i] = 0;
+		//cross = 0;
 	}
 }
 

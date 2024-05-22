@@ -1,16 +1,22 @@
 import pandas as pd
 
 experiment = 'smp1'
-subj = '100'
+subj = '106'
 session = 'scanning'  # training or scanning
 nblocks = 10
 
 for block in range(nblocks):
-    tgt = pd.read_csv(f'target/smp0_template_{session}.tgt', sep="\t")  # read template file
+    tgt = pd.read_csv(f'target/smp1_template_{session}.tgt', sep="\t")  # read template file
 
     go_rows = tgt['GoNogo'] == 'go'
-    planTime_shuffled = tgt.loc[go_rows, 'planTime'].sample(frac=1).reset_index(drop=True).to_list()
-    tgt.loc[go_rows, 'planTime'] = planTime_shuffled
+    shuffled = tgt.loc[go_rows, ['planTime', 'iti']].sample(frac=1)
+    planTime = shuffled['planTime'].reset_index(drop=True).to_list()
+    iti = shuffled['iti'].reset_index(drop=True).to_list()
+    # planTime_id_shuffled = planTime_shuffled.index.tolist()
+    # planTime_shuffled = planTime_shuffled.reset_index(drop=True).to_list()
+    tgt.loc[go_rows, 'planTime'] = planTime
+    tgt.loc[go_rows, 'iti'] = iti
+    # tgt.loc[go_rows, 'iti'] = tgt.loc[planTime_id_shuffled, 'iti']
 
     et = tgt.endTime  # extrapolate endTime
     st = tgt.startTimeDiff  # extrapolate startTimeDiff

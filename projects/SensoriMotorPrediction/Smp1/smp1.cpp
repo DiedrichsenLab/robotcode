@@ -120,8 +120,8 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	tDisp.init(gThisInst, 0, 0, 1000, 30, 9, 2, &(::parseCommand));		// Default setting for the Windows 10 PC
 	tDisp.setText("Subj", 0, 0);
 	//gScreen.init(gThisInst, 1920, 0, 1920, 1080, &(::updateGraphics));	// Default setting for the Windows 10 PC
-	gScreen.init(gThisInst, 1280, 0, 1024, 768, &(::updateGraphics));
-	//gScreen.init(gThisInst, 1920, 0, 1680, 1080, &(::updateGraphics));
+	//gScreen.init(gThisInst, 1280, 0, 1024, 768, &(::updateGraphics));
+	gScreen.init(gThisInst, 1920, 0, 1680, 1080, &(::updateGraphics));
 	gScreen.setCenter(Vector2D(0, 0)); // This set the center of the screen where forces are calibrated with zero force // In cm //0,2
 	gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));					// cm/pixel
 
@@ -279,8 +279,11 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 	}
 
 	else if (arguments[0] == "session") {
+		// Difference between training and scanning is that in scanning the 
+		// baseline area doesn't become red when subject goes outside of it
+
 		if (numArgs != 2) {
-			tDisp.print("USAGE: session <value>");
+			tDisp.print("USAGE: session <value (training or scanning)>");
 		}
 
 		else {
@@ -289,6 +292,7 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 	}
 
 	else if (arguments[0] == "flipscreen" || arguments[0] == "FLIPSCREEN") {
+
 		if (!flipscreen) {
 			TransforMatrix = Matrix2D(0, 1, 1, 0);
 			gScreen.setScale(Vector2D(-SCR_SCALE, SCR_SCALE));
@@ -533,7 +537,7 @@ void MyTrial::read(istream& in) {
 ///////////////////////////////////////////////////////////////
 void MyTrial::writeDat(ostream& out) {
 	// write to .dat file
-	// name of file is: smp0_<name of subject>_<session number>.dat
+	// name of file is: smp1_<name of subject>_<session number>.dat
 	out << subNum << "\t"
 		<< cueID << "\t"
 		<< stimFinger << "\t"

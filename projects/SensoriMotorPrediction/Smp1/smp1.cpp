@@ -35,7 +35,7 @@ bool showCue = 0;
 int hrfTime = 0;
 string probCue;
 
-bool flipscreen = false;
+//bool flipscreen = false;
 
 string session = "scanning";
 
@@ -124,6 +124,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	gScreen.init(gThisInst, 1920, 0, 1680, 1080, &(::updateGraphics));
 	gScreen.setCenter(Vector2D(0, 0)); // This set the center of the screen where forces are calibrated with zero force // In cm //0,2
 	gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));					// cm/pixel
+
 
 	// 2. initalize s626cards 
 	s626.init("c:/robotcode/calib/s626_single.txt");
@@ -292,17 +293,9 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 	}
 
 	else if (arguments[0] == "flipscreen" || arguments[0] == "FLIPSCREEN") {
+		
+		gs.flipscreen = !gs.flipscreen;
 
-		if (!flipscreen) {
-			TransforMatrix = Matrix2D(0, 1, 1, 0);
-			gScreen.setScale(Vector2D(-SCR_SCALE, SCR_SCALE));
-			flipscreen = true;
-		}
-		else { // flipscreen is true, is in mri mode, going to training mode
-			TransforMatrix = Matrix2D(1, 0, 0, 1);
-			gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));
-			flipscreen = false;
-		}
 	}
 
 	//  Valves Command: set voltage channels directly 
@@ -470,6 +463,7 @@ void MyBlock::start() {
 	gCounter.reset();
 	gCounter.start();
 	blockFeedbackFlag = 0;
+
 }
 
 ///////////////////////////////////////////////////////////////
@@ -710,7 +704,17 @@ void MyTrial::updateGraphics(int what) {
 
 	if (blockFeedbackFlag) {
 		gScreen.setCenter(Vector2D(0, 0));    // In cm //0,2
-		gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));
+		if (gs.flipscreen == 1) {
+			TransforMatrix = Matrix2D(0, 1, 1, 0);
+			gScreen.setScale(Vector2D(-SCR_SCALE, SCR_SCALE)); // this is the flipped
+			//flipscreen = true;
+		}
+
+		else { // flipscreen is true, is in mri mode, going to training mode
+			TransforMatrix = Matrix2D(1, 0, 0, 1);
+			gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));
+			//flipscreen = false;
+		}
 
 
 		//gScreen.setColor(Screen::white);
@@ -785,6 +789,20 @@ void MyTrial::updateGraphics(int what) {
 		gScreen.drawLine(BASELINE_X1, VERT_SHIFT - baseTHhi, BASELINE_X2, VERT_SHIFT - baseTHhi);
 
 	}
+
+	if (gs.flipscreen == 1) {
+		TransforMatrix = Matrix2D(0, 1, 1, 0);
+		gScreen.setScale(Vector2D(-SCR_SCALE, SCR_SCALE)); // this is the flipped
+		//flipscreen = true;
+	}
+		
+	else { // flipscreen is true, is in mri mode, going to training mode
+		TransforMatrix = Matrix2D(1, 0, 0, 1);
+		gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));
+		//flipscreen = false;
+	}
+
+	
 
 	if (gs.showFxCross == 1) { // show lines
 

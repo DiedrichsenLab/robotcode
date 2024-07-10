@@ -35,6 +35,18 @@ bool showCue = 0;
 int hrfTime = 0;
 string probCue;
 
+double RT_thresh = 5.0;
+
+int rewThresh1 = 250;
+int rewThresh2 = 500;
+bool wrongResp = 0;
+bool resp = 0;
+int points = 0;
+int points_tot = 0;
+int nRT = 0;
+
+double forceDiff_block = 0.0;
+
 //bool flipscreen = false;
 
 string session = "scanning";
@@ -466,6 +478,35 @@ void MyBlock::start() {
 
 }
 
+// Helper function to calculate the first and third quartiles
+void quartiles(double array[], int num_val, int q1, int q3) {
+	int i, j;
+	double dummy;
+
+	// Sort the array (using selection sort as per original implementation)
+	for (i = 0; i < num_val - 1; i++) {
+		for (j = i + 1; j < num_val; j++) {
+			if (array[i] > array[j]) {
+				dummy = array[i];
+				array[i] = array[j];
+				array[j] = dummy;
+			}
+		}
+	}
+
+	// Calculate Q1
+	if (num_val % 2 == 0) {
+		i = num_val / 2;
+		q1 = median(array, i); // median of lower half
+		q3 = median(array + i, i); // median of upper half
+	}
+	else {
+		i = (num_val - 1) / 2;
+		q1 = median(array, i + 1); // median of lower half (including median)
+		q3 = median(array + i + 1, i); // median of upper half
+	}
+}
+
 ///////////////////////////////////////////////////////////////
 /// giveFeedback and put it to the graphic state 
 ///////////////////////////////////////////////////////////////
@@ -473,27 +514,46 @@ void MyBlock::giveFeedback() {
 	gs.showTgLines = 0;
 	gs.showBsLines = 0;
 	gs.showForces = 0;
+
+	int q1 = 0, q3 = 0;
 	double forceDiff;
+	double* RTarray = new double[nRT]; // Dynamic allocation
 	int i, j = 0;
 	MyTrial* tpnr;
 	//double medianRT;
 	double blockDiff = 0;
 	blockFeedbackFlag = 1;
 
+	n = 0;
 	for (i = 0; i < trialNum; i++) { //check each trial
 		tpnr = (MyTrial*)trialVec.at(i);
 		forceDiff = tpnr->forceDiff;
 		blockDiff = blockDiff + forceDiff;
+
+		if (tpnr->RT > 0 && tpnr->RT < tpnr->execMaxTime) {
+			RTarray[n] = tpnr->RT;
+			n++;
+		}
+		
 	}
+
+
+
+	quartiles(RTarray, trialNum, q1, q3);
 
 	////gScreen.setColor(Screen::white);
 	sprintf(buffer, "End of Block");
-	gs.line[3] = buffer;
-	gs.lineColor[3] = 1;
-
-	sprintf(buffer, "mean difference cued vs. non cued: %2.2f", blockDiff / (trialNum - 6)); // 6 50/50 trials need to be remove from average
 	gs.line[0] = buffer;
 	gs.lineColor[0] = 1;
+
+	forceDiff_block = blockDiff / (trialNum - 6);
+
+	rewThresh1 = q1;
+	rewThresh2 = q3;
+
+	//sprintf(buffer, "mean difference cued vs. non cued: %2.2f", blockDiff / (trialNum - 6)); // 6 50/50 trials need to be remove from average
+	//gs.line[0] = buffer;
+	//gs.lineColor[0] = 1;
 }
 
 ///////////////////////////////////////////////////////////////
@@ -558,6 +618,7 @@ void MyTrial::writeDat(ostream& out) {
 		<< baselineCorrection << "\t"
 		<< fingerVolt << "\t"					// 
 		<< forceDiff << "\t"
+		<< RT << "\t"
 		<< endl;
 }
 
@@ -592,6 +653,7 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "baselineCorrection" << '\t'
 		<< "fingerVolt" << '\t'
 		<< "forceDiff" << '\t'
+		<< "RT" << '\t'
 		<< endl;
 }
 
@@ -665,7 +727,7 @@ void MyTrial::updateTextDisplay() {
 	tDisp.setText(buffer, 8, 0);
 
 	tDisp.setText("forceDiff", 7, 1);
-	sprintf(buffer, "Diff1: %2.2f", abs(gBox.getForce(1) - gBox.getForce(3)));
+	sprintf(buffer, "Diff: %2.3f", forceDiff_block);
 	tDisp.setText(buffer, 8, 1);
 
 	/*tDisp.setText("forceAv", 7, 1);
@@ -691,6 +753,21 @@ void MyTrial::updateTextDisplay() {
 	// force gains
 	sprintf(buffer, "GlobalGain = %1.1f     forceGain = %1.1f %1.1f %1.1f %1.1f %1.1f", forceGain, fGain[0], fGain[1], fGain[2], fGain[3], fGain[4]);
 	tDisp.setText(buffer, 13, 0);
+
+	// RT and wrongAns
+	sprintf(buffer, "RT: %d", RT);
+	tDisp.setText(buffer, 12, 1);
+
+	sprintf(buffer, "wrongResp: %d", wrongResp);
+	tDisp.setText(buffer, 13, 1);
+
+	sprintf(buffer, "current points: %d, points tot: %d", points, points_tot);
+	tDisp.setText(buffer, 14, 1);
+
+	sprintf(buffer, "rewThresh1: %d", rewThresh1);
+	tDisp.setText(buffer, 15, 1);
+	sprintf(buffer, "rewThresh2: %d", rewThresh2);
+	tDisp.setText(buffer, 16, 1);
 }
 
 ///////////////////////////////////////////////////////////////
@@ -1132,6 +1209,14 @@ void MyTrial::control() {
 
 		}
 
+		for (i = 0; i < 2; i++) {
+			fingerForceTmp = VERT_SHIFT + forceGain * fGain[fi[i]] * gBox.getForce(fi[i]) + baselineCorrection;
+			if (fingerForceTmp > RT_thresh) {
+				RT = -1;
+				resp = 1;
+			}
+		}
+
 		break;
 
 	case WAIT_EXEC: //3
@@ -1185,10 +1270,38 @@ void MyTrial::control() {
 			Navf++;
 		}
 
+		if (resp == 0) {
+			for (i = 0; i < 2; i++) {
+				fingerForceTmp = VERT_SHIFT + forceGain * fGain[fi[i]] * gBox.getForce(fi[i]) + baselineCorrection;
+				if (fingerForceTmp > RT_thresh) {
+					if (GoNogo == "go") {
+						RT = gTimer[3];
+						resp = 1;
+						if (stimFinger[fi[i]] == '1') {
+							wrongResp = 0;
+						}
+						else {
+							wrongResp = 30;
+						}
+					}
+					else {
+						RT = -1;
+						resp = 1;
+					}
+					
+				}
+			}
+			
+		}
+		
+
 		// If subject runs out of time:
 		if (gTimer[3] >= execMaxTime) {
 			//chordErrorFlag = 1;
 			//RT = 10000;
+			if (resp == 0) {
+				RT = execMaxTime;
+			}
 			state = GIVE_FEEDBACK;
 			gTimer.reset(2);
 			gTimer.reset(3);
@@ -1216,14 +1329,46 @@ void MyTrial::control() {
 		gs.showTimer5 = 0;
 		gs.showFeedback = 1;		// showing feedback (refer to MyTrial::updateGraphics() for details)
 
-		if (gTimer[2] >= feedbackTime || GoNogo == "nogo") {
+		if (RT < 0){
+			points = -100;
+			}		
+		else if (RT > 0 && RT < rewThresh1) {
+			points = 100 - wrongResp;
+			nRT++;
+		}
+		else if (RT > rewThresh1 && RT < rewThresh2) {
+			points = 50 - wrongResp;
+			nRT++;
+		}
+		else if (RT > rewThresh2 && RT < 1000) {
+			points = 0 - wrongResp;
+			nRT++;
+		}
+		else {
+			points = 0 - wrongResp;
+		}
+
+		sprintf(buffer, "%d points", points);
+		gs.line[0] = buffer;
+		gs.lineColor[0] = 1;
+
+		if (gTimer[2] >= feedbackTime ) { //|| GoNogo == "nogo"
 			state = WAIT_ITI;
+			resp = 0;
+			wrongResp = 0;
+			points_tot = points_tot + points;
+			points = 0;
 			gTimer.reset(2);
 		}
 		break;
 
 
 	case WAIT_ITI:
+
+		sprintf(buffer, "");
+		gs.line[0] = buffer;
+		gs.lineColor[0] = 1;
+
 		gs.showTgLines = 1;	// set screen lines/force bars to show
 		gs.showBsLines = 1;
 		gs.showFxCross = 1;
@@ -1351,7 +1496,7 @@ GraphicState::GraphicState() {
 
 	// points in block 
 	lineXpos[0] = 0;
-	lineYpos[0] = 0;			// feedback 	
+	lineYpos[0] = 2;			// feedback 	
 	lineColor[0] = 2;			// white 
 	size[0] = 5;
 

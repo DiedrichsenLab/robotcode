@@ -184,6 +184,7 @@ private:
 	int Navf = 0;
 	int trialPoint;							///< point received in each trial
 	double forceDiff;
+	int RT = 0;
 
 	DataManager<DataRecord, 30000 / 2> dataman;///< For data recording for MOV file //up to 30 s of data are recorded per trial
 };

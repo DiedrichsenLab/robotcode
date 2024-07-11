@@ -131,9 +131,9 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	// gExp->redirectIOToConsole();		// I uncommented this!!!
 	tDisp.init(gThisInst, 0, 0, 1000, 30, 9, 2, &(::parseCommand));		// Default setting for the Windows 10 PC
 	tDisp.setText("Subj", 0, 0);
-	//gScreen.init(gThisInst, 1920, 0, 1920, 1080, &(::updateGraphics));	// Default setting for the Windows 10 PC
-	gScreen.init(gThisInst, 1280, 0, 1024, 768, &(::updateGraphics));
-	//gScreen.init(gThisInst, 1920, 0, 1680, 1080, &(::updateGraphics));
+	//gScreen.init(gThisInst, 1920, 0, 1920, 1080, &(::updateGraphics));	
+	//gScreen.init(gThisInst, 1280, 0, 1024, 768, &(::updateGraphics)); 
+	gScreen.init(gThisInst, 1920, 0, 1680, 1080, &(::updateGraphics)); // Default setting for the Windows 10 PC
 	gScreen.setCenter(Vector2D(0, 0)); // This set the center of the screen where forces are calibrated with zero force // In cm //0,2
 	gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));					// cm/pixel
 
@@ -537,9 +537,7 @@ void MyBlock::giveFeedback() {
 		
 	}
 
-
-
-	quartiles(RTarray, trialNum, q1, q3);
+	quartiles(RTarray, nRT, q1, q3);
 
 	////gScreen.setColor(Screen::white);
 	sprintf(buffer, "End of Block");
@@ -710,7 +708,7 @@ void MyTrial::updateTextDisplay() {
 
 	tDisp.setText("Experiment: Smp1", 2, 1);
 
-	sprintf(buffer, "State : %d   Trial: %d   Block state: %d", state, gExp->theBlock->trialNum, gExp->theBlock->state);
+	sprintf(buffer, "State : %d   Trial: %d   Block state: %d   GoNogo: %s", state, gExp->theBlock->trialNum, gExp->theBlock->state, GoNogo.c_str());
 	tDisp.setText(buffer, 4, 0);
 
 	tDisp.setText("Fingers in task: " + fingerTask[0] + " " + fingerTask[1], 4, 1);
@@ -755,7 +753,7 @@ void MyTrial::updateTextDisplay() {
 	tDisp.setText(buffer, 13, 0);
 
 	// RT and wrongAns
-	sprintf(buffer, "RT: %d", RT);
+	sprintf(buffer, "RT: %d, nRT: %d", RT, nRT);
 	tDisp.setText(buffer, 12, 1);
 
 	sprintf(buffer, "wrongResp: %d", wrongResp);
@@ -1329,30 +1327,31 @@ void MyTrial::control() {
 		gs.showTimer5 = 0;
 		gs.showFeedback = 1;		// showing feedback (refer to MyTrial::updateGraphics() for details)
 
-		if (RT < 0){
-			points = -100;
-			}		
-		else if (RT > 0 && RT < rewThresh1) {
-			points = 100 - wrongResp;
-			nRT++;
-		}
-		else if (RT > rewThresh1 && RT < rewThresh2) {
-			points = 50 - wrongResp;
-			nRT++;
-		}
-		else if (RT > rewThresh2 && RT < 1000) {
-			points = 0 - wrongResp;
-			nRT++;
-		}
-		else {
-			points = 0 - wrongResp;
-		}
-
 		sprintf(buffer, "%d points", points);
 		gs.line[0] = buffer;
 		gs.lineColor[0] = 1;
 
 		if (gTimer[2] >= feedbackTime ) { //|| GoNogo == "nogo"
+
+			if (RT < 0) {
+				points = -100;
+			}
+			else if (RT > 0 && RT < rewThresh1) {
+				points = 100 - wrongResp;
+				nRT++;
+			}
+			else if (RT > rewThresh1 && RT < rewThresh2) {
+				points = 50 - wrongResp;
+				nRT++;
+			}
+			else if (RT > rewThresh2 && RT < execMaxTime) {
+				points = 0 - wrongResp;
+				nRT++;
+			}
+			else {
+				points = 0 - wrongResp;
+			}
+
 			state = WAIT_ITI;
 			resp = 0;
 			wrongResp = 0;

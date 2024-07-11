@@ -537,10 +537,12 @@ void MyBlock::giveFeedback() {
 		
 	}
 
+	double RTmedian = median(RTarray, nRT);
+
 	quartiles(RTarray, nRT, q1, q3);
 
 	////gScreen.setColor(Screen::white);
-	sprintf(buffer, "End of Block");
+	sprintf(buffer, "End of Block\npoints: %d, median RT: %f", points_tot, RTmedian);
 	gs.line[0] = buffer;
 	gs.lineColor[0] = 1;
 

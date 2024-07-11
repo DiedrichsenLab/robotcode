@@ -39,7 +39,7 @@ double RT_thresh = 5.0;
 
 int rewThresh1 = 250;
 int rewThresh2 = 500;
-bool wrongResp = 0;
+int wrongResp = 0;
 bool resp = 0;
 int points = 0;
 int points_tot = 0;
@@ -479,7 +479,7 @@ void MyBlock::start() {
 }
 
 // Helper function to calculate the first and third quartiles
-void quartiles(double array[], int num_val, int q1, int q3) {
+void quartiles(double array[], int num_val, int &q1, int &q3) {
 	int i, j;
 	double dummy;
 
@@ -1120,6 +1120,12 @@ void MyTrial::control() {
 		gs.showTarget = 0;
 		gs.showFeedback = 0;
 
+		resp = 0;
+		wrongResp = 0;
+		points = 0;
+
+		gs.reset();
+
 		if (gCounter.readTR() > 0 && gCounter.readTotTime() >= startTime) {
 			startTimeReal = gCounter.readTotTime();
 			startTRReal = gCounter.readTR(); // number of TR arrived so far
@@ -1327,11 +1333,9 @@ void MyTrial::control() {
 		gs.showTimer5 = 0;
 		gs.showFeedback = 1;		// showing feedback (refer to MyTrial::updateGraphics() for details)
 
-		sprintf(buffer, "%d points", points);
-		gs.line[0] = buffer;
-		gs.lineColor[0] = 1;
-
 		if (gTimer[2] >= feedbackTime ) { //|| GoNogo == "nogo"
+
+			state = WAIT_ITI;
 
 			if (RT < 0) {
 				points = -100;
@@ -1352,11 +1356,7 @@ void MyTrial::control() {
 				points = 0 - wrongResp;
 			}
 
-			state = WAIT_ITI;
-			resp = 0;
-			wrongResp = 0;
 			points_tot = points_tot + points;
-			points = 0;
 			gTimer.reset(2);
 		}
 		break;
@@ -1364,7 +1364,7 @@ void MyTrial::control() {
 
 	case WAIT_ITI:
 
-		sprintf(buffer, "");
+		sprintf(buffer, "%d points", points);
 		gs.line[0] = buffer;
 		gs.lineColor[0] = 1;
 

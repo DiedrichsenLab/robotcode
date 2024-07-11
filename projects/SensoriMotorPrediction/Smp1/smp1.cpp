@@ -37,8 +37,8 @@ string probCue;
 
 double RT_thresh = 5.0;
 
-int rewThresh1 = 250;
-int rewThresh2 = 500;
+double rewThresh1 = 250;
+double rewThresh2 = 500;
 int wrongResp = 0;
 bool resp = 0;
 int points = 0;
@@ -479,7 +479,7 @@ void MyBlock::start() {
 }
 
 // Helper function to calculate the first and third quartiles
-void quartiles(double array[], int num_val, int &q1, int &q3) {
+void quartiles(double array[], int num_val, double &q1, double &q3) {
 	int i, j;
 	double dummy;
 
@@ -515,7 +515,7 @@ void MyBlock::giveFeedback() {
 	gs.showBsLines = 0;
 	gs.showForces = 0;
 
-	int q1 = 0, q3 = 0;
+	double q1 = 0, q3 = 0;
 	double forceDiff;
 	double* RTarray = new double[nRT]; // Dynamic allocation
 	int i, j = 0;
@@ -546,8 +546,12 @@ void MyBlock::giveFeedback() {
 
 	forceDiff_block = blockDiff / (trialNum - 6);
 
-	rewThresh1 = q1;
-	rewThresh2 = q3;
+	if (nRT >= 5) {
+		rewThresh1 = q1;
+		rewThresh2 = q3;
+	}
+
+	
 
 	//sprintf(buffer, "mean difference cued vs. non cued: %2.2f", blockDiff / (trialNum - 6)); // 6 50/50 trials need to be remove from average
 	//gs.line[0] = buffer;
@@ -564,6 +568,7 @@ MyTrial::MyTrial() {
 	int i, j;
 	state = WAIT_TRIAL;
 	forceDiff = 1;
+	nRT = 0;
 }
 
 ///////////////////////////////////////////////////////////////
@@ -617,6 +622,7 @@ void MyTrial::writeDat(ostream& out) {
 		<< fingerVolt << "\t"					// 
 		<< forceDiff << "\t"
 		<< RT << "\t"
+		<< points << "\t"
 		<< endl;
 }
 
@@ -652,6 +658,7 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "fingerVolt" << '\t'
 		<< "forceDiff" << '\t'
 		<< "RT" << '\t'
+		<< "points" << "\t"
 		<< endl;
 }
 
@@ -753,7 +760,7 @@ void MyTrial::updateTextDisplay() {
 	tDisp.setText(buffer, 13, 0);
 
 	// RT and wrongAns
-	sprintf(buffer, "RT: %d, nRT: %d", RT, nRT);
+	sprintf(buffer, "RT: %f, nRT: %d", RT, nRT);
 	tDisp.setText(buffer, 12, 1);
 
 	sprintf(buffer, "wrongResp: %d", wrongResp);
@@ -762,9 +769,9 @@ void MyTrial::updateTextDisplay() {
 	sprintf(buffer, "current points: %d, points tot: %d", points, points_tot);
 	tDisp.setText(buffer, 14, 1);
 
-	sprintf(buffer, "rewThresh1: %d", rewThresh1);
+	sprintf(buffer, "rewThresh1: %f", rewThresh1);
 	tDisp.setText(buffer, 15, 1);
-	sprintf(buffer, "rewThresh2: %d", rewThresh2);
+	sprintf(buffer, "rewThresh2: %f", rewThresh2);
 	tDisp.setText(buffer, 16, 1);
 }
 

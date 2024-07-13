@@ -42,7 +42,7 @@ double fGain[5] = { 1.0,1.0,1.0,1.5,1.5 };	// finger specific force gains -> app
 double forceGain = 1;						// universal force gain -> applied on all the fingers
 double mahdiyar = 123;
 bool blockFeedbackFlag = 0;
-bool wait_baseline_zone = 0;				// if 1, waits until the subject's fingers are all in the baseline zone. 
+bool wait_baseline_zone = 1;				// if 1, waits until the subject's fingers are all in the baseline zone. MARCO CHANGED TO 1
 
 #define FINGWIDTH 1.3
 #define N_FINGERS 5
@@ -98,7 +98,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 {
 	// 1. initialization window, text display and screen
 	gThisInst = hThisInst;
-	gExp = new MyExperiment("efc1", "efc1", "C:/data/ExtFlexChord/efc1/");
+	gExp = new MyExperiment("efc2", "efc2", "C:/data/ExtFlexChord/efc2/"); // Marco chmaged to efc2 here
 	gExp->redirectIOToConsole();
 	
 	// gExp->redirectIOToConsole();		// I uncommented this!!!

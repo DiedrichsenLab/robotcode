@@ -38,12 +38,12 @@ string probCue;
 double RT_thresh_plan = 1.0;
 double RT_thresh_exec = 5.0;
 
-double rewThresh1 = 250;
-double rewThresh2 = 500;
+double rewThresh1_global = 250;
+double rewThresh2_global = 500;
 int wrongResp = 0;
 bool resp = 0;
 const char* sPoints;
-int points = 0;
+//int points = 0;
 int points_tot = 0;
 int nRT = 0;
 
@@ -300,8 +300,8 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 		}
 
 		else {
-			rewThresh1 = std::stod(arguments[1]);
-			rewThresh2 = std::stod(arguments[2]);
+			rewThresh1_global = std::stod(arguments[1]);
+			rewThresh2_global = std::stod(arguments[2]);
 		}
 	}
 
@@ -567,8 +567,8 @@ void MyBlock::giveFeedback() {
 	forceDiff_block = blockDiff / (trialNum - 6);
 
 	if (nRT >= 5) {
-		rewThresh1 = q1;
-		rewThresh2 = q3;
+		rewThresh1_global = q1;
+		rewThresh2_global = q3;
 	}
 
 	
@@ -589,6 +589,9 @@ MyTrial::MyTrial() {
 	state = WAIT_TRIAL;
 	forceDiff = 1;
 	nRT = 0;
+	double rewThresh1 = 250;
+	double rewThresh2 = 500;
+
 }
 
 ///////////////////////////////////////////////////////////////
@@ -1103,7 +1106,13 @@ void MyTrial::control() {
 				gs.line[i] = "";
 			}
 		}
+
+		rewThresh1 = rewThresh1_global;
+		rewThresh2 = rewThresh2_global;
+
 		break;
+
+		
 
 		//break;
 
@@ -1121,6 +1130,9 @@ void MyTrial::control() {
 		planErrorFlag = 0;	// initialize planErrorFlag variable in the begining of each trial
 		chordErrorFlag = 1;	// initialize chordErrorFlag variable in the begining of each trial;
 		//startTriggerEMG = 1;	// Ali EMG: starts EMG trigger in the beginning of each trial
+
+		rewThresh1 = rewThresh1_global;
+		rewThresh2 = rewThresh2_global;
 
 		//SetDacVoltage(0, emgTrigVolt);	// Ali EMG - gets ~200us to change digital to analog. Does it interrupt the ADC?
 		SetDIOState(0, 0x0000);

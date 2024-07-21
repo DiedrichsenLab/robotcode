@@ -35,12 +35,14 @@ bool showCue = 0;
 int hrfTime = 0;
 string probCue;
 
-double RT_thresh = 5.0;
+double RT_thresh_plan = 1.0;
+double RT_thresh_exec = 5.0;
 
 double rewThresh1 = 250;
 double rewThresh2 = 500;
 int wrongResp = 0;
 bool resp = 0;
+const char* sPoints;
 int points = 0;
 int points_tot = 0;
 int nRT = 0;
@@ -542,9 +544,13 @@ void MyBlock::giveFeedback() {
 	quartiles(RTarray, nRT, q1, q3);
 
 	////gScreen.setColor(Screen::white);
-	sprintf(buffer, "End of Block\npoints: %d, median RT: %f", points_tot, RTmedian);
+	sprintf(buffer, "End of Block");
 	gs.line[0] = buffer;
 	gs.lineColor[0] = 1;
+
+	sprintf(buffer, "Points: %d, Median RT: %f", points_tot, RTmedian);
+	gs.line[1] = buffer;
+	gs.lineColor[1] = 1;
 
 	forceDiff_block = blockDiff / (trialNum - 6);
 
@@ -1224,7 +1230,7 @@ void MyTrial::control() {
 
 		for (i = 0; i < 2; i++) {
 			fingerForceTmp = VERT_SHIFT + forceGain * fGain[fi[i]] * gBox.getForce(fi[i]) + baselineCorrection;
-			if (fingerForceTmp > RT_thresh) {
+			if (fingerForceTmp > RT_thresh_plan) {
 				RT = -1;
 				resp = 1;
 			}
@@ -1286,7 +1292,7 @@ void MyTrial::control() {
 		if (resp == 0) {
 			for (i = 0; i < 2; i++) {
 				fingerForceTmp = VERT_SHIFT + forceGain * fGain[fi[i]] * gBox.getForce(fi[i]) + baselineCorrection;
-				if (fingerForceTmp > RT_thresh) {
+				if (fingerForceTmp > RT_thresh_exec) {
 					if (GoNogo == "go") {
 						RT = gTimer[3];
 						resp = 1;
@@ -1294,7 +1300,7 @@ void MyTrial::control() {
 							wrongResp = 0;
 						}
 						else {
-							wrongResp = 30;
+							wrongResp = 1;
 						}
 					}
 					else {
@@ -1307,7 +1313,6 @@ void MyTrial::control() {
 			
 		}
 		
-
 		// If subject runs out of time:
 		if (gTimer[3] >= execMaxTime) {
 			//chordErrorFlag = 1;
@@ -1315,6 +1320,43 @@ void MyTrial::control() {
 			if (resp == 0) {
 				RT = execMaxTime;
 			}
+
+			if (RT < 0) {
+				points = -1;
+				sPoints = "-1";
+			}
+			else if (RT > 0 && RT < rewThresh1) {
+				points = 3;
+				sPoints = "+3";
+				nRT++;
+			}
+			else if (RT > rewThresh1 && RT < rewThresh2) {
+				points = 1;
+				sPoints = "+1";
+				nRT++;
+			}
+			else if (RT > rewThresh2 && RT < execMaxTime) {
+				points = 0;
+				sPoints = "0";
+				nRT++;
+			}
+			else {
+				if (GoNogo == "go") {
+					points = 0;
+					sPoints = "0";
+				}
+				else {
+					points = 1;
+					sPoints = "+1";
+				}
+				
+			}
+
+			points_tot = points_tot + points;
+			sprintf(buffer, "%s", sPoints);
+			gs.line[2] = buffer;
+			gs.lineColor[2] = 1;
+
 			state = GIVE_FEEDBACK;
 			gTimer.reset(2);
 			gTimer.reset(3);
@@ -1343,39 +1385,19 @@ void MyTrial::control() {
 		gs.showFeedback = 1;		// showing feedback (refer to MyTrial::updateGraphics() for details)
 
 		if (gTimer[2] >= feedbackTime ) { //|| GoNogo == "nogo"
+			
+			gTimer.reset(2);
+
+			sprintf(buffer, "");
+			gs.line[2] = buffer;
+			gs.lineColor[2] = 1;
 
 			state = WAIT_ITI;
-
-			if (RT < 0) {
-				points = -100;
-			}
-			else if (RT > 0 && RT < rewThresh1) {
-				points = 100 - wrongResp;
-				nRT++;
-			}
-			else if (RT > rewThresh1 && RT < rewThresh2) {
-				points = 50 - wrongResp;
-				nRT++;
-			}
-			else if (RT > rewThresh2 && RT < execMaxTime) {
-				points = 0 - wrongResp;
-				nRT++;
-			}
-			else {
-				points = 0 - wrongResp;
-			}
-
-			points_tot = points_tot + points;
-			gTimer.reset(2);
 		}
 		break;
 
 
 	case WAIT_ITI:
-
-		sprintf(buffer, "%d points", points);
-		gs.line[0] = buffer;
-		gs.lineColor[0] = 1;
 
 		gs.showTgLines = 1;	// set screen lines/force bars to show
 		gs.showBsLines = 1;
@@ -1505,14 +1527,20 @@ GraphicState::GraphicState() {
 	// points in block 
 	lineXpos[0] = 0;
 	lineYpos[0] = 2;			// feedback 	
-	lineColor[0] = 2;			// white 
+	lineColor[0] = 1;			// white 
 	size[0] = 5;
 
 	//// RT 
-	//lineXpos[1] = 0;
-	//lineYpos[1] = 5;			// feedback 	
-	//lineColor[1] = 1;			// white 
-	//size[1] = 5;
+	lineXpos[1] = 0;
+	lineYpos[1] = 0;			// feedback 	
+	lineColor[1] = 1;			// white 
+	size[1] = 5;
+
+	// points in trial
+	lineXpos[2] = 0;
+	lineYpos[2] = VERT_SHIFT + CROSSP - CROSSW / 2; // feedback 	
+	lineColor[2] = 1;			// white 
+	size[2] = 5;
 
 	//// total points 
 	//lineXpos[2] = 0;

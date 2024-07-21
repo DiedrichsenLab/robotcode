@@ -35,7 +35,19 @@ bool showCue = 0;
 int hrfTime = 0;
 string probCue;
 
-bool flipscreen = false;
+double RT_thresh = 5.0;
+
+double rewThresh1 = 250;
+double rewThresh2 = 500;
+int wrongResp = 0;
+bool resp = 0;
+int points = 0;
+int points_tot = 0;
+int nRT = 0;
+
+double forceDiff_block = 0.0;
+
+//bool flipscreen = false;
 
 string session = "scanning";
 
@@ -119,11 +131,12 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	// gExp->redirectIOToConsole();		// I uncommented this!!!
 	tDisp.init(gThisInst, 0, 0, 1000, 30, 9, 2, &(::parseCommand));		// Default setting for the Windows 10 PC
 	tDisp.setText("Subj", 0, 0);
-	//gScreen.init(gThisInst, 1920, 0, 1920, 1080, &(::updateGraphics));	// Default setting for the Windows 10 PC
-	gScreen.init(gThisInst, 1280, 0, 1024, 768, &(::updateGraphics));
-	//gScreen.init(gThisInst, 1920, 0, 1680, 1080, &(::updateGraphics));
+	//gScreen.init(gThisInst, 1920, 0, 1920, 1080, &(::updateGraphics));	
+	//gScreen.init(gThisInst, 1280, 0, 1024, 768, &(::updateGraphics)); 
+	gScreen.init(gThisInst, 1920, 0, 1680, 1080, &(::updateGraphics)); // Default setting for the Windows 10 PC
 	gScreen.setCenter(Vector2D(0, 0)); // This set the center of the screen where forces are calibrated with zero force // In cm //0,2
 	gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));					// cm/pixel
+
 
 	// 2. initalize s626cards 
 	s626.init("c:/robotcode/calib/s626_single.txt");
@@ -279,8 +292,11 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 	}
 
 	else if (arguments[0] == "session") {
+		// Difference between training and scanning is that in scanning the 
+		// baseline area doesn't become red when subject goes outside of it
+
 		if (numArgs != 2) {
-			tDisp.print("USAGE: session <value>");
+			tDisp.print("USAGE: session <value (training or scanning)>");
 		}
 
 		else {
@@ -289,16 +305,9 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 	}
 
 	else if (arguments[0] == "flipscreen" || arguments[0] == "FLIPSCREEN") {
-		if (!flipscreen) {
-			TransforMatrix = Matrix2D(0, 1, 1, 0);
-			gScreen.setScale(Vector2D(-SCR_SCALE, SCR_SCALE));
-			flipscreen = true;
-		}
-		else { // flipscreen is true, is in mri mode, going to training mode
-			TransforMatrix = Matrix2D(1, 0, 0, 1);
-			gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));
-			flipscreen = false;
-		}
+		
+		gs.flipscreen = !gs.flipscreen;
+
 	}
 
 	//  Valves Command: set voltage channels directly 
@@ -466,6 +475,36 @@ void MyBlock::start() {
 	gCounter.reset();
 	gCounter.start();
 	blockFeedbackFlag = 0;
+
+}
+
+// Helper function to calculate the first and third quartiles
+void quartiles(double array[], int num_val, double &q1, double &q3) {
+	int i, j;
+	double dummy;
+
+	// Sort the array (using selection sort as per original implementation)
+	for (i = 0; i < num_val - 1; i++) {
+		for (j = i + 1; j < num_val; j++) {
+			if (array[i] > array[j]) {
+				dummy = array[i];
+				array[i] = array[j];
+				array[j] = dummy;
+			}
+		}
+	}
+
+	// Calculate Q1
+	if (num_val % 2 == 0) {
+		i = num_val / 2;
+		q1 = median(array, i); // median of lower half
+		q3 = median(array + i, i); // median of upper half
+	}
+	else {
+		i = (num_val - 1) / 2;
+		q1 = median(array, i + 1); // median of lower half (including median)
+		q3 = median(array + i + 1, i); // median of upper half
+	}
 }
 
 ///////////////////////////////////////////////////////////////
@@ -475,27 +514,50 @@ void MyBlock::giveFeedback() {
 	gs.showTgLines = 0;
 	gs.showBsLines = 0;
 	gs.showForces = 0;
+
+	double q1 = 0, q3 = 0;
 	double forceDiff;
+	double* RTarray = new double[nRT]; // Dynamic allocation
 	int i, j = 0;
 	MyTrial* tpnr;
 	//double medianRT;
 	double blockDiff = 0;
 	blockFeedbackFlag = 1;
 
+	n = 0;
 	for (i = 0; i < trialNum; i++) { //check each trial
 		tpnr = (MyTrial*)trialVec.at(i);
 		forceDiff = tpnr->forceDiff;
 		blockDiff = blockDiff + forceDiff;
+
+		if (tpnr->RT > 0 && tpnr->RT < tpnr->execMaxTime) {
+			RTarray[n] = tpnr->RT;
+			n++;
+		}
+		
 	}
 
-	////gScreen.setColor(Screen::white);
-	sprintf(buffer, "End of Block");
-	gs.line[3] = buffer;
-	gs.lineColor[3] = 1;
+	double RTmedian = median(RTarray, nRT);
 
-	sprintf(buffer, "mean difference cued vs. non cued: %2.2f", blockDiff / (trialNum - 6)); // 6 50/50 trials need to be remove from average
+	quartiles(RTarray, nRT, q1, q3);
+
+	////gScreen.setColor(Screen::white);
+	sprintf(buffer, "End of Block\npoints: %d, median RT: %f", points_tot, RTmedian);
 	gs.line[0] = buffer;
 	gs.lineColor[0] = 1;
+
+	forceDiff_block = blockDiff / (trialNum - 6);
+
+	if (nRT >= 5) {
+		rewThresh1 = q1;
+		rewThresh2 = q3;
+	}
+
+	
+
+	//sprintf(buffer, "mean difference cued vs. non cued: %2.2f", blockDiff / (trialNum - 6)); // 6 50/50 trials need to be remove from average
+	//gs.line[0] = buffer;
+	//gs.lineColor[0] = 1;
 }
 
 ///////////////////////////////////////////////////////////////
@@ -508,6 +570,7 @@ MyTrial::MyTrial() {
 	int i, j;
 	state = WAIT_TRIAL;
 	forceDiff = 1;
+	nRT = 0;
 }
 
 ///////////////////////////////////////////////////////////////
@@ -533,7 +596,7 @@ void MyTrial::read(istream& in) {
 ///////////////////////////////////////////////////////////////
 void MyTrial::writeDat(ostream& out) {
 	// write to .dat file
-	// name of file is: smp0_<name of subject>_<session number>.dat
+	// name of file is: smp1_<name of subject>_<session number>.dat
 	out << subNum << "\t"
 		<< cueID << "\t"
 		<< stimFinger << "\t"
@@ -560,6 +623,8 @@ void MyTrial::writeDat(ostream& out) {
 		<< baselineCorrection << "\t"
 		<< fingerVolt << "\t"					// 
 		<< forceDiff << "\t"
+		<< RT << "\t"
+		<< points << "\t"
 		<< endl;
 }
 
@@ -594,6 +659,8 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "baselineCorrection" << '\t'
 		<< "fingerVolt" << '\t'
 		<< "forceDiff" << '\t'
+		<< "RT" << '\t'
+		<< "points" << "\t"
 		<< endl;
 }
 
@@ -650,7 +717,7 @@ void MyTrial::updateTextDisplay() {
 
 	tDisp.setText("Experiment: Smp1", 2, 1);
 
-	sprintf(buffer, "State : %d   Trial: %d   Block state: %d", state, gExp->theBlock->trialNum, gExp->theBlock->state);
+	sprintf(buffer, "State : %d   Trial: %d   Block state: %d   GoNogo: %s", state, gExp->theBlock->trialNum, gExp->theBlock->state, GoNogo.c_str());
 	tDisp.setText(buffer, 4, 0);
 
 	tDisp.setText("Fingers in task: " + fingerTask[0] + " " + fingerTask[1], 4, 1);
@@ -667,7 +734,7 @@ void MyTrial::updateTextDisplay() {
 	tDisp.setText(buffer, 8, 0);
 
 	tDisp.setText("forceDiff", 7, 1);
-	sprintf(buffer, "Diff1: %2.2f", abs(gBox.getForce(1) - gBox.getForce(3)));
+	sprintf(buffer, "Diff: %2.3f", forceDiff_block);
 	tDisp.setText(buffer, 8, 1);
 
 	/*tDisp.setText("forceAv", 7, 1);
@@ -693,6 +760,21 @@ void MyTrial::updateTextDisplay() {
 	// force gains
 	sprintf(buffer, "GlobalGain = %1.1f     forceGain = %1.1f %1.1f %1.1f %1.1f %1.1f", forceGain, fGain[0], fGain[1], fGain[2], fGain[3], fGain[4]);
 	tDisp.setText(buffer, 13, 0);
+
+	// RT and wrongAns
+	sprintf(buffer, "RT: %f, nRT: %d", RT, nRT);
+	tDisp.setText(buffer, 12, 1);
+
+	sprintf(buffer, "wrongResp: %d", wrongResp);
+	tDisp.setText(buffer, 13, 1);
+
+	sprintf(buffer, "current points: %d, points tot: %d", points, points_tot);
+	tDisp.setText(buffer, 14, 1);
+
+	sprintf(buffer, "rewThresh1: %f", rewThresh1);
+	tDisp.setText(buffer, 15, 1);
+	sprintf(buffer, "rewThresh2: %f", rewThresh2);
+	tDisp.setText(buffer, 16, 1);
 }
 
 ///////////////////////////////////////////////////////////////
@@ -706,7 +788,17 @@ void MyTrial::updateGraphics(int what) {
 
 	if (blockFeedbackFlag) {
 		gScreen.setCenter(Vector2D(0, 0));    // In cm //0,2
-		gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));
+		if (gs.flipscreen == 1) {
+			TransforMatrix = Matrix2D(0, 1, 1, 0);
+			gScreen.setScale(Vector2D(-SCR_SCALE, SCR_SCALE)); // this is the flipped
+			//flipscreen = true;
+		}
+
+		else { // flipscreen is true, is in mri mode, going to training mode
+			TransforMatrix = Matrix2D(1, 0, 0, 1);
+			gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));
+			//flipscreen = false;
+		}
 
 
 		//gScreen.setColor(Screen::white);
@@ -781,6 +873,20 @@ void MyTrial::updateGraphics(int what) {
 		gScreen.drawLine(BASELINE_X1, VERT_SHIFT - baseTHhi, BASELINE_X2, VERT_SHIFT - baseTHhi);
 
 	}
+
+	if (gs.flipscreen == 1) {
+		TransforMatrix = Matrix2D(0, 1, 1, 0);
+		gScreen.setScale(Vector2D(-SCR_SCALE, SCR_SCALE)); // this is the flipped
+		//flipscreen = true;
+	}
+		
+	else { // flipscreen is true, is in mri mode, going to training mode
+		TransforMatrix = Matrix2D(1, 0, 0, 1);
+		gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));
+		//flipscreen = false;
+	}
+
+	
 
 	if (gs.showFxCross == 1) { // show lines
 
@@ -1023,6 +1129,12 @@ void MyTrial::control() {
 		gs.showTarget = 0;
 		gs.showFeedback = 0;
 
+		resp = 0;
+		wrongResp = 0;
+		points = 0;
+
+		gs.reset();
+
 		if (gCounter.readTR() > 0 && gCounter.readTotTime() >= startTime) {
 			startTimeReal = gCounter.readTotTime();
 			startTRReal = gCounter.readTR(); // number of TR arrived so far
@@ -1110,6 +1222,14 @@ void MyTrial::control() {
 
 		}
 
+		for (i = 0; i < 2; i++) {
+			fingerForceTmp = VERT_SHIFT + forceGain * fGain[fi[i]] * gBox.getForce(fi[i]) + baselineCorrection;
+			if (fingerForceTmp > RT_thresh) {
+				RT = -1;
+				resp = 1;
+			}
+		}
+
 		break;
 
 	case WAIT_EXEC: //3
@@ -1163,10 +1283,38 @@ void MyTrial::control() {
 			Navf++;
 		}
 
+		if (resp == 0) {
+			for (i = 0; i < 2; i++) {
+				fingerForceTmp = VERT_SHIFT + forceGain * fGain[fi[i]] * gBox.getForce(fi[i]) + baselineCorrection;
+				if (fingerForceTmp > RT_thresh) {
+					if (GoNogo == "go") {
+						RT = gTimer[3];
+						resp = 1;
+						if (stimFinger[fi[i]] == '1') {
+							wrongResp = 0;
+						}
+						else {
+							wrongResp = 30;
+						}
+					}
+					else {
+						RT = -1;
+						resp = 1;
+					}
+					
+				}
+			}
+			
+		}
+		
+
 		// If subject runs out of time:
 		if (gTimer[3] >= execMaxTime) {
 			//chordErrorFlag = 1;
 			//RT = 10000;
+			if (resp == 0) {
+				RT = execMaxTime;
+			}
 			state = GIVE_FEEDBACK;
 			gTimer.reset(2);
 			gTimer.reset(3);
@@ -1194,14 +1342,41 @@ void MyTrial::control() {
 		gs.showTimer5 = 0;
 		gs.showFeedback = 1;		// showing feedback (refer to MyTrial::updateGraphics() for details)
 
-		if (gTimer[2] >= feedbackTime || GoNogo == "nogo") {
+		if (gTimer[2] >= feedbackTime ) { //|| GoNogo == "nogo"
+
 			state = WAIT_ITI;
+
+			if (RT < 0) {
+				points = -100;
+			}
+			else if (RT > 0 && RT < rewThresh1) {
+				points = 100 - wrongResp;
+				nRT++;
+			}
+			else if (RT > rewThresh1 && RT < rewThresh2) {
+				points = 50 - wrongResp;
+				nRT++;
+			}
+			else if (RT > rewThresh2 && RT < execMaxTime) {
+				points = 0 - wrongResp;
+				nRT++;
+			}
+			else {
+				points = 0 - wrongResp;
+			}
+
+			points_tot = points_tot + points;
 			gTimer.reset(2);
 		}
 		break;
 
 
 	case WAIT_ITI:
+
+		sprintf(buffer, "%d points", points);
+		gs.line[0] = buffer;
+		gs.lineColor[0] = 1;
+
 		gs.showTgLines = 1;	// set screen lines/force bars to show
 		gs.showBsLines = 1;
 		gs.showFxCross = 1;
@@ -1329,7 +1504,7 @@ GraphicState::GraphicState() {
 
 	// points in block 
 	lineXpos[0] = 0;
-	lineYpos[0] = 0;			// feedback 	
+	lineYpos[0] = 2;			// feedback 	
 	lineColor[0] = 2;			// white 
 	size[0] = 5;
 

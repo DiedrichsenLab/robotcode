@@ -127,7 +127,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 {
 	// 1. initialization window, text display and screen
 	gThisInst = hThisInst;
-	gExp = new MyExperiment("smp1", "smp1", "C:/data/SensoriMotorPrediction/smp1/");
+	gExp = new MyExperiment("smp2", "smp2", "C:/data/SensoriMotorPrediction/smp2/");
 	//gExp->redirectIOToConsole();
 
 	// gExp->redirectIOToConsole();		// I uncommented this!!!
@@ -290,6 +290,18 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 
 		else {
 			baselineCorrection = std::stod(arguments[1]);
+		}
+	}
+
+	// Baseline correction
+	else if (arguments[0] == "rewThresh") {
+		if (numArgs !=3) {
+			tDisp.print("USAGE: rewThesh <value1> <value1>");
+		}
+
+		else {
+			rewThresh1 = std::stod(arguments[1]);
+			rewThresh2 = std::stod(arguments[2]);
 		}
 	}
 
@@ -602,7 +614,7 @@ void MyTrial::read(istream& in) {
 ///////////////////////////////////////////////////////////////
 void MyTrial::writeDat(ostream& out) {
 	// write to .dat file
-	// name of file is: smp1_<name of subject>_<session number>.dat
+	// name of file is: smp2_<name of subject>_<session number>.dat
 	out << subNum << "\t"
 		<< cueID << "\t"
 		<< stimFinger << "\t"
@@ -631,6 +643,8 @@ void MyTrial::writeDat(ostream& out) {
 		<< forceDiff << "\t"
 		<< RT << "\t"
 		<< points << "\t"
+		<< rewThresh1 << "\t"
+		<< rewThresh2 << "\t"
 		<< endl;
 }
 
@@ -667,6 +681,8 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "forceDiff" << '\t'
 		<< "RT" << '\t'
 		<< "points" << "\t"
+		<< "rewThresh1" << "\t"
+		<< "rewThresh2" << "\t"
 		<< endl;
 }
 

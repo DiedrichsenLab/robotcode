@@ -1,12 +1,12 @@
 import pandas as pd
 
-experiment = 'smp1'
-subj = '106'
-session = 'scanning'  # training or scanning
+experiment = 'smp2'
+subj = '102'
+session = 'pilot'  # training or scanning
 nblocks = 10
 
 for block in range(nblocks):
-    tgt = pd.read_csv(f'target/smp1_template_{session}.tgt', sep="\t")  # read template file
+    tgt = pd.read_csv(f'target/{experiment}_template_{session}.tgt', sep="\t")  # read template file
 
     go_rows = tgt['GoNogo'] == 'go'
     shuffled = tgt.loc[go_rows, ['planTime', 'iti']].sample(frac=1)

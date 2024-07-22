@@ -159,6 +159,8 @@ public:
 	//		}
 public:
 	string cueID;							///< Chord identifier. 0: neutral , 1: flexion , 2: extension
+	double rewThresh1 = 250;
+	double rewThresh2 = 500;
 
 private:
 	int forceFinger;								///< finger for max force calculation
@@ -185,6 +187,8 @@ private:
 	int trialPoint;							///< point received in each trial
 	double forceDiff;
 	double RT = 0;
+	int points = 0;
+	
 
 	DataManager<DataRecord, 30000 / 2> dataman;///< For data recording for MOV file //up to 30 s of data are recorded per trial
 };

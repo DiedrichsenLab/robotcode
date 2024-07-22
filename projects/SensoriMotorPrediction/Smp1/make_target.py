@@ -1,7 +1,7 @@
 import pandas as pd
 
 experiment = 'smp2'
-subj = '102'
+subj = '103'
 session = 'pilot'  # training or scanning
 nblocks = 10
 

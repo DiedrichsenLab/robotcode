@@ -1,8 +1,8 @@
 import pandas as pd
 
 experiment = 'smp2'
-subj = '103'
-session = 'pilot'  # training or scanning
+subj = '101'
+session = 'training'  # training or scanning
 nblocks = 10
 
 for block in range(nblocks):
@@ -33,6 +33,7 @@ for block in range(nblocks):
     tgt = tgt.drop('startTimeDiff', axis=1)  # drop startTimeDiff column
     tgt['startTime'] = st  # add startTime to target
     tgt['endTime'] = et  # add endTime to target
+    tgt['subNum'] = subj
 
     filename = f"{experiment}_{subj}_{block + 1:02}_{session}.tgt"
 

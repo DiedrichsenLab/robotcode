@@ -2,7 +2,7 @@
 /// WorkingMemoryPlanning - ....
 ///////////////////////////////////////////////////////////////
 
-#include "SDI1.h" 
+#include "SI1.h" 
 #include "StimulatorBox.h"
 
 #include <string>
@@ -92,7 +92,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	LPSTR kposzArgs, int nWinMode)
 {
 	gThisInst = hThisInst;
-	gExp = new MyExperiment("SequenceDigitInterference", "SequenceDigitInterference", "C:/data/SequenceDigitInterference/SDI1/");
+	gExp = new MyExperiment("SequenceInterference", "SequenceInterference", "C:/data/SequenceInterference/SI1/");
 	//auto start = std::chrono::high_resolution_clock::now();
 	gExp->redirectIOToConsole();
 	//auto end = std::chrono::high_resolution_clock::now();
@@ -165,15 +165,15 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 
 
 	//low force Flatbox3
-	gBox[1].init(BOX_RIGHT,"c:/robotcode/calib/Flatbox3_lowforce_RIGHT_22_May_2024.txt");
+	gBox[1].init(BOX_RIGHT, "c:/robotcode/calib/Flatbox3_lowforce_RIGHT_22_May_2024.txt");
 
 
 
 
 
-//High force Ali
- //gBox[0].init(BOX_LEFT, "c:/robotcode/calib/Flatbox1_highforce2_LEFT_12-Feb-2022.txt");
-	//gBox[1].init(BOX_RIGHT, "c:/robotcode/calib/Flatbox1_highforce2_RIGHT_03-Dec-2021.txt");
+	//High force Ali
+	 //gBox[0].init(BOX_LEFT, "c:/robotcode/calib/Flatbox1_highforce2_LEFT_12-Feb-2022.txt");
+		//gBox[1].init(BOX_RIGHT, "c:/robotcode/calib/Flatbox1_highforce2_RIGHT_03-Dec-2021.txt");
 
 	gBox[0].filterconst = 0.8;
 	gBox[1].filterconst = 0.8;
@@ -185,7 +185,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 		s626.initInterrupt(updateHaptics, UPDATERATE); // initialize at 200 Hz update rate 
 	}
 
-	
+
 	gTimer.init();
 
 	// initialize TR counter 
@@ -461,7 +461,7 @@ void MyBlock::giveFeedback() {
 
 
 
-	gs.cross = 0;
+	//gs.cross = 0;
 
 
 	// print FEEDBACK on the screen 
@@ -512,6 +512,7 @@ MyTrial::MyTrial() {
 	useMetronome = 1;//0;
 	startTime = 0;
 	seq = "0";
+	cue = "0";
 	for (int i = 0; i < MAX_PRESS; i++) {
 		response[i] = 0;					// finger response
 		pressTime[i] = 0;					// press time	
@@ -527,7 +528,7 @@ MyTrial::MyTrial() {
 ///////////////////////////////////////////////////////////////
 void MyTrial::read(istream& in) {
 	// read from .tgt file
-	in >> subNum >> group >> hand >> isTrain >> seq >> execTime >> iti >> digitChangePos >> digitChangeValue >> precueTime >> windowSize;
+	in >> subNum >> group >> hand >> isTrain >> isChanged >> seq >> cue >> execTime >> iti >> digitChangePos  >> precueTime >> windowSize;
 	//cout << seq << "\n";
 	seqLength = seq.length(); //get seqLength	 
 	//cout << "seq Length " << seqLength << "\n";
@@ -538,8 +539,8 @@ void MyTrial::read(istream& in) {
 ///////////////////////////////////////////////////////////////
 void MyTrial::writeDat(ostream& out) {
 	// write to .dat file
-	out << subNum << "\t" << group << "\t" << hand << "\t" << isTrain << "\t" << seq << "\t" << digitChangePos << "\t" << digitChangeValue << "\t" <<
-		precueTime << "\t" << windowSize << "\t";
+	out << subNum << "\t" << group << "\t" << hand << "\t" << isTrain << "\t" << isChanged << "\t" << seq << "\t" << cue << "\t" <<
+		digitChangePos << "\t" << precueTime << "\t" << windowSize << "\t";
 	int i;
 
 	for (i = 0; i < MAX_PRESS; i++) {
@@ -585,7 +586,8 @@ void MyTrial::writeDat(ostream& out) {
 void MyTrial::writeHeader(ostream& out) {
 	char header[200];
 
-	out << "SubNum" << "\t" << "group" << "\t" << "hand" << "\t" << "isTrain" << "\t" << "seq" << "\t" << "digitChangePos" << "\t" << "digitChangeValue" << "\t" <<
+	out << "SubNum" << "\t" << "group" << "\t" << "hand" << "\t" << "isTrain" << "\t" << "isChanged" << "\t" <<
+		"seq" << "\t" << "cue" << "\t" << "digitChangePos" << "\t" <<
 		"precueTime" << "\t" << "windowSize" << "\t";
 
 	//out << "SubNum" << "\t" << "isTrain" << "\t" << "seq" << "\t" << "ChunkSize" << "\t" << "digitChangePos" << "\t" << "digitChangeValue" << "\t" << "exeType" << "\t" << "cueType" << "\t"
@@ -691,7 +693,7 @@ void MyTrial::updateTextDisplay() {
 	sprintf(buffer, "upper Threshold: %2.0f   lower Threshold: %2.0f", timeThreshold, timeThresholdSuper);
 	tDisp.setText(buffer, 4, 0);
 
-	sprintf(buffer, "trial: %d/%d   state: %d   seqNum: %lld", gExp->theBlock->trialNum + 1, gExp->theBlock->numTrials, state, std::stoll(seq));
+	sprintf(buffer, "trial: %d/%d   state: %d   seqNum: %lld", gExp->theBlock->trialNum + 1, gExp->theBlock->numTrials, state, std::stoll(cue));
 	//sprintf(buffer, "trial: %d/%d   state: %d", gExp->theBlock->trialNum + 1, gExp->theBlock->numTrials, state);
 	tDisp.setText(buffer, 5, 0);
 
@@ -755,7 +757,7 @@ char TEXT[5] = { '1','2','3','4','5' };
 #define OTHER_LETTERS_SIZE 1.5
 
 // cuePress rectangle 
-#define RECWIDTH_X WIDTH_CHAR_CUE*(MAX_PRESS + 1)
+#define RECWIDTH_X WIDTH_CHAR_CUE*(MAX_PRESS)
 #define RECWIDTH_Y WIDTH_CHAR_CUE * 4 /3  
 #define REC_xPOS 0
 #define REC_yPOS CUE_PRESS_yPOS + 0.75
@@ -798,7 +800,7 @@ void MyTrial::updateGraphics(int what) {
 
 			// Force threshold		
 			gScreen.setColor(Screen::grey);
-			gScreen.drawLine(1. * BASELINE_X1, preTH * FORCESCALE + BASELINE_Y1, 1. * BASELINE_X2 , preTH * FORCESCALE + BASELINE_Y2);
+			gScreen.drawLine(1. * BASELINE_X1, preTH * FORCESCALE + BASELINE_Y1, 1. * BASELINE_X2, preTH * FORCESCALE + BASELINE_Y2);
 
 			// Finger forces (right)
 			for (i = 0; i < 5; i++) {
@@ -829,17 +831,17 @@ void MyTrial::updateGraphics(int what) {
 	for (i = 0; i < MAX_PRESS; i++) {
 		if (gs.seqMask[i] > 0) { // Mask (asterisk)
 			gScreen.setColor(responseArray[i]);
-			gScreen.printChar(gs.seqMask[i], ((i+1) - ((double)((MAX_PRESS + 1) / 2) - 0.5)) * WIDTH_CHAR_CUE + WIDTH_CHAR_CUE * ((double)(MAX_PRESS - seqLength) / 2), CUE_PRESS_yPOS, SIZE_CUE);
+			gScreen.printChar(gs.seqMask[i], (i - ((double)((MAX_PRESS ) / 2) )) * WIDTH_CHAR_CUE + WIDTH_CHAR_CUE * ((double)(MAX_PRESS - seqLength) / 2), CUE_PRESS_yPOS, SIZE_CUE);
 		}
 
 		else if (gs.seq[i] > 0) { // Numbers
 			gScreen.setColor(responseArray[i]);
-			gScreen.printChar(gs.seq[i], ((i + 1) - ((double)((MAX_PRESS + 1) / 2) - 0.5 )) * WIDTH_CHAR_CUE + WIDTH_CHAR_CUE * ((double)(MAX_PRESS - seqLength) / 2), CUE_PRESS_yPOS, SIZE_CUE);
+			gScreen.printChar(gs.seq[i], (i - ((double)((MAX_PRESS ) / 2) )) * WIDTH_CHAR_CUE + WIDTH_CHAR_CUE * ((double)(MAX_PRESS - seqLength) / 2), CUE_PRESS_yPOS, SIZE_CUE);
 		}
 	}
 
 	gScreen.setColor(crossColor);
-	gScreen.printChar(gs.cross, (0 - ((double)((MAX_PRESS + 1) / 2) - 0.5)) * WIDTH_CHAR_CUE + WIDTH_CHAR_CUE * ((double)(MAX_PRESS - seqLength) / 2), CUE_PRESS_yPOS, SIZE_CUE);
+	//gScreen.printChar(gs.cross, (0 - ((double)((MAX_PRESS + 1) / 2) - 0.5)) * WIDTH_CHAR_CUE + WIDTH_CHAR_CUE * ((double)(MAX_PRESS - seqLength) / 2), CUE_PRESS_yPOS, SIZE_CUE);
 
 
 
@@ -850,23 +852,23 @@ void MyTrial::updateGraphics(int what) {
 		gScreen.setColor(Screen::grey);
 		gScreen.drawRect(RECWIDTH_X, RECWIDTH_Y, REC_xPOS, REC_yPOS);
 
-	//	//----------------------------------
-	//	// DELAYED-MOVEMENT GO-NOGO PARADIGM
-	//	//if ((state >= 3 && state <= 5) && gTimer[1] >= (prepTime + cueTime)) { // go/nogo after preparatory period defined by prepTime
+		//	//----------------------------------
+		//	// DELAYED-MOVEMENT GO-NOGO PARADIGM
+		//	//if ((state >= 3 && state <= 5) && gTimer[1] >= (prepTime + cueTime)) { // go/nogo after preparatory period defined by prepTime
 
-	//	//	if (exeType == 1) { // GO 
-	//	//		//gScreen.setColor(Screen::oceanblue);
-	//	//		//gScreen.drawRect(RECWIDTH_X + 0.3, RECWIDTH_Y + 0.3, REC_xPOS, REC_yPOS);
-	//	//		gScreen.setColor(Screen::black);
-	//	//		gScreen.drawRect(RECWIDTH_X, RECWIDTH_Y, REC_xPOS, REC_yPOS);
-	//	//		gScreen.setColor(Screen::white);
-	//	//	}
-	//	//	else if (exeType == 0) { // NO-GO
-	//	//		gScreen.setColor(Screen::darkorange);
-	//	//		gScreen.drawRect(RECWIDTH_X + 0.3, RECWIDTH_Y + 0.3, REC_xPOS, REC_yPOS);
-	//	//		gScreen.setColor(Screen::white);
-	//	//	}
-	//	//}
+		//	//	if (exeType == 1) { // GO 
+		//	//		//gScreen.setColor(Screen::oceanblue);
+		//	//		//gScreen.drawRect(RECWIDTH_X + 0.3, RECWIDTH_Y + 0.3, REC_xPOS, REC_yPOS);
+		//	//		gScreen.setColor(Screen::black);
+		//	//		gScreen.drawRect(RECWIDTH_X, RECWIDTH_Y, REC_xPOS, REC_yPOS);
+		//	//		gScreen.setColor(Screen::white);
+		//	//	}
+		//	//	else if (exeType == 0) { // NO-GO
+		//	//		gScreen.setColor(Screen::darkorange);
+		//	//		gScreen.drawRect(RECWIDTH_X + 0.3, RECWIDTH_Y + 0.3, REC_xPOS, REC_yPOS);
+		//	//		gScreen.setColor(Screen::white);
+		//	//	}
+		//	//}
 	}
 
 	if (useMetronome == 1 && state == 3 && timeMet == 0) {
@@ -885,7 +887,7 @@ void MyTrial::updateGraphics(int what) {
 	}
 
 	// Debugging tool to visualize current state of program control
-	
+
 	//string stateString;
 	//switch(state)
 	//{
@@ -918,7 +920,7 @@ void MyTrial::updateGraphics(int what) {
 	//break;
 	//}
 	//gScreen.print(stateString,0,9,5);
-	
+
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -997,23 +999,23 @@ void MyTrial::control() {
 		//	}
 		//}
 		//else {
-			force = gBox[1].getForce(f - 5);
-			if (finger[f] == 0 && force > THRESHOLD[0][f - 5]) { // Press threshold comparison
-				newPress++;
-				pressedFinger = (f - 5) + 1;
-				pressedHand = 2;
-				finger[f] = 1;
-				released = 0;
-			}
-			//todo: Should I add release fingers? Ask Jorn
-			if (force <= THRESHOLD[1][f - 5]) { // Release threshold comparison
-				finger[f] = 0;
-				released++;
-			}
+		force = gBox[1].getForce(f - 5);
+		if (finger[f] == 0 && force > THRESHOLD[0][f - 5]) { // Press threshold comparison
+			newPress++;
+			pressedFinger = (f - 5) + 1;
+			pressedHand = 2;
+			finger[f] = 1;
+			released = 0;
+		}
+		//todo: Should I add release fingers? Ask Jorn
+		if (force <= THRESHOLD[1][f - 5]) { // Release threshold comparison
+			finger[f] = 0;
+			released++;
+		}
 
-			if (force >= BASE_THRESHOLD_HI[0][f - 5]) {
-				numNewThresCross++;
-			}
+		if (force >= BASE_THRESHOLD_HI[0][f - 5]) {
+			numNewThresCross++;
+		}
 		//}
 	}
 
@@ -1062,14 +1064,8 @@ void MyTrial::control() {
 			if ((gExp->theBlock->trialNum + 1) == 1) {	// if first trial of the block 
 				if (gTimer[1] >= waitTime) {			// wait waitTime before presenting cuePress
 					for (i = 0; i < seqLength; i++) {
-						if (i == digitChangePos && !isTrain) {
-							press[i] = digitChangeValue - '0';
-							gs.seq[i] = digitChangeValue;
-						}
-						else{
-							press[i] = seq.at(i) - '0';
-							gs.seq[i] = seq.at(i);
-						}
+						press[i] = cue.at(i) - '0';
+						gs.seq[i] = cue.at(i);
 
 						if (i < maskCounter + stoi(windowSize)) {
 							gs.seqMask[i] = 0;
@@ -1078,7 +1074,7 @@ void MyTrial::control() {
 							gs.seqMask[i] = '*';
 						}
 
-						cout <<"hand" <<  hand << '\n';
+						//cout << "hand" << hand << '\n';
 						if (show == 1) {
 							if (hand == 2) {
 								responseArray[i] = 6; // orange for the right
@@ -1088,7 +1084,7 @@ void MyTrial::control() {
 							}
 						}
 					}
-					gs.cross = '+';
+					//gs.cross = '+';
 					gTimer.reset(1); gTimer.reset(2); gTimer.reset(5);
 					dataman.startRecording();
 					state = WAIT_PREP;
@@ -1097,14 +1093,8 @@ void MyTrial::control() {
 			else { // every other trial of the block
 				if (gTimer[1] >= stimOnsetTime) {		// wait stimOnsetTime before presenting cuePress
 					for (i = 0; i < seqLength; i++) {
-						if (i == digitChangePos && !isTrain) {
-							press[i] = digitChangeValue - '0';
-							gs.seq[i] = digitChangeValue;
-						}
-						else {
-							press[i] = seq.at(i) - '0';
-							gs.seq[i] = seq.at(i);
-						}
+						press[i] = cue.at(i) - '0';
+						gs.seq[i] = cue.at(i);
 
 						if (i < maskCounter + stoi(windowSize)) {
 							gs.seqMask[i] = 0;
@@ -1122,7 +1112,7 @@ void MyTrial::control() {
 							}
 						}
 					}
-					gs.cross = '+';
+					//gs.cross = '+';
 					gTimer.reset(1); gTimer.reset(2); gTimer.reset(5);
 					dataman.startRecording();
 					state = WAIT_PREP;
@@ -1138,8 +1128,8 @@ void MyTrial::control() {
 			startTRtime = gCounter.readTime();
 			// present cuePress (visual cues)
 			for (i = 0; i < seqLength; i++) {
-				press[i] = seq.at(i) - '0';
-				gs.seq[i] = seq.at(i);
+				press[i] = cue.at(i) - '0';
+				gs.seq[i] = cue.at(i);
 				if (isTrain) {
 					if (i < maskCounter + stoi(windowSize)) {
 						gs.seqMask[i] = 0;
@@ -1177,12 +1167,12 @@ void MyTrial::control() {
 				gs.lineYpos[0] = 8;
 			}
 		}
-		
-		if (gTimer[1]>timeStamp + 500) {
-		sprintf(buffer,"");
-		gs.lineColor[0] = 1;
-		gs.line[0] = buffer;
-		gs.lineYpos[0] = 8;
+
+		if (gTimer[1] > timeStamp + 500) {
+			sprintf(buffer, "");
+			gs.lineColor[0] = 1;
+			gs.line[0] = buffer;
+			gs.lineYpos[0] = 8;
 		}
 		//
 
@@ -1326,7 +1316,7 @@ void MyTrial::control() {
 			}
 
 
-		// SEQUENCE TIME OUT
+			// SEQUENCE TIME OUT
 		}
 		else if (gTimer[2] >= execTime) { // time out (if sequence not completed in time)
 			RT = RT;				// reaction time
@@ -1353,46 +1343,46 @@ void MyTrial::control() {
 
 			//if (isTrain == 1 ) { // GO
 
-				if (isError == 0) {
+			if (isError == 0) {
 
-					// assign points
-					//norm_MT = (RT + ET);
+				// assign points
+				//norm_MT = (RT + ET);
 
-					if (norm_MT < timeThresholdSuper) {
-						points = 3;
-					}
-					else if (norm_MT < timeThreshold) {
-						points = 2;
-					}
-					else {
-						points = 1;
-					}
-
-					gs.clearCues();
-					sprintf(buffer, "+%d", points);
-					gs.lineColor[1] = 1; // white
-					gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
-
-
+				if (norm_MT < timeThresholdSuper) {
+					points = 3;
 				}
-				else if (isError == 1 && timingError == 0) {
-					points = 0;
-					// PLAY SOUND 
-					PlaySound(TASKSOUNDS[5].c_str(), NULL, SND_ASYNC);
-					gs.clearCues(); sprintf(buffer, "%d", points);
-					gs.lineColor[1] = 1; // white
-					gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
+				else if (norm_MT < timeThreshold) {
+					points = 2;
 				}
-				else if (isError == 1 && timingError == 1) {
-					points = -1;
-					// PLAY SOUND 
-					PlaySound(TASKSOUNDS[6].c_str(), NULL, SND_ASYNC);
-					gs.clearCues(); sprintf(buffer, "%d", points);
-					gs.lineColor[1] = 1; // white
-					gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
+				else {
+					points = 1;
 				}
-				gTimer.reset(2);
-				state = WAIT_FEEDBACK;
+
+				gs.clearCues();
+				sprintf(buffer, "+%d", points);
+				gs.lineColor[1] = 1; // white
+				gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
+
+
+			}
+			else if (isError == 1 && timingError == 0) {
+				points = 0;
+				// PLAY SOUND 
+				PlaySound(TASKSOUNDS[5].c_str(), NULL, SND_ASYNC);
+				gs.clearCues(); sprintf(buffer, "%d", points);
+				gs.lineColor[1] = 1; // white
+				gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
+			}
+			else if (isError == 1 && timingError == 1) {
+				points = -1;
+				// PLAY SOUND 
+				PlaySound(TASKSOUNDS[6].c_str(), NULL, SND_ASYNC);
+				gs.clearCues(); sprintf(buffer, "%d", points);
+				gs.lineColor[1] = 1; // white
+				gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
+			}
+			gTimer.reset(2);
+			state = WAIT_FEEDBACK;
 			//}
 
 			//else if (isTrain == 0) { // NO-GO

@@ -830,6 +830,7 @@ void MyTrial::control() {
 		gs.showFeedback = 0;
 		gs.showTarget = 0;
 		gs.showTimer5 = 0;
+		gs.showDiagnostics = 1;
 		// gs.showForceBars = 1;
 		gs.rewardTrial = 0;
 		trialPoint = 0;

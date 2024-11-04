@@ -522,6 +522,8 @@ void MyTrial::writeHeader(ostream& out) {
 	out << "subNum" << "\t"
 		<< "chordID" << "\t"
 		<< "planTime" << "\t"
+		<< "lowTime" << "\t"
+		<< "highTime" << "\t"
 		<< "execMaxTime" << "\t"
 		<< "feedbackTime" << "\t"
 		<< "startTime" << "\t"
@@ -762,6 +764,9 @@ void MyTrial::updateGraphics(int what) {
 		case WAIT_TRIAL:
 			stateString = "Wait Trial";
 			break;
+		case WAIT_TR:
+			stateString = "Wait TR";
+			break;
 		case START_TRIAL:
 			stateString = "Start Trial";
 			break;
@@ -776,6 +781,9 @@ void MyTrial::updateGraphics(int what) {
 			break;
 		case WAIT_ITI:
 			stateString = "Wait ITI";
+			break;
+		case ACQUIRE_HRF:
+			stateString = "Acquire HRF";
 			break;
 		case END_TRIAL:
 			stateString = "End Trial";

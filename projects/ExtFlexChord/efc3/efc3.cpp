@@ -827,7 +827,7 @@ void MyTrial::control() {
 		gs.boxColor = 5;	// grey baseline box color
 		planErrorFlag = 0;
 		//SetDacVoltage(0, 0);	// Ali EMG - gets ~200us to change digital to analog. Does it interrupt the ADC?
-		SetDIOState(0, 0xFFFF); // Ali EMG
+		
 
 		for (i = 0; i < NUMDISPLAYLINES; i++) {
 			if (!gs.line[i].empty()) {
@@ -848,6 +848,7 @@ void MyTrial::control() {
 		planErrorFlag = 0;	// initialize planErrorFlag variable in the begining of each trial
 		chordErrorFlag = 1;	// initialize chordErrorFlag variable in the begining of each trial
 		startTriggerEMG = 1;	// Ali EMG: starts EMG trigger in the beginning of each trial
+		SetDIOState(0, 0xFFFF); // Ali EMG
 
 		for (i = 0; i < 5; i++) {
 			gs.fingerCorrectGraphic[i] = 0;
@@ -936,6 +937,11 @@ void MyTrial::control() {
 				SetDIOState(0, 0x0000);
 			}
 
+			if (gTimer[3] >= 500 + stimTrig + 100) {
+				//SetDacVoltage(0, emgTrigVolt);	// trigger to TMS
+				SetDIOState(0, 0xFFFF);
+			}
+
 			// if subjects holds the baseline zone for plan time after visual cue was shown go to execution state:
 			if (gTimer[3] >= 500 + planTime) {
 				state = WAIT_EXEC;
@@ -1019,7 +1025,7 @@ void MyTrial::control() {
 
 	case GIVE_FEEDBACK:
 		//SetDacVoltage(0, 0); // Ali EMG
-		SetDIOState(0, 0xFFFF);
+		//SetDIOState(0, 0xFFFF);
 
 		gs.showLines = 1;			// no force lines/thresholds
 		gs.showTarget = 0;			// no visual targets

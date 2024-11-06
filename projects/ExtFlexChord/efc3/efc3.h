@@ -137,6 +137,7 @@ private:
 	int subNum;								///< Subjet number
 	int planTime;							///< Duration between cue onset (visual stimulus) and go onset
 	int execMaxTime;						///< Maximum duration for execution of the chord
+	int stimTrig;
 	int feedbackTime;						///< The duration between giveFeedback and giveScore
 	int iti;								///< inter trial interval
 	string chordID;							///< Chord identifier. 0: neutral , 1: flexion , 2: extension
@@ -163,4 +164,4 @@ public:
 };
 
 void SetDacVoltage(WORD channel, DOUBLE volts);
-void SetDIOState(WORD group, WORD states);
+void SetDIOState(WORD group, WORD states); 

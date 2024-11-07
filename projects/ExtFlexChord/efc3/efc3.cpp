@@ -4,6 +4,9 @@
 #include "efc3.h" 
 #include "StimulatorBox.h"
 #include "Vector2d.h"
+#include <vector>
+#include <iostream>
+#include <numeric>
 
 ///////////////////////////////////////////////////////////////
 /// Global variables 
@@ -25,6 +28,8 @@ bool gTimerFlagFirst = 0;
 bool startTriggerEMG = 0; // Ali added this: experimental - under construction
 float emgTrigVolt = 2;	// Ali added this: experimental - under construction
 
+std::vector<std::vector<double>> X;
+
 
 ///< Basic imaging parameters
 #define TRTIME 1000				///< timer for simulating timer
@@ -40,6 +45,7 @@ char counterSignal = '5';		///< What char is used to count the TR
 #define baseTHhi  1.2 //0.8//1.0			// Baseline higher threshold (to check for premature movements during sequence planning phase)
 double fGain[5] = { 1.0,1.0,1.0,1.5,1.5 };	// finger specific force gains -> applied on each finger
 double forceGain = 1;						// universal force gain -> applied on all the fingers
+std::vector<double> fingerForceTmp5(5, 0.0);
 double mahdiyar = 123;
 bool blockFeedbackFlag = 0;
 bool wait_baseline_zone = 1;				// if 1, waits until the subject's fingers are all in the baseline zone. MARCO CHANGED TO 1
@@ -87,6 +93,83 @@ bool gKeyPressed;
 double gTargetWidth = 0.25;
 double gErrors[2][5] = { {0,0,0,0,0},{0,0,0,0,0} };
 double execAccTime = 600;
+
+//////////////////////
+//// Stuff to calculate MD online 
+/////////////
+
+// Function to calculate the Euclidean norm of a vector
+double calculate_norm(const std::vector<double>& vec) {
+	double sum_of_squares = 0.0;
+	for (double v : vec) {
+		sum_of_squares += v * v;
+	}
+	return std::sqrt(sum_of_squares);
+}
+
+// Function to perform dot product between two vectors
+double dot_product(const std::vector<double>& a, const std::vector<double>& b) {
+	double result = 0.0;
+	for (size_t i = 0; i < a.size(); ++i) {
+		result += a[i] * b[i];
+	}
+	return result;
+}
+
+// Function to scale a vector by a scalar value
+std::vector<double> scale_vector(const std::vector<double>& vec, double scalar) {
+	std::vector<double> result(vec.size());
+	for (size_t i = 0; i < vec.size(); ++i) {
+		result[i] = vec[i] * scalar;
+	}
+	return result;
+}
+
+// Function to subtract two vectors
+std::vector<double> subtract_vectors(const std::vector<double>& a, const std::vector<double>& b) {
+	std::vector<double> result(a.size());
+	for (size_t i = 0; i < a.size(); ++i) {
+		result[i] = a[i] - b[i];
+	}
+	return result;
+}
+
+// Function to calculate MD and distance values
+std::pair<double, std::vector<double>> calc_md(const std::vector<std::vector<double>>& X) {
+	size_t N = X.size();
+	size_t m = X[0].size();
+
+	// Initial and final vectors
+	std::vector<double> F1 = X[0];
+	std::vector<double> FN = subtract_vectors(X[N - 1], F1);  // Shift the end point
+
+	// Shift all points
+	std::vector<std::vector<double>> shifted_matrix(N, std::vector<double>(m));
+	for (size_t i = 0; i < N; ++i) {
+		shifted_matrix[i] = subtract_vectors(X[i], F1);
+	}
+
+	std::vector<double> d;
+
+	// Calculate distances
+	for (size_t t = 1; t < N - 1; ++t) {
+		std::vector<double> Ft = shifted_matrix[t];
+
+		// Project Ft onto the ideal straight line
+		double proj_scalar = dot_product(Ft, FN) / dot_product(FN, FN);
+		std::vector<double> proj = scale_vector(FN, proj_scalar);
+
+		// Calculate the Euclidean distance
+		d.push_back(calculate_norm(subtract_vectors(Ft, proj)));
+	}
+
+	// Calculate MD
+	double MD = std::accumulate(d.begin(), d.end(), 0.0) / d.size();
+
+	return { MD, d };
+}
+
+////////////////// end of MD online /////////////////
 
 
 ///////////
@@ -387,41 +470,41 @@ void MyBlock::giveFeedback() {
 	gs.showLines = 0;
 	int i, j, n = 0;
 	MyTrial* tpnr;
-	double medianRT;
-	double vecRT[2000];
+	double medianMD;
+	double vecMD[2000];
 	blockFeedbackFlag = 1;
 
 	// putting RT values in an array
 	for (i = 0; i < 2000; i++) {
-		vecRT[i] = 0;
+		vecMD[i] = 0;
 	}
 	for (i = 0; i < trialNum; i++) { //check each trial
 		tpnr = (MyTrial*)trialVec.at(i);
 		if (tpnr->trialCorr == 1) { //if trial was correct
-			vecRT[i] = tpnr->RT - 600;
+			vecMD[i] = tpnr->MD;
 			n++;	//count correct trials
 		}
 	}
 
-	// calculating the median RT
+	// calculating the median MD
 	if (n > 2) {
 		double dummy;
 		for (i = 0; i < n - 1; i++) {
 			for (j = i + 1; j < n; j++) {
-				if (vecRT[i] > vecRT[j]) {
-					dummy = vecRT[i];
-					vecRT[i] = vecRT[j];
-					vecRT[j] = dummy;
+				if (vecMD[i] > vecMD[j]) {
+					dummy = vecMD[i];
+					vecMD[i] = vecMD[j];
+					vecMD[j] = dummy;
 				}
 			}
 		}
 		if (n % 2 == 0) {
 			i = n / 2;
-			medianRT = ((vecRT[i - 1] + vecRT[i]) / 2);
+			medianMD = ((vecMD[i - 1] + vecMD[i]) / 2);
 		}
 		else {
 			i = (n - 1) / 2;
-			medianRT = (vecRT[i]);
+			medianMD = (vecMD[i]);
 		}
 	}
 
@@ -439,7 +522,7 @@ void MyBlock::giveFeedback() {
 	gs.lineColor[1] = 1;
 
 	if (n > 2) {
-		sprintf(buffer, "Med RT = %.0f ms", medianRT);
+		sprintf(buffer, "Median MD = %.2f N", medianMD);
 		gs.line[2] = buffer;
 		gs.lineColor[2] = 1;
 	}
@@ -501,6 +584,7 @@ void MyTrial::writeDat(ostream& out) {
 		<< trialCorr << "\t"					// trial is correct or not
 		<< trialErrorType << "\t"				// trial error type
 		<< RT << "\t"							// reaction time of each trial. 
+		<< MD << "\t"
 		<< trialPoint << "\t"					// points received in each trial
 		<< endl;
 }
@@ -532,6 +616,7 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "trialCorr" << "\t"
 		<< "trialErrorType" << "\t"
 		<< "RT" << "\t"
+		<< "MD" << "\t"
 		<< "trialPoint" << "\t"
 		<< endl;
 }
@@ -586,7 +671,7 @@ void MyTrial::updateTextDisplay() {
 	sprintf(buffer, "Time : %2.2f", gTimer[1]);
 	tDisp.setText(buffer, 3, 0);
 
-	sprintf(buffer, "State : %d   Trial: %d", state, gExp->theBlock->trialNum);
+	sprintf(buffer, "State : %d   Trial: %d ", state, gExp->theBlock->trialNum);
 	tDisp.setText(buffer, 4, 0);
 
 	// display forces
@@ -948,6 +1033,8 @@ void MyTrial::control() {
 				gTimer.reset(2);	// resetting timer 2 to use in next state
 				gTimer.reset(3);	// resetting timer 3 to use in next state
 				gTimer.reset(5);	// resetting timer 4 to use in next state
+
+				X.clear();
 			}
 
 			// if subject takes too long to go in the planning zone:
@@ -971,6 +1058,7 @@ void MyTrial::control() {
 		for (i = 0; i < 5; i++) {
 			tmpChord = chordID[i];	// required state of finger i -> 0:relaxed , 1:extended , 2:flexed -- chordID comes from the target file
 			fingerForceTmp = VERT_SHIFT + forceGain * fGain[i] * (gBox[0].getForce(i) - gBox[1].getForce(i));
+			fingerForceTmp5[i] = fingerForceTmp;
 			switch (tmpChord) {
 			case '9':	// finger i should be in the baseline zone (relaxed)
 				fingerCorrect[i] = ((fingerForceTmp <= VERT_SHIFT + baseTHhi) && (fingerForceTmp >= VERT_SHIFT - baseTHhi));
@@ -984,6 +1072,8 @@ void MyTrial::control() {
 			}
 			gs.fingerCorrectGraphic[i] = 1;
 		}
+
+		X.push_back(fingerForceTmp5);
 
 		// Checking if the whole chord is correct
 		chordCorrect = fingerCorrect[0];
@@ -1001,6 +1091,9 @@ void MyTrial::control() {
 			// chord was executed successfully so error = 0:
 			chordErrorFlag = 0;
 
+			auto result = calc_md(X);
+			MD = result.first;
+
 			// RT equals the time it took the subject to execute the chord successfully after the go cue. 
 			// Also, remember that chord is held for 600ms so RT = 600ms + actual_RT:
 			RT = gTimer[2];
@@ -1016,6 +1109,8 @@ void MyTrial::control() {
 		// If subject runs out of time:
 		if (gTimer[2] >= execMaxTime) {
 			//chordErrorFlag = 1;
+			auto result = calc_md(X);
+			MD = result.first;
 			RT = 10000;
 			state = GIVE_FEEDBACK;
 			gTimer.reset(2);

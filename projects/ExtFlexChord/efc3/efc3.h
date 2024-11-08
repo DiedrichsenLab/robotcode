@@ -145,6 +145,7 @@ private:
 	int trialErrorType;						///< 0: no error , 1: movement during planning , 2: could not execute
 	double RT;								///< Reaction time: time from go cue to full execution of chord
 	double MD;
+	bool Trig;
 	int trialPoint;							///< point received in each trial
 
 	DataManager<DataRecord, 30000 / 2> dataman;///< For data recording for MOV file 

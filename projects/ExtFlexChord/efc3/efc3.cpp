@@ -554,7 +554,8 @@ void MyTrial::read(istream& in) {
 		>> stimTrig
 		>> execMaxTime
 		>> feedbackTime
-		>> iti;
+		>> iti
+		>> Trig;
 }
 
 ///////////////////////////////////////////////////////////////
@@ -671,7 +672,7 @@ void MyTrial::updateTextDisplay() {
 	sprintf(buffer, "Time : %2.2f", gTimer[1]);
 	tDisp.setText(buffer, 3, 0);
 
-	sprintf(buffer, "State : %d   Trial: %d ", state, gExp->theBlock->trialNum);
+	sprintf(buffer, "State : %d   Trial: %d   Trig: %d   ITI: %d", state, gExp->theBlock->trialNum, Trig, iti);
 	tDisp.setText(buffer, 4, 0);
 
 	// display forces
@@ -1017,12 +1018,12 @@ void MyTrial::control() {
 				gs.boxColor = 5;	// baseline zone color becomes grey
 			}
 
-			if (gTimer[3] >= 500 + stimTrig) {
+			if (gTimer[3] >= 500 + stimTrig && Trig == 1) {
 				//SetDacVoltage(0, emgTrigVolt);	// trigger to TMS
 				SetDIOState(0, 0x0000);
 			}
 
-			if (gTimer[3] >= 500 + stimTrig + 100) {
+			if (gTimer[3] >= 500 + stimTrig + 100 && Trig == 1) {
 				//SetDacVoltage(0, emgTrigVolt);	// trigger to TMS
 				SetDIOState(0, 0xFFFF);
 			}
@@ -1159,6 +1160,15 @@ void MyTrial::control() {
 		gs.showLines = 1;
 		gs.showTarget = 0;
 		gs.showFeedback = 0;
+
+		if (gTimer[2] >= 5000 && gTimer[2] < 5000 + 100) {
+			SetDIOState(0, 0x0000);
+		}
+
+		if (gTimer[2] >= 5000 + 100) {
+			SetDIOState(0, 0xFFFF);
+		}
+
 		if (gTimer[2] >= iti) {
 			state = END_TRIAL;
 			dataman.stopRecording();

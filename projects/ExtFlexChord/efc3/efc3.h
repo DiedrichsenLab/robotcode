@@ -33,6 +33,7 @@ using namespace std;
 ///////////////////////////////////////////////////////////////
 enum TrialState {
 	WAIT_TRIAL,			// 0
+	BUFFER,
 	START_TRIAL,		// 1
 	WAIT_PLAN,			// 2
 	WAIT_EXEC,			// 3

@@ -950,7 +950,27 @@ void MyTrial::control() {
 		gTimer.reset(5);
 		gTimer.reset(6);
 
-		state = WAIT_PLAN;
+		state = BUFFER;
+		break;
+
+	case BUFFER:
+
+		if (gExp->theBlock->trialNum == 0) {
+			if (gTimer[2] > 5000) {
+				gTimer.reset(0);
+				gTimer.reset(1);	// timer for each trial
+				gTimer.reset(2);
+				gTimer.reset(3);
+				gTimer.reset(5);
+				gTimer.reset(6);
+				state = WAIT_PLAN;
+			}
+		}
+
+		else {
+			state = WAIT_PLAN;
+		}
+
 		break;
 
 	case WAIT_PLAN: //2

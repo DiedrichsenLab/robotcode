@@ -1,12 +1,9 @@
 ///////////////////////////////////////////////////////////////
-/// ExtensionFlextionChord - Ali Ghavampour , Nov 2022
+/// EFC two hand - Ali Ghavampour , Nov 2024
 ///////////////////////////////////////////////////////////////
-#include "efc3.h" 
+#include "efc_2hands.h" 
 #include "StimulatorBox.h"
-#include "Vector2d.h"
-#include <vector>
-#include <iostream>
-#include <numeric>
+//#include "Vector2d.h"
 
 ///////////////////////////////////////////////////////////////
 /// Global variables 
@@ -15,7 +12,6 @@ S626sManager s626;				///< Hardware Manager
 TextDisplay tDisp;				///< Text Display
 Screen gScreen;					///< Screen 
 StimulatorBox gBox[2];			///< Stimulator Box
-TRCounter gCounter;				///< TR Counter 
 Timer gTimer(UPDATERATE);		///< Timer from S626 board experiments 
 HapticState hs;					///< This is the haptic State as d by the interrupt 
 GraphicState gs;				///< Graphic state
@@ -23,32 +19,16 @@ char buffer[300];				///< String buffer
 HINSTANCE gThisInst;			///< Instance of Windows application
 Experiment* gExp;				///< Pointer to myExperiment 
 Trial* currentTrial;			///< Pointer to current Trial 
-#define DAC_VSCALAR 819.1 // Binary-to-volts scalar for DAC.
-bool gTimerFlagFirst = 0;
-bool startTriggerEMG = 0; // Ali added this: experimental - under construction
-float emgTrigVolt = 2;	// Ali added this: experimental - under construction
-
-std::vector<std::vector<double>> X;
-
-
-///< Basic imaging parameters
-#define TRTIME 1000				///< timer for simulating timer
-//#define HOLDTIME 1000			///< timer for holding key press
-#define MOVETHRESHOLD 0.8		///< above this force, finger detected as moving
-#define RELEASETHRESHOLD 0.6	///< below this force, finger detected as released
-#define FEEDBACKTIME 1000;		///< duration of n points feedback on screen
-#define NOGOTIME 3000;			///< Duration if the cue is no-go
-char counterSignal = '5';		///< What char is used to count the TR
-//int sliceNumber = 32;			///< How many slices do we have
+#define DAC_VSCALAR 819.1		///< Binary-to-volts scalar for DAC.
+bool startTriggerEMG = 0;		///< Ali added this: experimental - under construction
+int hand = 2;					///< Left hand = 1, Right hand = 2
 
 ///< Screen graphics defenitions
-#define baseTHhi  1.2 //0.8//1.0			// Baseline higher threshold (to check for premature movements during sequence planning phase)
+#define baseTHhi  1.2 //0.8//1.0			// Baseline threshold
 double fGain[5] = { 1.0,1.0,1.0,1.5,1.5 };	// finger specific force gains -> applied on each finger
 double forceGain = 1;						// universal force gain -> applied on all the fingers
-std::vector<double> fingerForceTmp5(5, 0.0);
-double mahdiyar = 123;
 bool blockFeedbackFlag = 0;
-bool wait_baseline_zone = 1;				// if 1, waits until the subject's fingers are all in the baseline zone. MARCO CHANGED TO 1
+bool wait_baseline_zone = 1;				// if 1, waits until the subject's fingers are all in the baseline zone.
 
 #define FINGWIDTH 1.3
 #define N_FINGERS 5
@@ -94,84 +74,6 @@ double gTargetWidth = 0.25;
 double gErrors[2][5] = { {0,0,0,0,0},{0,0,0,0,0} };
 double execAccTime = 600;
 
-//////////////////////
-//// Stuff to calculate MD online 
-/////////////
-
-// Function to calculate the Euclidean norm of a vector
-double calculate_norm(const std::vector<double>& vec) {
-	double sum_of_squares = 0.0;
-	for (double v : vec) {
-		sum_of_squares += v * v;
-	}
-	return std::sqrt(sum_of_squares);
-}
-
-// Function to perform dot product between two vectors
-double dot_product(const std::vector<double>& a, const std::vector<double>& b) {
-	double result = 0.0;
-	for (size_t i = 0; i < a.size(); ++i) {
-		result += a[i] * b[i];
-	}
-	return result;
-}
-
-// Function to scale a vector by a scalar value
-std::vector<double> scale_vector(const std::vector<double>& vec, double scalar) {
-	std::vector<double> result(vec.size());
-	for (size_t i = 0; i < vec.size(); ++i) {
-		result[i] = vec[i] * scalar;
-	}
-	return result;
-}
-
-// Function to subtract two vectors
-std::vector<double> subtract_vectors(const std::vector<double>& a, const std::vector<double>& b) {
-	std::vector<double> result(a.size());
-	for (size_t i = 0; i < a.size(); ++i) {
-		result[i] = a[i] - b[i];
-	}
-	return result;
-}
-
-// Function to calculate MD and distance values
-std::pair<double, std::vector<double>> calc_md(const std::vector<std::vector<double>>& X) {
-	size_t N = X.size();
-	size_t m = X[0].size();
-
-	// Initial and final vectors
-	std::vector<double> F1 = X[0];
-	std::vector<double> FN = subtract_vectors(X[N - 1], F1);  // Shift the end point
-
-	// Shift all points
-	std::vector<std::vector<double>> shifted_matrix(N, std::vector<double>(m));
-	for (size_t i = 0; i < N; ++i) {
-		shifted_matrix[i] = subtract_vectors(X[i], F1);
-	}
-
-	std::vector<double> d;
-
-	// Calculate distances
-	for (size_t t = 1; t < N - 1; ++t) {
-		std::vector<double> Ft = shifted_matrix[t];
-
-		// Project Ft onto the ideal straight line
-		double proj_scalar = dot_product(Ft, FN) / dot_product(FN, FN);
-		std::vector<double> proj = scale_vector(FN, proj_scalar);
-
-		// Calculate the Euclidean distance
-		d.push_back(calculate_norm(subtract_vectors(Ft, proj)));
-	}
-
-	// Calculate MD
-	double MD = std::accumulate(d.begin(), d.end(), 0.0) / d.size();
-
-	return { MD, d };
-}
-
-/////////////////////////////////////////////////////
-////////////////// end of MD online /////////////////
-/////////////////////////////////////////////////////
 
 ///////////
 ////////////////////////////////////////////////////
@@ -182,10 +84,9 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 {
 	// 1. initialization window, text display and screen
 	gThisInst = hThisInst;
-	gExp = new MyExperiment("efc3", "efc3", "C:/data/ExtFlexChord/efc3/"); // Marco chmaged to efc2 here
+	gExp = new MyExperiment("efc_2hands", "efc_2hands", "C:/data/ExtFlexChord/efc_2hands/");
 	gExp->redirectIOToConsole();
 
-	// gExp->redirectIOToConsole();		// I uncommented this!!!
 	tDisp.init(gThisInst, 0, 0, 600, 20, 9, 2, &(::parseCommand));		// Default setting for the Windows 10 PC
 	tDisp.setText("Subj", 0, 0);
 	gScreen.init(gThisInst, 1920, 0, 1440, 900, &(::updateGraphics));	// Default setting for the Windows 10 PC
@@ -199,7 +100,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 		atexit(::onExit);
 		s626.initInterrupt(updateHaptics, UPDATERATE); // initialize at 200 Hz update rate 
 	}
-	gTimer.init(); // Ali Changed Here!!!!
+	gTimer.init();
 
 	// 3. stimulation box initialization and calibration
 	// high force 1
@@ -247,12 +148,6 @@ MyExperiment::MyExperiment(string name, string code, string dDir) : Experiment(n
 ////////////////////////////////////////////////////////////////////////
 void MyExperiment::control(void) {
 	MSG msg;
-	float emgTrigVolt = 0;	// Ali EMG
-
-	//if (!gTimerFlagFirst) { // Ali Changed Here!!!!
-	//	gTimer.init();
-	//	gTimerFlagFirst = TRUE;
-	//}
 
 	do {
 		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
@@ -308,18 +203,16 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 		tDisp.unlock();
 	}
 
-	/// Set TR Counter to simulated or non-simulated (default is given by TRTIME in ms)
-	else if (arguments[0] == "TR") {
+	/// choose which hand:
+	else if (arguments[0] == "hand") {
 		if (numArgs != 2) {
-			tDisp.print("USAGE: TR duration [in ms]");
+			tDisp.print("USAGE: hand 1/2 (left/right)");
 		}
 		else {
 			sscanf(arguments[1].c_str(), "%f", &arg[0]);
-			if (arg[0] > 0) {
-				gCounter.simulate(arg[0]);  // TR>0  -> simulate trigger (practice sessions) and define TR time (custom duration defined by input TR)
-			}
-			else {
-				gCounter.simulate(0);       // TR<=0 -> wait for trigger from scanner (scanning sessions)
+			hand = arg[0];
+			if ((hand != 2) && (hand != 1)) { // if a wrong number was given, default to right hand:
+				hand = 2;
 			}
 		}
 	}
@@ -457,8 +350,6 @@ Trial* MyBlock::getTrial() {
 void MyBlock::start() {
 	int i;
 	for (i = 0; i < NUMDISPLAYLINES; i++) { gs.line[i] = ""; }
-	gCounter.reset();
-	gCounter.start();
 	gNumCorr = 0;
 	gNumWrong = 0;
 	blockFeedbackFlag = 0;
@@ -471,41 +362,41 @@ void MyBlock::giveFeedback() {
 	gs.showLines = 0;
 	int i, j, n = 0;
 	MyTrial* tpnr;
-	double medianMD;
-	double vecMD[2000];
+	double medianRT;
+	double vecRT[2000];
 	blockFeedbackFlag = 1;
 
-	// putting MD values in an array
+	// putting RT values in an array
 	for (i = 0; i < 2000; i++) {
-		vecMD[i] = 0;
+		vecRT[i] = 0;
 	}
 	for (i = 0; i < trialNum; i++) { //check each trial
 		tpnr = (MyTrial*)trialVec.at(i);
 		if (tpnr->trialCorr == 1) { //if trial was correct
-			vecMD[i] = tpnr->MD;
+			vecRT[i] = tpnr->RT - 600;
 			n++;	//count correct trials
 		}
 	}
 
-	// calculating the median MD
+	// calculating the median RT
 	if (n > 2) {
 		double dummy;
 		for (i = 0; i < n - 1; i++) {
 			for (j = i + 1; j < n; j++) {
-				if (vecMD[i] > vecMD[j]) {
-					dummy = vecMD[i];
-					vecMD[i] = vecMD[j];
-					vecMD[j] = dummy;
+				if (vecRT[i] > vecRT[j]) {
+					dummy = vecRT[i];
+					vecRT[i] = vecRT[j];
+					vecRT[j] = dummy;
 				}
 			}
 		}
 		if (n % 2 == 0) {
 			i = n / 2;
-			medianMD = ((vecMD[i - 1] + vecMD[i]) / 2);
+			medianRT = ((vecRT[i - 1] + vecRT[i]) / 2);
 		}
 		else {
 			i = (n - 1) / 2;
-			medianMD = (vecMD[i]);
+			medianRT = (vecRT[i]);
 		}
 	}
 
@@ -523,7 +414,7 @@ void MyBlock::giveFeedback() {
 	gs.lineColor[1] = 1;
 
 	if (n > 2) {
-		sprintf(buffer, "Median MD = %.2f N", medianMD);
+		sprintf(buffer, "Med RT = %.0f ms", medianRT);
 		gs.line[2] = buffer;
 		gs.lineColor[2] = 1;
 	}
@@ -552,11 +443,9 @@ void MyTrial::read(istream& in) {
 	in >> subNum
 		>> chordID
 		>> planTime
-		>> stimTrig
 		>> execMaxTime
 		>> feedbackTime
-		>> iti
-		>> Trig;
+		>> iti;
 }
 
 ///////////////////////////////////////////////////////////////
@@ -565,9 +454,9 @@ void MyTrial::read(istream& in) {
 void MyTrial::writeDat(ostream& out) {
 	// write to .dat file
 	out << subNum << "\t"
+		<< hand << "\t"							// hand = 1: left hand, hand = 2: right hand
 		<< chordID << "\t"
 		<< planTime << "\t"
-		<< stimTrig << "\t"
 		<< execMaxTime << "\t"
 		<< feedbackTime << "\t"
 		<< iti << "\t"
@@ -586,7 +475,6 @@ void MyTrial::writeDat(ostream& out) {
 		<< trialCorr << "\t"					// trial is correct or not
 		<< trialErrorType << "\t"				// trial error type
 		<< RT << "\t"							// reaction time of each trial. 
-		<< MD << "\t"
 		<< trialPoint << "\t"					// points received in each trial
 		<< endl;
 }
@@ -597,9 +485,9 @@ void MyTrial::writeDat(ostream& out) {
 void MyTrial::writeHeader(ostream& out) {
 	char header[200];
 	out << "subNum" << "\t"
+		<< "hand" << "\t"
 		<< "chordID" << "\t"
 		<< "planTime" << "\t"
-		<< "stimTrig" << "\t"
 		<< "execMaxTime" << "\t"
 		<< "feedbackTime" << "\t"
 		<< "iti" << "\t"
@@ -618,7 +506,6 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "trialCorr" << "\t"
 		<< "trialErrorType" << "\t"
 		<< "RT" << "\t"
-		<< "MD" << "\t"
 		<< "trialPoint" << "\t"
 		<< endl;
 }
@@ -668,28 +555,37 @@ void MyTrial::copyHaptics() {
 void MyTrial::updateTextDisplay() {
 	int i;
 	double diffForce[5] = { 0,0,0,0,0 };
-	sprintf(buffer, "TR : %d time: %2.2f slice:%d", gCounter.readTR(), gCounter.readTime(), gCounter.readSlice());
+	sprintf(buffer, "Hand = %d", hand);
 	tDisp.setText(buffer, 2, 0);
+
 	sprintf(buffer, "Time : %2.2f", gTimer[1]);
 	tDisp.setText(buffer, 3, 0);
 
-	sprintf(buffer, "State : %d   Trial: %d   Trig: %d   ITI: %d", state, gExp->theBlock->trialNum, Trig, iti);
+	sprintf(buffer, "State : %d   Trial: %d", state, gExp->theBlock->trialNum);
 	tDisp.setText(buffer, 4, 0);
 
 	// display forces
 	tDisp.setText("Forces", 6, 0);
-	sprintf(buffer, "F1: %2.2f   F2: %2.2f   F3: %2.2f   F4: %2.2f   F5: %2.2f", gBox[1].getForce(0), gBox[1].getForce(1), gBox[1].getForce(2),
+	sprintf(buffer, "Box[1] = [%2.2f   %2.2f   %2.2f   %2.2f   %2.2f]", gBox[1].getForce(0), gBox[1].getForce(1), gBox[1].getForce(2),
 		gBox[1].getForce(3), gBox[1].getForce(4));
 	tDisp.setText(buffer, 7, 0);
-	sprintf(buffer, "E1: %2.2f   E2: %2.2f   E3: %2.2f   E4: %2.2f   E5: %2.2f", gBox[0].getForce(0), gBox[0].getForce(1), gBox[0].getForce(2),
+	sprintf(buffer, "Box[0] = [%2.2f   %2.2f   %2.2f   %2.2f   %2.2f]", gBox[0].getForce(0), gBox[0].getForce(1), gBox[0].getForce(2),
 		gBox[0].getForce(3), gBox[0].getForce(4));
 	tDisp.setText(buffer, 8, 0);
 
 	// differential forces
-	for (i = 0; i < 5; i++) {
-		diffForce[i] = gBox[0].getForce(i) - gBox[1].getForce(i);
+	if (hand == 2) { // right hand
+		for (i = 0; i < 5; i++) {
+			diffForce[i] = gBox[0].getForce(i) - gBox[1].getForce(i);
+		}
 	}
-	sprintf(buffer, "D1: %2.2f   D2: %2.2f   D3: %2.2f   D4: %2.2f   D5: %2.2f", diffForce[0], diffForce[1], diffForce[2],
+	else if (hand == 1) { // left hand
+		for (i = 0; i < 5; i++) {
+			diffForce[4-i] = gBox[1].getForce(i) - gBox[0].getForce(i);
+		}
+	}
+	
+	sprintf(buffer, "diff_force = [%2.2f   %2.2f   %2.2f   %2.2f   %2.2f]", diffForce[0], diffForce[1], diffForce[2],
 		diffForce[3], diffForce[4]);
 	tDisp.setText(buffer, 9, 0);
 
@@ -792,20 +688,21 @@ void MyTrial::updateGraphics(int what) {
 			gScreen.drawLine(((i * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) + FINGER_SPACING, VERT_SHIFT - forceGain*gBox[0].getForce(i), (((i + 1) * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) - FINGER_SPACING, VERT_SHIFT - forceGain*gBox[0].getForce(i));
 		}
 		*/
-
-		for (i = 0; i < 5; i++) {
-			diffForce[i] = fGain[i] * (gBox[0].getForce(i) - gBox[1].getForce(i));
+		if (hand == 2) { // right hand
+			for (i = 0; i < 5; i++) {
+				diffForce[i] = fGain[i] * (gBox[0].getForce(i) - gBox[1].getForce(i));
+			}
 		}
+		else if (hand == 1) { // left hand
+			for (i = 0; i < 5; i++) {
+				diffForce[4-i] = fGain[i] * (gBox[1].getForce(i) - gBox[0].getForce(i));
+			}
+		}
+		
 		// Finger forces (difference -> force = f_ext - f_flex)
 		for (i = 0; i < 5; i++) {
-			gScreen.setColor(Screen::red);
-			gScreen.drawLine(((i * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) + FINGER_SPACING, VERT_SHIFT + forceGain * diffForce[i], (((i + 1) * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) - FINGER_SPACING, VERT_SHIFT + forceGain * diffForce[i]);
-		}
-
-		if (gs.showTimer5) {
 			gScreen.setColor(Screen::white);
-			gScreen.print("Hold Time: ", 6, 3, 4);
-			gScreen.print(to_string(gTimer[5]), 10, 3, 4);
+			gScreen.drawLine(((i * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) + FINGER_SPACING, VERT_SHIFT + forceGain * diffForce[i], (((i + 1) * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) - FINGER_SPACING, VERT_SHIFT + forceGain * diffForce[i]);
 		}
 	}
 
@@ -872,8 +769,6 @@ void MyTrial::updateHaptics() {
 	gTimer.countup();
 	gTimer.countupReal();
 	s626.updateAD(0);
-	// scan
-	gCounter.update();
 	gBox[0].update();
 	gBox[1].update();
 	/// Call the Trial for control 
@@ -881,7 +776,7 @@ void MyTrial::updateHaptics() {
 
 	/// record the data at record frequency 
 	if (dataman.isRecording()) {
-		bool x = dataman.record(DataRecord(state, gExp->theBlock->trialNum));
+		bool x = dataman.record(DataRecord(state));
 		if (!x) {
 			dataman.stopRecording();
 		}
@@ -900,6 +795,20 @@ void MyTrial::control() {
 	double fingerForceTmp;
 	char tmpChord;
 	bool check_baseline_hold = 0;
+	double diff_force[5];
+
+	if (hand == 2) { // right hand
+		for (i = 0; i < 5; i++) {	// evaluate force differential force of fingers: f_ext - f_flx
+			//fingerForceTmp = VERT_SHIFT + forceGain * fGain[i] * (gBox[0].getForce(i) - gBox[1].getForce(i));
+			diff_force[i] = VERT_SHIFT + forceGain * fGain[i] * (gBox[0].getForce(i) - gBox[1].getForce(i));
+		}
+	}
+	else if (hand == 1) { // left hand
+		for (i = 0; i < 5; i++) {	// evaluate force differential force of fingers: f_ext - f_flx
+			//fingerForceTmp = VERT_SHIFT + forceGain * fGain[i] * (gBox[0].getForce(i) - gBox[1].getForce(i));
+			diff_force[4-i] = VERT_SHIFT + forceGain * fGain[i] * (gBox[1].getForce(i) - gBox[0].getForce(i));
+		}
+	}
 
 	switch (state) {
 	case WAIT_TRIAL: //0
@@ -914,7 +823,7 @@ void MyTrial::control() {
 		gs.boxColor = 5;	// grey baseline box color
 		planErrorFlag = 0;
 		//SetDacVoltage(0, 0);	// Ali EMG - gets ~200us to change digital to analog. Does it interrupt the ADC?
-		
+		SetDIOState(0, 0xFFFF); // Ali EMG
 
 		for (i = 0; i < NUMDISPLAYLINES; i++) {
 			if (!gs.line[i].empty()) {
@@ -935,7 +844,8 @@ void MyTrial::control() {
 		planErrorFlag = 0;	// initialize planErrorFlag variable in the begining of each trial
 		chordErrorFlag = 1;	// initialize chordErrorFlag variable in the begining of each trial
 		startTriggerEMG = 1;	// Ali EMG: starts EMG trigger in the beginning of each trial
-		SetDIOState(0, 0xFFFF); // Ali EMG
+
+		SetDIOState(0, 0x0000);
 
 		for (i = 0; i < 5; i++) {
 			gs.fingerCorrectGraphic[i] = 0;
@@ -951,27 +861,7 @@ void MyTrial::control() {
 		gTimer.reset(5);
 		gTimer.reset(6);
 
-		state = BUFFER;
-		break;
-
-	case BUFFER:
-
-		if (gExp->theBlock->trialNum == 0) {
-			if (gTimer[2] > 5000) {
-				gTimer.reset(0);
-				gTimer.reset(1);	// timer for each trial
-				gTimer.reset(2);
-				gTimer.reset(3);
-				gTimer.reset(5);
-				gTimer.reset(6);
-				state = WAIT_PLAN;
-			}
-		}
-
-		else {
-			state = WAIT_PLAN;
-		}
-
+		state = WAIT_PLAN;
 		break;
 
 	case WAIT_PLAN: //2
@@ -988,7 +878,7 @@ void MyTrial::control() {
 			}
 
 			for (i = 0; i < 5; i++) {	// check fingers' states -> fingers should stay in the baseline during planing
-				fingerForceTmp = VERT_SHIFT + forceGain * fGain[i] * (gBox[0].getForce(i) - gBox[1].getForce(i));
+				fingerForceTmp = diff_force[i];
 				if (fingerForceTmp >= (VERT_SHIFT + baseTHhi) || fingerForceTmp <= (VERT_SHIFT - (baseTHhi))) {
 					planErrorFlag = 1;
 					// gs.showForceBars = 0;
@@ -1015,7 +905,7 @@ void MyTrial::control() {
 		// So in this case, planning error is impossible to happen:
 		else {
 			for (i = 0; i < 5; i++) {	// check fingers' states -> fingers should stay in the baseline during planing
-				fingerForceTmp = VERT_SHIFT + forceGain * fGain[i] * (gBox[0].getForce(i) - gBox[1].getForce(i));
+				fingerForceTmp = diff_force[i];
 				check_baseline_hold = 1;
 				if (fingerForceTmp >= (VERT_SHIFT + baseTHhi) || fingerForceTmp <= (VERT_SHIFT - (baseTHhi))) {
 					// if even one finger was out of baseline zone, reset timer(1):
@@ -1039,24 +929,12 @@ void MyTrial::control() {
 				gs.boxColor = 5;	// baseline zone color becomes grey
 			}
 
-			if (gTimer[3] >= 500 + stimTrig && Trig == 1) {
-				//SetDacVoltage(0, emgTrigVolt);	// trigger to TMS
-				SetDIOState(0, 0x0000);
-			}
-
-			if (gTimer[3] >= 500 + stimTrig + 100 && Trig == 1) {
-				//SetDacVoltage(0, emgTrigVolt);	// trigger to TMS
-				SetDIOState(0, 0xFFFF);
-			}
-
 			// if subjects holds the baseline zone for plan time after visual cue was shown go to execution state:
 			if (gTimer[3] >= 500 + planTime) {
 				state = WAIT_EXEC;
 				gTimer.reset(2);	// resetting timer 2 to use in next state
 				gTimer.reset(3);	// resetting timer 3 to use in next state
 				gTimer.reset(5);	// resetting timer 4 to use in next state
-
-				X.clear();
 			}
 
 			// if subject takes too long to go in the planning zone:
@@ -1079,8 +957,7 @@ void MyTrial::control() {
 		// checking state of each finger
 		for (i = 0; i < 5; i++) {
 			tmpChord = chordID[i];	// required state of finger i -> 0:relaxed , 1:extended , 2:flexed -- chordID comes from the target file
-			fingerForceTmp = VERT_SHIFT + forceGain * fGain[i] * (gBox[0].getForce(i) - gBox[1].getForce(i));
-			fingerForceTmp5[i] = fingerForceTmp;
+			fingerForceTmp = diff_force[i];
 			switch (tmpChord) {
 			case '9':	// finger i should be in the baseline zone (relaxed)
 				fingerCorrect[i] = ((fingerForceTmp <= VERT_SHIFT + baseTHhi) && (fingerForceTmp >= VERT_SHIFT - baseTHhi));
@@ -1094,8 +971,6 @@ void MyTrial::control() {
 			}
 			gs.fingerCorrectGraphic[i] = 1;
 		}
-
-		X.push_back(fingerForceTmp5);
 
 		// Checking if the whole chord is correct
 		chordCorrect = fingerCorrect[0];
@@ -1113,9 +988,6 @@ void MyTrial::control() {
 			// chord was executed successfully so error = 0:
 			chordErrorFlag = 0;
 
-			auto result = calc_md(X);
-			MD = result.first;
-
 			// RT equals the time it took the subject to execute the chord successfully after the go cue. 
 			// Also, remember that chord is held for 600ms so RT = 600ms + actual_RT:
 			RT = gTimer[2];
@@ -1131,8 +1003,6 @@ void MyTrial::control() {
 		// If subject runs out of time:
 		if (gTimer[2] >= execMaxTime) {
 			//chordErrorFlag = 1;
-			auto result = calc_md(X);
-			MD = result.first;
 			RT = 10000;
 			state = GIVE_FEEDBACK;
 			gTimer.reset(2);
@@ -1142,7 +1012,7 @@ void MyTrial::control() {
 
 	case GIVE_FEEDBACK:
 		//SetDacVoltage(0, 0); // Ali EMG
-		//SetDIOState(0, 0xFFFF);
+		SetDIOState(0, 0xFFFF);
 
 		gs.showLines = 1;			// no force lines/thresholds
 		gs.showTarget = 0;			// no visual targets
@@ -1181,15 +1051,6 @@ void MyTrial::control() {
 		gs.showLines = 1;
 		gs.showTarget = 0;
 		gs.showFeedback = 0;
-
-		if (gTimer[2] >= 5000 && gTimer[2] < 5000 + 100) {
-			SetDIOState(0, 0x0000);
-		}
-
-		if (gTimer[2] >= 5000 + 100) {
-			SetDIOState(0, 0xFFFF);
-		}
-
 		if (gTimer[2] >= iti) {
 			state = END_TRIAL;
 			dataman.stopRecording();
@@ -1205,10 +1066,9 @@ void MyTrial::control() {
 /////////////////////////////////////////////////////////////////////////////////////
 /// Data Record: creator records the current data from the device 
 /////////////////////////////////////////////////////////////////////////////////////
-DataRecord::DataRecord(int s, int t) {
+DataRecord::DataRecord(int s) {
 	int i, j;
 	state = s;
-	trialNum = t;
 	time = gTimer[1];
 	timeReal = gTimer.getRealtime();
 
@@ -1218,8 +1078,13 @@ DataRecord::DataRecord(int s, int t) {
 		}
 	}
 	for (i = 0; i < 5; i++) {
-		diffForceMov[i] = (gBox[0].getForce(i) - gBox[1].getForce(i));	// diffForceMov = f_ext - f_flex
-		visualizedForce[i] = VERT_SHIFT + forceGain * (gBox[0].getForce(i) - gBox[1].getForce(i));	// The position of the force bars that are shown on the screen
+		// diffForceMov = f_ext - f_flex:
+		if (hand == 2) { // right hand
+			diffForceMov[i] = (gBox[0].getForce(i) - gBox[1].getForce(i));
+		}
+		else if (hand == 1) { // left hand
+			diffForceMov[4-i] = (gBox[1].getForce(i) - gBox[0].getForce(i));
+		}
 	}
 }
 
@@ -1228,8 +1093,7 @@ DataRecord::DataRecord(int s, int t) {
 /////////////////////////////////////////////////////////////////////////////////////
 void DataRecord::write(ostream& out) {
 	int i, j;
-	out << trialNum + 1 << "\t" 
-		<< state << "\t"
+	out << state << "\t"
 		<< timeReal << "\t"
 		<< time << "\t";
 	for (i = 0; i < 2; i++) {	// Flexion and extension force -> fforce[0][:] is extension forces and fforce[1][:] is flexion forces
@@ -1239,9 +1103,6 @@ void DataRecord::write(ostream& out) {
 	}
 	for (i = 0; i < 5; i++) {	// Differential forces -> diffForceMov = extension force - flexion force
 		out << diffForceMov[i] << "\t";
-	}
-	for (i = 0; i < 5; i++) {	// Position of visualized force bars
-		out << visualizedForce[i] << "\t";
 	}
 	out << endl;
 }

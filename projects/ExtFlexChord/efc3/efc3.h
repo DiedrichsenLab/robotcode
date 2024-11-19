@@ -87,7 +87,7 @@ public:
 class DataRecord {
 public:
 	DataRecord() {}
-	DataRecord(int s);
+	DataRecord(int s, int t);
 	void write(ostream& out);
 public:
 	int state;
@@ -97,6 +97,11 @@ public:
 	double fforce[2][5];
 	double diffForceMov[5];
 	double visualizedForce[5];
+
+	double	TotTime;
+	int		TR;
+	int		currentSlice;
+	double	TRtime;
 };
 
 ///////////////////////////////////////////////////////////////

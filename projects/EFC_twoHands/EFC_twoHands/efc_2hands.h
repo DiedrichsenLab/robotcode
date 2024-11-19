@@ -13,7 +13,6 @@
 #include "S626sManager.h"
 #include "Experiment.h" 
 #include "Timer626.h"
-#include "TRCounter626.h" 
 #include "Win626.h"
 #include <gl/glut.h>
 //#include "SDL.h" // SDL library
@@ -27,20 +26,17 @@ using namespace std;
 #define RECORDRATE 2
 #define UPDATE_TEXTDISP 10
 #define SCR_SCALE 1.84/72 //3/72 //2.54/72 // cm/pixel 
-#define MAX_PRESS 6 // max number of finger presses in a sequence
 /////////////////////////////////////////k//////////////////////
 // Enumeration of Trial State 
 ///////////////////////////////////////////////////////////////
 enum TrialState {
 	WAIT_TRIAL,			// 0
-	WAIT_TR,			// 1
-	START_TRIAL,		// 2
-	WAIT_PLAN,			// 3
-	WAIT_EXEC,			// 4
-	GIVE_FEEDBACK,		// 5
-	WAIT_ITI,			// 6
-	ACQUIRE_HRF,		// 7
-	END_TRIAL			// 8
+	START_TRIAL,		// 1
+	WAIT_PLAN,			// 2
+	WAIT_EXEC,			// 3
+	GIVE_FEEDBACK,		// 4
+	WAIT_ITI,			// 5
+	END_TRIAL			// 6
 };
 
 ///////////////////////////////////////////////////////////////
@@ -98,11 +94,6 @@ public:
 	double fforce[2][5];
 	double diffForceMov[5];
 	double visualizedForce[5];
-	double	TotTime;
-	int		TR;
-	int		currentSlice;
-	double	TRtime;
-
 };
 
 ///////////////////////////////////////////////////////////////
@@ -144,24 +135,15 @@ private:
 	int subNum;								///< Subjet number
 	int planTime;							///< Duration between cue onset (visual stimulus) and go onset
 	int execMaxTime;						///< Maximum duration for execution of the chord
-	int success_holdTime;
-	int max_holdTime = 0;
-	int startTimeReal;
-	int startTRReal;
-	int startTime;
-	int endTime;
 	int feedbackTime;						///< The duration between giveFeedback and giveScore
 	int iti;								///< inter trial interval
 	string chordID;							///< Chord identifier. 0: neutral , 1: flexion , 2: extension
 	bool trialCorr;							///< 1: trial is correct , 2: trial is not correct
 	int trialErrorType;						///< 0: no error , 1: movement during planning , 2: could not execute
 	double RT;								///< Reaction time: time from go cue to full execution of chord
-	double MD;
-	double ET;
 	int trialPoint;							///< point received in each trial
-	int points;
 
-	DataManager<DataRecord, 30000 / 2> dataman;///< For data recording for MOV file 
+	DataManager<DataRecord, 10000> dataman;///< For data recording for MOV file 
 };
 
 ///////////////////////////////////////////////////////////////

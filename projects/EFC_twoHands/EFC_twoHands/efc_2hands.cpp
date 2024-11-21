@@ -84,7 +84,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 {
 	// 1. initialization window, text display and screen
 	gThisInst = hThisInst;
-	gExp = new MyExperiment("efc_2hands", "efc_2hands", "C:/data/ExtFlexChord/efc_2hands/");
+	gExp = new MyExperiment("efc_2hands", "efc_2hands", "C:/data/efc_twoHands/");
 	gExp->redirectIOToConsole();
 
 	tDisp.init(gThisInst, 0, 0, 600, 20, 9, 2, &(::parseCommand));		// Default setting for the Windows 10 PC
@@ -440,7 +440,8 @@ MyTrial::MyTrial() {
 ///////////////////////////////////////////////////////////////
 void MyTrial::read(istream& in) {
 	// read from .tgt file
-	in >> subNum
+	in  >> subNum
+		>> day
 		>> chordID
 		>> planTime
 		>> execMaxTime
@@ -454,6 +455,7 @@ void MyTrial::read(istream& in) {
 void MyTrial::writeDat(ostream& out) {
 	// write to .dat file
 	out << subNum << "\t"
+		<< day << "\t"
 		<< hand << "\t"							// hand = 1: left hand, hand = 2: right hand
 		<< chordID << "\t"
 		<< planTime << "\t"
@@ -485,6 +487,7 @@ void MyTrial::writeDat(ostream& out) {
 void MyTrial::writeHeader(ostream& out) {
 	char header[200];
 	out << "subNum" << "\t"
+		<< "day" << "\t"
 		<< "hand" << "\t"
 		<< "chordID" << "\t"
 		<< "planTime" << "\t"

@@ -1105,8 +1105,14 @@ void MyTrial::control() {
 			// chord was executed successfully so error = 0:
 			//chordErrorFlag = !chordCorrect;
 
-			auto result = calc_md(X);
-			MD = result.first;
+			if (chordStarted == 1) {
+				auto result = calc_md(X);
+				MD = result.first;
+			}
+			else {
+				MD = 0;
+			}
+			
 
 			if (max_holdTime >= success_holdTime) {
 				chordErrorFlag = 0;

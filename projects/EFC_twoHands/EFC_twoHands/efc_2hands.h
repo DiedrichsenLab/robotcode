@@ -134,6 +134,7 @@ private:
 
 	int subNum;								///< Subjet number
 	int planTime;							///< Duration between cue onset (visual stimulus) and go onset
+	int day;
 	int execMaxTime;						///< Maximum duration for execution of the chord
 	int feedbackTime;						///< The duration between giveFeedback and giveScore
 	int iti;								///< inter trial interval

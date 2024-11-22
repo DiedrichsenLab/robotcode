@@ -732,10 +732,21 @@ void MyTrial::updateGraphics(int what) {
 
 	if (gs.showFxCross == 1) { // show lines
 
-		// Baseline lines
-		gScreen.setColor(Screen::red);
-		gScreen.drawLine(-CROSSW / 2, VERT_SHIFT + CROSSP, CROSSW / 2, VERT_SHIFT + CROSSP);
-		gScreen.drawLine(0, VERT_SHIFT + CROSSP - CROSSW / 2, 0, VERT_SHIFT + CROSSP + CROSSW / 2);
+		if (gs.rewardTrial == 1) {
+			gScreen.setColor(Screen::blue);
+			gScreen.drawLine(-CROSSW / 2, VERT_SHIFT, CROSSW / 2, VERT_SHIFT);
+			gScreen.drawLine(0, VERT_SHIFT - CROSSW / 2, 0, VERT_SHIFT + CROSSW / 2);
+		}
+			
+		else {
+			gScreen.setColor(Screen::red);
+			gScreen.drawLine(-CROSSW / 2, VERT_SHIFT, CROSSW / 2, VERT_SHIFT);
+			gScreen.drawLine(0, VERT_SHIFT - CROSSW / 2, 0, VERT_SHIFT + CROSSW / 2);
+		}
+			
+		
+		
+		
 
 	}
 
@@ -940,7 +951,7 @@ void MyTrial::control() {
 		gs.showLines = 1;	// set screen lines/force bars to show
 		gs.showFeedback = 0;
 		gs.showTarget = 0;
-		gs.showFxCross = 1;
+		gs.showFxCross = 0;
 		gs.showTimer5 = 0;
 		gs.showDiagnostics = 1;
 		// gs.showForceBars = 1;
@@ -964,7 +975,7 @@ void MyTrial::control() {
 		gs.showLines = 1;	// set screen lines/force bars to show
 		gs.showFeedback = 0;
 		gs.showTimer5 = 0;
-		gs.showFxCross = 1;
+		gs.showFxCross = 0;
 		// gs.showForceBars = 1;
 		gs.boxColor = 5;	// grey baseline box color
 		gs.planError = 0;
@@ -998,7 +1009,7 @@ void MyTrial::control() {
 		gs.showTarget = 0;
 		gs.showFeedback = 0;
 
-		gs.showFxCross = 1;
+		gs.showFxCross = 0;
 
 		gs.reset();
 
@@ -1206,7 +1217,7 @@ void MyTrial::control() {
 		break;
 
 	case WAIT_ITI:
-		gs.showLines = 1;
+		gs.showLines = 0;
 		gs.showTarget = 0;
 		gs.showFxCross = 1;
 		gs.showFeedback = 0;

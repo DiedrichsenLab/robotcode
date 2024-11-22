@@ -150,6 +150,7 @@ private:
 	int startTimeReal;
 	int startTRReal;
 	int startTime;
+	//bool chordErrorFlag;
 	int endTime;
 	int feedbackTime;						///< The duration between giveFeedback and giveScore
 	int iti;								///< inter trial interval

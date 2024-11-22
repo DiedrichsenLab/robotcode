@@ -31,6 +31,8 @@ float emgTrigVolt = 2;	// Ali added this: experimental - under construction
 std::vector<std::vector<double>> X;
 std::vector<double> fingerForceTmp5(5, 0.0);
 
+bool planError = 0;
+
 ///< Basic imaging parameters
 #define TRTIME 1000				///< timer for simulating timer
 //#define HOLDTIME 1000			///< timer for holding key press
@@ -62,6 +64,9 @@ bool wait_baseline_zone = 1;				// if 1, waits until the subject's fingers are a
 #define FLX_TOP_Y1 FLX_BOT_Y1+FLX_ZONE_WIDTH
 #define FLX_BOT_Y2 FLX_BOT_Y1
 #define FLX_TOP_Y2 FLX_TOP_Y1
+
+#define CROSSW 0.6 // adjust to visual angle based on the distance in the scanner
+#define CROSSP (FLX_BOT_Y1 + FLX_TOP_Y1) / 2
 
 #define VERT_SHIFT 0	// vertical shift of the screen graphics
 
@@ -558,8 +563,9 @@ void MyTrial::read(istream& in) {
 		>> execMaxTime
 		>> feedbackTime
 		>> iti
-		>> endTime
-		>> startTime;
+		>> startTime
+		>> endTime;
+		
 
 }
 
@@ -722,6 +728,15 @@ void MyTrial::updateGraphics(int what) {
 	if (blockFeedbackFlag) {
 		gScreen.setCenter(Vector2D(0, 0));    // In cm //0,2
 		gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));
+	}
+
+	if (gs.showFxCross == 1) { // show lines
+
+		// Baseline lines
+		gScreen.setColor(Screen::red);
+		gScreen.drawLine(-CROSSW / 2, VERT_SHIFT + CROSSP, CROSSW / 2, VERT_SHIFT + CROSSP);
+		gScreen.drawLine(0, VERT_SHIFT + CROSSP - CROSSW / 2, 0, VERT_SHIFT + CROSSP + CROSSW / 2);
+
 	}
 
 	if (gs.showTarget == 1) {
@@ -925,6 +940,7 @@ void MyTrial::control() {
 		gs.showLines = 1;	// set screen lines/force bars to show
 		gs.showFeedback = 0;
 		gs.showTarget = 0;
+		gs.showFxCross = 1;
 		gs.showTimer5 = 0;
 		gs.showDiagnostics = 1;
 		// gs.showForceBars = 1;
@@ -948,6 +964,7 @@ void MyTrial::control() {
 		gs.showLines = 1;	// set screen lines/force bars to show
 		gs.showFeedback = 0;
 		gs.showTimer5 = 0;
+		gs.showFxCross = 1;
 		// gs.showForceBars = 1;
 		gs.boxColor = 5;	// grey baseline box color
 		gs.planError = 0;
@@ -981,8 +998,12 @@ void MyTrial::control() {
 		gs.showTarget = 0;
 		gs.showFeedback = 0;
 
+		gs.showFxCross = 1;
+
 		gs.reset();
 
+		cout << gCounter.readTotTime() << '\n';\
+		cout << startTime << '\n';
 		if (gCounter.readTR() > 0 && gCounter.readTotTime() >= startTime) {
 			startTimeReal = gCounter.readTotTime();
 			startTRReal = gCounter.readTR(); // number of TR arrived so far
@@ -993,12 +1014,24 @@ void MyTrial::control() {
 			gTimer.reset(3);
 			state = WAIT_PLAN;
 
+			planError = 0;
+
 		}
 		break;
 
 	case WAIT_PLAN: //2
 		//gs.planCue = 1;
 		gs.showTimer5 = 0;
+		gs.showFxCross = 0;
+
+		for (i = 0; i < 5; i++) {	// RT is the time of the first finger outside the baseline area
+			fingerForceTmp = VERT_SHIFT + forceGain * fGain[i] * (gBox[0].getForce(i) - gBox[1].getForce(i));
+			//check_baseline_hold = 1;
+			if (fingerForceTmp >= (VERT_SHIFT + baseTHhi) || fingerForceTmp <= (VERT_SHIFT - (baseTHhi))) {
+				planError = 1;
+				break;
+			}
+		}
 
 		
 		// if wait baseline zone was on, the code waits until the subject holds the baseline zone for 500ms and then gives the go cue. 
@@ -1058,6 +1091,7 @@ void MyTrial::control() {
 		for (i = 0; i < 5; i++) {
 			tmpChord = chordID[i];	// required state of finger i -> 0:relaxed , 1:extended , 2:flexed -- chordID comes from the target file
 			fingerForceTmp = VERT_SHIFT + forceGain * fGain[i] * (gBox[0].getForce(i) - gBox[1].getForce(i));
+			fingerForceTmp5[i] = fingerForceTmp;
 			switch (tmpChord) {
 			case '9':	// finger i should be in the baseline zone (relaxed)
 				fingerCorrect[i] = ((fingerForceTmp <= VERT_SHIFT + baseTHhi) && (fingerForceTmp >= VERT_SHIFT - baseTHhi));
@@ -1105,25 +1139,33 @@ void MyTrial::control() {
 			// chord was executed successfully so error = 0:
 			//chordErrorFlag = !chordCorrect;
 
-			if (chordStarted == 1) {
+			if (chordStarted == 1 && chordCorrect == 1 && planError == 0 && max_holdTime >= success_holdTime) {
 				auto result = calc_md(X);
 				MD = result.first;
+
+				chordErrorFlag = 0;
+				trialPoint = 1;
 			}
 			else {
 				MD = 0;
-			}
-			
+				RT = 0;
+				ET = 0;
 
-			if (max_holdTime >= success_holdTime) {
-				chordErrorFlag = 0;
-				trialPoint = 1;
-				
-			}
-
-			else {
 				chordErrorFlag = 1;
 				trialPoint = 0;
 			}
+			
+
+			//if (max_holdTime >= success_holdTime) {
+			//	chordErrorFlag = 0;
+			//	trialPoint = 1;
+			//	
+			//}
+
+			//else {
+			//	chordErrorFlag = 1;
+			//	trialPoint = 0;
+			//}
 
 			trialCorr = trialPoint;
 
@@ -1166,6 +1208,7 @@ void MyTrial::control() {
 	case WAIT_ITI:
 		gs.showLines = 1;
 		gs.showTarget = 0;
+		gs.showFxCross = 1;
 		gs.showFeedback = 0;
 		if (gTimer[2] >= iti) {
 			state = ACQUIRE_HRF;
@@ -1175,6 +1218,8 @@ void MyTrial::control() {
 		break;
 
 	case ACQUIRE_HRF: //6
+
+		gs.showFxCross = 1;
 
 		i = gCounter.readTotTime();
 

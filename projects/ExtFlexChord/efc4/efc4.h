@@ -69,6 +69,7 @@ public:
 	bool showBoxes;
 	bool showLines;
 	bool showTarget;
+	bool showFxCross;
 	bool planCue;
 	bool planError;
 	bool chordError;

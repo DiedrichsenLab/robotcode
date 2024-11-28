@@ -28,6 +28,14 @@ bool gTimerFlagFirst = 0;
 bool startTriggerEMG = 0; // Ali added this: experimental - under construction
 float emgTrigVolt = 2;	// Ali added this: experimental - under construction
 
+FixCross fixationCross;
+
+ForceCursor forceCursor[5];
+//ForceCursor forceCursor2;
+//ForceCursor forceCursor3;
+//ForceCursor forceCursor4;
+//ForceCursor forceCursor5;
+
 std::vector<std::vector<double>> X;
 std::vector<double> fingerForceTmp5(5, 0.0);
 
@@ -58,6 +66,9 @@ bool wait_baseline_zone = 1;				// if 1, waits until the subject's fingers are a
 #define FINGER_SPACING 0.2
 #define BASELINE_X1 -(FINGWIDTH*N_FINGERS/2)
 #define BASELINE_X2 +(FINGWIDTH*N_FINGERS/2)
+
+#define FIXCROSS_SIZE 3
+#define FIXCROSS_THICK 0.3 
 
 #define FLX_ZONE_WIDTH 3
 #define FLX_BOT_Y1 2
@@ -206,6 +217,15 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 		atexit(::onExit);
 		s626.initInterrupt(updateHaptics, UPDATERATE); // initialize at 200 Hz update rate 
 	}
+
+	fixationCross.position = gScreen.getCenter();
+	fixationCross.size = Vector2D(FIXCROSS_SIZE, FIXCROSS_SIZE);
+	fixationCross.setShape(SHAPE_PLUS);
+
+	for (size_t i = 0; i < 5; ++i) {
+		forceCursor[i].size = Vector2D(FINGWIDTH, FINGWIDTH);
+	}
+
 	gTimer.init(); // Ali Changed Here!!!!
 
 	// 3. stimulation box initialization and calibration
@@ -476,6 +496,8 @@ void MyBlock::start() {
 ///////////////////////////////////////////////////////////////
 void MyBlock::giveFeedback() {
 	gs.showLines = 0;
+	gs.showFxCross = 0;
+	gs.showForceBars = 0;
 	int i, j, n = 0;
 	MyTrial* tpnr;
 	double medianMD;
@@ -549,6 +571,7 @@ MyTrial::MyTrial() {
 	trialCorr = 0;		// flag for tiral being correct or incorrect -> 0: trial error , 1: trial correct
 	trialErrorType = 0;	// flag for the type of trial error -> 0: no error , 1: planning error , 2: execution error
 	RT = 0;
+	fixationCross.setColor(SCR_WHITE);
 }
 
 ///////////////////////////////////////////////////////////////
@@ -730,26 +753,6 @@ void MyTrial::updateGraphics(int what) {
 		gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));
 	}
 
-	if (gs.showFxCross == 1) { // show lines
-
-		if (gs.rewardTrial == 1) {
-			gScreen.setColor(Screen::blue);
-			gScreen.drawLine(-CROSSW / 2, VERT_SHIFT, CROSSW / 2, VERT_SHIFT);
-			gScreen.drawLine(0, VERT_SHIFT - CROSSW / 2, 0, VERT_SHIFT + CROSSW / 2);
-		}
-			
-		else {
-			gScreen.setColor(Screen::red);
-			gScreen.drawLine(-CROSSW / 2, VERT_SHIFT, CROSSW / 2, VERT_SHIFT);
-			gScreen.drawLine(0, VERT_SHIFT - CROSSW / 2, 0, VERT_SHIFT + CROSSW / 2);
-		}
-			
-		
-		
-		
-
-	}
-
 	if (gs.showTarget == 1) {
 		for (i = 0; i < 5; i++) {
 			tmpChord = chordID[i];
@@ -785,6 +788,8 @@ void MyTrial::updateGraphics(int what) {
 			}
 		}
 	}
+
+	
 
 	if (gs.showLines == 1) {
 		// Baseline box
@@ -829,14 +834,7 @@ void MyTrial::updateGraphics(int what) {
 		}
 		*/
 
-		for (i = 0; i < 5; i++) {
-			diffForce[i] = fGain[i] * (gBox[0].getForce(i) - gBox[1].getForce(i));
-		}
-		// Finger forces (difference -> force = f_ext - f_flex)
-		for (i = 0; i < 5; i++) {
-			gScreen.setColor(Screen::red);
-			gScreen.drawLine(((i * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) + FINGER_SPACING, VERT_SHIFT + forceGain * diffForce[i], (((i + 1) * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) - FINGER_SPACING, VERT_SHIFT + forceGain * diffForce[i]);
-		}
+		
 
 		if (gs.showTimer5) {
 			gScreen.setColor(Screen::white);
@@ -866,6 +864,51 @@ void MyTrial::updateGraphics(int what) {
 			//gScreen.print("-Moved during planning-", 0, 3, 7);
 		//if (gs.chordError)
 			//gScreen.print("-Chord too short-", 0, 3, 7);
+	}
+
+	if (gs.showFxCross == 1) { // show lines
+
+		if (gs.rewardTrial == 1 && state == GIVE_FEEDBACK) {
+		//	gScreen.setColor(Screen::blue);
+		//	gScreen.drawLine(-CROSSW / 2, VERT_SHIFT, CROSSW / 2, VERT_SHIFT);
+		//	gScreen.drawLine(0, VERT_SHIFT - CROSSW / 2, 0, VERT_SHIFT + CROSSW / 2);
+			fixationCross.setColor(SCR_GREEN);
+		
+		}
+
+		else if (gs.rewardTrial == 0 && state == GIVE_FEEDBACK) {
+			//	gScreen.setColor(Screen::blue);
+			//	gScreen.drawLine(-CROSSW / 2, VERT_SHIFT, CROSSW / 2, VERT_SHIFT);
+			//	gScreen.drawLine(0, VERT_SHIFT - CROSSW / 2, 0, VERT_SHIFT + CROSSW / 2);
+			fixationCross.setColor(SCR_RED);
+
+		}
+		//	
+		else {
+			fixationCross.setColor(SCR_WHITE);
+		//	gScreen.setColor(Screen::red);
+		//	gScreen.drawLine(-CROSSW / 2, VERT_SHIFT, CROSSW / 2, VERT_SHIFT);
+		//	gScreen.drawLine(0, VERT_SHIFT - CROSSW / 2, 0, VERT_SHIFT + CROSSW / 2);
+		}
+
+		fixationCross.draw();
+
+	}
+
+	if (gs.showForces) {
+		for (i = 0; i < 5; i++) {
+			diffForce[i] = fGain[i] * (gBox[0].getForce(i) - gBox[1].getForce(i));
+		}
+		// Finger forces (difference -> force = f_ext - f_flex)
+		for (i = 0; i < 5; i++) {
+			//gScreen.setColor(Screen::red);
+			//gScreen.drawLine(((i * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) + FINGER_SPACING, VERT_SHIFT + forceGain * diffForce[i], (((i + 1) * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) - FINGER_SPACING, VERT_SHIFT + forceGain * diffForce[i]);
+			forceCursor[i].position[0] = ((i * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) + FINGER_SPACING;
+			forceCursor[i].position[1] = VERT_SHIFT + forceGain * diffForce[i];
+
+			forceCursor[i].draw()
+		
+		}
 	}
 
 	if (gs.showDiagnostics) {
@@ -953,11 +996,12 @@ void MyTrial::control() {
 		gs.showTarget = 0;
 		gs.showFxCross = 0;
 		gs.showTimer5 = 0;
-		gs.showDiagnostics = 1;
+		gs.showForces = 1;
+		gs.showDiagnostics = 0;
 		// gs.showForceBars = 1;
 		gs.rewardTrial = 0;
 		trialPoint = 0;
-		gs.planError = 0;
+		//gs.planError = 0;
 		gs.boxColor = 5;	// grey baseline box color
 		planErrorFlag = 0;
 		//SetDacVoltage(0, 0);	// Ali EMG - gets ~200us to change digital to analog. Does it interrupt the ADC?
@@ -975,10 +1019,11 @@ void MyTrial::control() {
 		gs.showLines = 1;	// set screen lines/force bars to show
 		gs.showFeedback = 0;
 		gs.showTimer5 = 0;
-		gs.showFxCross = 0;
+		gs.showFxCross = 1;
+		gs.showForces = 1;
 		// gs.showForceBars = 1;
 		gs.boxColor = 5;	// grey baseline box color
-		gs.planError = 0;
+		//gs.planError = 0;
 		gs.chordError = 0;
 		planErrorFlag = 0;	// initialize planErrorFlag variable in the begining of each trial
 		chordErrorFlag = 1;	// initialize chordErrorFlag variable in the begining of each trial
@@ -1008,8 +1053,9 @@ void MyTrial::control() {
 
 		gs.showTarget = 0;
 		gs.showFeedback = 0;
-
-		gs.showFxCross = 0;
+		gs.showForces = 1;
+		gs.showLines = 1;
+		gs.showFxCross = 1;
 
 		gs.reset();
 
@@ -1033,7 +1079,9 @@ void MyTrial::control() {
 	case WAIT_PLAN: //2
 		//gs.planCue = 1;
 		gs.showTimer5 = 0;
-		gs.showFxCross = 0;
+		gs.showFxCross = 1;
+		gs.showForces = 1;
+		gs.showLines = 1;
 
 		for (i = 0; i < 5; i++) {	// RT is the time of the first finger outside the baseline area
 			fingerForceTmp = VERT_SHIFT + forceGain * fGain[i] * (gBox[0].getForce(i) - gBox[1].getForce(i));
@@ -1077,7 +1125,9 @@ void MyTrial::control() {
 	case WAIT_EXEC:
 		gs.showLines = 1;		// show force bars and thresholds
 		gs.showTarget = 1;		// show the targets on the screen (grey bars)
-		gs.showTimer5 = 1;		// show timer 4 value on screen (duration of holding a chord)
+		gs.showTimer5 = 0;		// show timer 4 value on screen (duration of holding a chord)
+		gs.showForceBars = 1;
+		gs.showFxCross = 1;
 		gs.boxColor = 5;		// grey baseline box color
 
 		if (chordCorrect == 0 && chordStarted == 0) {
@@ -1207,8 +1257,10 @@ void MyTrial::control() {
 		gs.showLines = 1;			// no force lines/thresholds
 		gs.showTarget = 0;			// no visual targets
 		gs.showTimer5 = 0;
-		gs.showFeedback = 1;		// showing feedback (refer to MyTrial::updateGraphics() for details)
+		gs.showFeedback = 0;		// showing feedback (refer to MyTrial::updateGraphics() for details)
 		gs.rewardTrial = trialPoint;	// set reward to zero
+		gs.showFxCross = 1;
+		gs.showForces = 1;
 				
 		if (gTimer[2] >= feedbackTime) {
 			state = WAIT_ITI;
@@ -1217,8 +1269,9 @@ void MyTrial::control() {
 		break;
 
 	case WAIT_ITI:
-		gs.showLines = 0;
+		gs.showLines = 1;
 		gs.showTarget = 0;
+		gs.showForces = 1;
 		gs.showFxCross = 1;
 		gs.showFeedback = 0;
 		if (gTimer[2] >= iti) {
@@ -1231,6 +1284,8 @@ void MyTrial::control() {
 	case ACQUIRE_HRF: //6
 
 		gs.showFxCross = 1;
+		gs.showForces = 1;
+		gs.showLines = 1;
 
 		i = gCounter.readTotTime();
 

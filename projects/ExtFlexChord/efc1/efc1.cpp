@@ -98,7 +98,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 {
 	// 1. initialization window, text display and screen
 	gThisInst = hThisInst;
-	gExp = new MyExperiment("efc2", "efc2", "C:/data/ExtFlexChord/efc2/"); // Marco chmaged to efc2 here
+	gExp = new MyExperiment("efcp", "efcp", "C:/data/ExtFlexChord/efcp/"); // Marco chmaged to efc2 here
 	gExp->redirectIOToConsole();
 	
 	// gExp->redirectIOToConsole();		// I uncommented this!!!

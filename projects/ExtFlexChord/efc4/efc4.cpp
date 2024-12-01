@@ -1324,6 +1324,11 @@ DataRecord::DataRecord(int s, int t) {
 	time = gTimer[1];
 	timeReal = gTimer.getRealtime();
 
+	TotTime = gCounter.readTotTime(); //internally generated time initiated at first TTL pulse
+	TR = gCounter.readTR(); //counted TR pulse
+	TRtime = gCounter.readTime(); //time since last TR
+	currentSlice = 0; //gCounter.readSlice();
+
 	for (i = 0; i < 2; i++) {
 		for (j = 0; j < 5; j++) {
 			fforce[i][j] = gBox[i].getForce(j);

@@ -223,7 +223,8 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	fixationCross.setShape(SHAPE_PLUS);
 
 	for (size_t i = 0; i < 5; ++i) {
-		forceCursor[i].size = Vector2D(FINGWIDTH, FINGWIDTH);
+		forceCursor[i].size = Vector2D(FINGWIDTH - FINGER_SPACING *2, FINGWIDTH - FINGER_SPACING*2);
+		forceCursor[i].setColor(SCR_RED);
 	}
 
 	gTimer.init(); // Ali Changed Here!!!!
@@ -497,7 +498,7 @@ void MyBlock::start() {
 void MyBlock::giveFeedback() {
 	gs.showLines = 0;
 	gs.showFxCross = 0;
-	gs.showForceBars = 0;
+	gs.showForces = 0;
 	int i, j, n = 0;
 	MyTrial* tpnr;
 	double medianMD;
@@ -903,10 +904,10 @@ void MyTrial::updateGraphics(int what) {
 		for (i = 0; i < 5; i++) {
 			//gScreen.setColor(Screen::red);
 			//gScreen.drawLine(((i * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) + FINGER_SPACING, VERT_SHIFT + forceGain * diffForce[i], (((i + 1) * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) - FINGER_SPACING, VERT_SHIFT + forceGain * diffForce[i]);
-			forceCursor[i].position[0] = ((i * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) + FINGER_SPACING;
+			forceCursor[i].position[0] = (((2 * i + 1) * FINGWIDTH) - (FINGWIDTH * N_FINGERS)) / 2.0;;
 			forceCursor[i].position[1] = VERT_SHIFT + forceGain * diffForce[i];
 
-			forceCursor[i].draw()
+			forceCursor[i].draw();
 		
 		}
 	}

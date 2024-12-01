@@ -91,7 +91,7 @@ public:
 class DataRecord {
 public:
 	DataRecord() {}
-	DataRecord(int s);
+	DataRecord(int s, int t);
 	void write(ostream& out);
 public:
 	int state;

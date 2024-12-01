@@ -502,7 +502,7 @@ void MyBlock::giveFeedback() {
 	int i, j, n = 0;
 	MyTrial* tpnr;
 	double medianMD;
-	double vecMD[2000];
+	double vecMD[2000]; 
 	blockFeedbackFlag = 1;
 
 	// putting MD values in an array
@@ -967,7 +967,7 @@ void MyTrial::updateHaptics() {
 
 	/// record the data at record frequency 
 	if (dataman.isRecording()) {
-		bool x = dataman.record(DataRecord(state));
+		bool x = dataman.record(DataRecord(state, gExp->theBlock->trialNum));
 		if (!x) {
 			dataman.stopRecording();
 		}
@@ -1317,9 +1317,10 @@ void MyTrial::control() {
 /////////////////////////////////////////////////////////////////////////////////////
 /// Data Record: creator records the current data from the device 
 /////////////////////////////////////////////////////////////////////////////////////
-DataRecord::DataRecord(int s) {
+DataRecord::DataRecord(int s, int t) {
 	int i, j;
 	state = s;
+	trialNum = t;
 	time = gTimer[1];
 	timeReal = gTimer.getRealtime();
 

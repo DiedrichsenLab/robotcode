@@ -160,7 +160,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 		s626.initInterrupt(updateHaptics, UPDATERATE); // initialize at 200 Hz update rate 
 	}
 
-	fixationCross.position = Vector2D(0, SCR_SCALE);
+	fixationCross.position = Vector2D(0, VERT_SHIFT + CROSSP);
 	fixationCross.size = Vector2D(FIXCROSS_SIZE, FIXCROSS_SIZE);
 	fixationCross.setShape(SHAPE_PLUS);
 	

@@ -9,6 +9,7 @@
 #include "Screen.h"
 //#include "Vector2d.h"
 //#include "Matrix2d.h"
+#include "Target.h"
 #include "DataManager.h" 
 #include "S626sManager.h"
 #include "Experiment.h" 
@@ -208,10 +209,28 @@ public:
 
 };
 
-
-
-
-
 void SetDacVoltage(WORD channel, DOUBLE volts);
 void SetDIOState(WORD group, WORD states);
+
+//////////////////////////////////////////////////////////////
+class FixCross : public Target {
+public:
+	void draw();
+};
+void FixCross::draw() {
+	//setColor(1);
+	gScreen.setColor(color);
+	gScreen.drawBox(Vector2D(size[0], 0.3), Vector2D(position[0], position[1]));
+	gScreen.drawBox(Vector2D(0.3, size[1]), Vector2D(position[0], position[1]));
+}
+
+class ForceCursor : public Target {
+public:
+	void draw();
+};
+void ForceCursor::draw() {
+	//setColor(1);
+	gScreen.setColor(color);
+	gScreen.drawBox(Vector2D(size[0], 0.2), Vector2D(position[0], position[1]));
+}
 

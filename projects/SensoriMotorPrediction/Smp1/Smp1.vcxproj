@@ -140,6 +140,7 @@
     <ClInclude Include="..\..\..\include\PneumaticBox.h" />
     <ClInclude Include="..\..\..\include\S626sManager.h" />
     <ClInclude Include="..\..\..\include\Screen.h" />
+    <ClInclude Include="..\..\..\include\Target.h" />
     <ClInclude Include="..\..\..\include\TextDisplay.h" />
     <ClInclude Include="..\..\..\include\Timer626.h" />
     <ClInclude Include="..\..\..\include\TRCounter626.h" />

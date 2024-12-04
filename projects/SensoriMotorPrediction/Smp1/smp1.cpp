@@ -35,6 +35,10 @@ bool showCue = 0;
 int hrfTime = 0;
 string probCue;
 
+ForceCursor forceCursor[2];
+
+FixCross fixationCross;
+
 double RT_thresh_plan = 1.0;
 double RT_thresh_exec = 5.0;
 
@@ -75,7 +79,7 @@ double fGain[5] = { 1.0 ,1.0,1.0,1.0,1.0 };	// finger specific force gains -> ap
 double forceGain = 1;						// universal force gain -> applied on all the fingers
 bool blockFeedbackFlag = 0;
 bool wait_baseline_zone = 1;				// if 1, waits until the subject's fingers are all in the baseline zone. 
-int baseline_wait_time = 500;
+int baseline_wait_time = 0;
 
 //double indexForceTmp;
 //double ringForceTmp;
@@ -83,9 +87,13 @@ int baseline_wait_time = 500;
 int n = 1;
 
 #define FINGWIDTH 2 //previously 1.3
-#define X_CURSOR_DEV 1.5
+#define X_CURSOR_DEV 1.3
 #define BASELINE_X1 -3 //-(FINGWIDTH*N_FINGERS/2)
 #define BASELINE_X2 3 //+(FINGWIDTH*N_FINGERS/2)
+
+#define FINGER_SPACING 0.2
+
+#define FIXCROSS_SIZE  1
 
 double xPosBox[2] = { -X_CURSOR_DEV, X_CURSOR_DEV };
 #define FLX_ZONE_WIDTH 5
@@ -93,6 +101,8 @@ double xPosBox[2] = { -X_CURSOR_DEV, X_CURSOR_DEV };
 #define FLX_TOP_Y1 FLX_BOT_Y1+FLX_ZONE_WIDTH 
 #define FLX_BOT_Y2 FLX_BOT_Y1
 #define FLX_TOP_Y2 FLX_TOP_Y1
+
+#define N_FINGERS 2
 
 #define CROSSW 0.6 // adjust to visual angle based on the distance in the scanner
 #define CROSSP (FLX_BOT_Y1 + FLX_TOP_Y1) / 2
@@ -149,6 +159,16 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 		atexit(::onExit);
 		s626.initInterrupt(updateHaptics, UPDATERATE); // initialize at 200 Hz update rate 
 	}
+
+	fixationCross.position = Vector2D(0, SCR_SCALE);
+	fixationCross.size = Vector2D(FIXCROSS_SIZE, FIXCROSS_SIZE);
+	fixationCross.setShape(SHAPE_PLUS);
+	
+	for (size_t i = 0; i < 2; ++i) {
+		forceCursor[i].size = Vector2D(FINGWIDTH, FINGWIDTH);
+		forceCursor[i].setColor(SCR_RED);
+	}
+	
 	gTimer.init(); // Ali Changed Here!!!!
 
 	// 3. stimulation box initialization and calibration
@@ -917,11 +937,13 @@ void MyTrial::updateGraphics(int what) {
 
 	if (gs.showFxCross == 1) { // show lines
 
-		// Baseline lines
-		gScreen.setColor(Screen::red);
-		gScreen.drawLine(-CROSSW / 2, VERT_SHIFT + CROSSP, CROSSW / 2, VERT_SHIFT + CROSSP);
-		gScreen.drawLine(0, VERT_SHIFT + CROSSP - CROSSW /2 , 0, VERT_SHIFT + CROSSP + CROSSW/2);
-
+		//// Baseline lines
+		//gScreen.setColor(Screen::red);
+		//gScreen.drawLine(-CROSSW / 2, VERT_SHIFT + CROSSP, CROSSW / 2, VERT_SHIFT + CROSSP);
+		//gScreen.drawLine(0, VERT_SHIFT + CROSSP - CROSSW /2 , 0, VERT_SHIFT + CROSSP + CROSSW/2);
+		
+		fixationCross.setColor(SCR_RED);
+		fixationCross.draw();
 	}
 
 	if (gs.showTgLines == 1) {
@@ -956,41 +978,72 @@ void MyTrial::updateGraphics(int what) {
 		for (i = 0; i < 5; i++) {
 			diffForce[i] = fGain[i] * gBox.getForce(i);
 		}
-		// Finger forces (difference -> force = f_ext - f_flex)
-		gScreen.setColor(Screen::red);
-		gScreen.drawLine(-X_CURSOR_DEV - FINGWIDTH / 2,
-			VERT_SHIFT + forceGain * diffForce[1] + baselineCorrection,
-			-X_CURSOR_DEV + FINGWIDTH / 2,
-			VERT_SHIFT + forceGain * diffForce[1] + baselineCorrection);
-		gScreen.drawLine(X_CURSOR_DEV - FINGWIDTH / 2,
-			VERT_SHIFT + forceGain * diffForce[3] + baselineCorrection,
-			X_CURSOR_DEV + FINGWIDTH / 2,
-			VERT_SHIFT + forceGain * diffForce[3] + baselineCorrection);
+		//// Finger forces (difference -> force = f_ext - f_flex)
+		//gScreen.setColor(Screen::red);
+		//gScreen.drawLine(-X_CURSOR_DEV - FINGWIDTH / 2,
+		//	VERT_SHIFT + forceGain * diffForce[1] + baselineCorrection,
+		//	-X_CURSOR_DEV + FINGWIDTH / 2,
+		//	VERT_SHIFT + forceGain * diffForce[1] + baselineCorrection);
+		//gScreen.drawLine(X_CURSOR_DEV - FINGWIDTH / 2,
+		//	VERT_SHIFT + forceGain * diffForce[3] + baselineCorrection,
+		//	X_CURSOR_DEV + FINGWIDTH / 2,
+		//	VERT_SHIFT + forceGain * diffForce[3] + baselineCorrection);
+
+		//// Finger forces (difference -> force = f_ext - f_flex)
+
+			//gScreen.setColor(Screen::red);
+			//gScreen.drawLine(((i * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) + FINGER_SPACING, VERT_SHIFT + forceGain * diffForce[i], (((i + 1) * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) - FINGER_SPACING, VERT_SHIFT + forceGain * diffForce[i]);
+		forceCursor[0].position[0] = -X_CURSOR_DEV;
+		forceCursor[0].position[1] = VERT_SHIFT + forceGain * diffForce[1] + baselineCorrection;
+		forceCursor[0].draw();
+
+		forceCursor[1].position[0] = X_CURSOR_DEV;
+		forceCursor[1].position[1] = VERT_SHIFT + forceGain * diffForce[3] + baselineCorrection;
+		forceCursor[1].draw();
 
 	}
 
 	if (gs.showFeedback) { // show feedback
-		gScreen.setColor(Screen::red);
-		gScreen.drawLine(-X_CURSOR_DEV - FINGWIDTH / 2,
-			Favf[0] / Navf,
-			-X_CURSOR_DEV + FINGWIDTH / 2,
-			Favf[0] / Navf);
-		gScreen.drawLine(X_CURSOR_DEV - FINGWIDTH / 2,
-			Favf[1] / Navf,
-			X_CURSOR_DEV + FINGWIDTH / 2,
-			Favf[1] / Navf);
+		//gScreen.setColor(Screen::red);
+		//gScreen.drawLine(-X_CURSOR_DEV - FINGWIDTH / 2,
+		//	Favf[0] / Navf,
+		//	-X_CURSOR_DEV + FINGWIDTH / 2,
+		//	Favf[0] / Navf);
+		//gScreen.drawLine(X_CURSOR_DEV - FINGWIDTH / 2,
+		//	Favf[1] / Navf,
+		//	X_CURSOR_DEV + FINGWIDTH / 2,
+		//	Favf[1] / Navf);
+
+		forceCursor[0].position[0] = -X_CURSOR_DEV;
+		forceCursor[0].position[1] = Favf[0] / Navf;
+		forceCursor[0].draw();
+
+		forceCursor[1].position[0] = X_CURSOR_DEV;
+		forceCursor[1].position[1] = Favf[1] / Navf;
+		forceCursor[1].draw();
+
 	}
 
 	if (gs.showForceFixed) { 
 		gScreen.setColor(Screen::red);
-		gScreen.drawLine(-X_CURSOR_DEV - FINGWIDTH / 2,
-			forceFixed[0],
-			-X_CURSOR_DEV + FINGWIDTH / 2,
-			forceFixed[0]);
-		gScreen.drawLine(X_CURSOR_DEV - FINGWIDTH / 2,
-			forceFixed[1],
-			X_CURSOR_DEV + FINGWIDTH / 2,
-			forceFixed[1]);
+		//gScreen.drawLine(-X_CURSOR_DEV - FINGWIDTH / 2,
+		//	forceFixed[0],
+		//	-X_CURSOR_DEV + FINGWIDTH / 2,
+		//	forceFixed[0]);
+		//gScreen.drawLine(X_CURSOR_DEV - FINGWIDTH / 2,
+		//	forceFixed[1],
+		//	X_CURSOR_DEV + FINGWIDTH / 2,
+		//	forceFixed[1]);
+
+		forceCursor[0].position[0] = -X_CURSOR_DEV;
+		forceCursor[0].position[1] = forceFixed[0];
+		forceCursor[0].draw();
+
+		forceCursor[1].position[0] = X_CURSOR_DEV;
+		forceCursor[1].position[1] = forceFixed[1];
+		forceCursor[1].draw();
+
+
 	}
 
 	if (gs.showDiagnostics) {

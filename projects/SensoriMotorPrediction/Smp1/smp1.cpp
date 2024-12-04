@@ -93,7 +93,7 @@ int n = 1;
 
 #define FINGER_SPACING 0.2
 
-#define FIXCROSS_SIZE  1
+#define FIXCROSS_SIZE  1.5
 
 double xPosBox[2] = { -X_CURSOR_DEV, X_CURSOR_DEV };
 #define FLX_ZONE_WIDTH 5
@@ -551,47 +551,61 @@ void MyBlock::giveFeedback() {
 	gs.showBsLines = 0;
 	gs.showForces = 0;
 
-	double q1 = 0, q3 = 0;
-	double forceDiff;
-	double* RTarray = new double[nRT]; // Dynamic allocation
-	int i, j = 0;
-	MyTrial* tpnr;
-	//double medianRT;
-	double blockDiff = 0;
-	blockFeedbackFlag = 1;
+	if (nRT > 0) {
+		double q1 = 0, q3 = 0;
+		double forceDiff;
+		double* RTarray = new double[nRT]; // Dynamic allocation
+		int i, j = 0;
+		MyTrial* tpnr;
+		//double medianRT;
+		double blockDiff = 0;
+		blockFeedbackFlag = 1;
 
-	n = 0;
-	for (i = 0; i < trialNum; i++) { //check each trial
-		tpnr = (MyTrial*)trialVec.at(i);
-		forceDiff = tpnr->forceDiff;
-		blockDiff = blockDiff + forceDiff;
+		n = 0;
+		for (i = 0; i < trialNum; i++) { //check each trial
+			tpnr = (MyTrial*)trialVec.at(i);
+			forceDiff = tpnr->forceDiff;
+			blockDiff = blockDiff + forceDiff;
 
-		if (tpnr->RT > 0 && tpnr->RT < tpnr->execMaxTime) {
-			RTarray[n] = tpnr->RT;
-			n++;
+			if (tpnr->RT > 0 && tpnr->RT < tpnr->execMaxTime) {
+				RTarray[n] = tpnr->RT;
+				n++;
+			}
+
 		}
-		
+
+		double RTmedian = median(RTarray, nRT);
+
+		quartiles(RTarray, nRT, q1, q3);
+
+		////gScreen.setColor(Screen::white);
+		sprintf(buffer, "End of Block");
+		gs.line[0] = buffer;
+		gs.lineColor[0] = 1;
+
+		sprintf(buffer, "Points: %d, Median RT: %f", points_tot, RTmedian);
+		gs.line[1] = buffer;
+		gs.lineColor[1] = 1;
+
+		forceDiff_block = blockDiff / (trialNum - 6);
+
+		if (nRT >= 5) {
+			rewThresh1_global = q1;
+			rewThresh2_global = q3;
+		}
 	}
 
-	double RTmedian = median(RTarray, nRT);
+	else {
+		////gScreen.setColor(Screen::white);
+		sprintf(buffer, "End of Block");
+		gs.line[0] = buffer;
+		gs.lineColor[0] = 1;
 
-	quartiles(RTarray, nRT, q1, q3);
-
-	////gScreen.setColor(Screen::white);
-	sprintf(buffer, "End of Block");
-	gs.line[0] = buffer;
-	gs.lineColor[0] = 1;
-
-	sprintf(buffer, "Points: %d, Median RT: %f", points_tot, RTmedian);
-	gs.line[1] = buffer;
-	gs.lineColor[1] = 1;
-
-	forceDiff_block = blockDiff / (trialNum - 6);
-
-	if (nRT >= 5) {
-		rewThresh1_global = q1;
-		rewThresh2_global = q3;
+		sprintf(buffer, "No succesful trials found");
+		gs.line[1] = buffer;
+		gs.lineColor[1] = 1;
 	}
+	
 
 	
 

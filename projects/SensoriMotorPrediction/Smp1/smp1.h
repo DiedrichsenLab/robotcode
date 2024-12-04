@@ -220,8 +220,8 @@ public:
 void FixCross::draw() {
 	//setColor(1);
 	gScreen.setColor(color);
-	gScreen.drawBox(Vector2D(size[0], 0.3), Vector2D(position[0], position[1]));
-	gScreen.drawBox(Vector2D(0.3, size[1]), Vector2D(position[0], position[1]));
+	gScreen.drawBox(Vector2D(size[0], 0.2), Vector2D(position[0], position[1]));
+	gScreen.drawBox(Vector2D(0.2, size[1]), Vector2D(position[0], position[1]));
 }
 
 class ForceCursor : public Target {

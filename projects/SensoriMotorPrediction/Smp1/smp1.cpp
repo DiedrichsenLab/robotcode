@@ -133,9 +133,11 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	// gExp->redirectIOToConsole();		// I uncommented this!!!
 	tDisp.init(gThisInst, 0, 0, 1000, 30, 9, 2, &(::parseCommand));		// Default setting for the Windows 10 PC
 	tDisp.setText("Subj", 0, 0);
-	//gScreen.init(gThisInst, 1920, 0, 1920, 1080, &(::updateGraphics));	
-	gScreen.init(gThisInst, 1280, 0, 1024, 768, &(::updateGraphics)); 
-	//gScreen.init(gThisInst, 1920, 0, 1680, 1080, &(::updateGraphics)); // Default setting for the Windows 10 PC
+	//gScreen.init(gThisInst, 1920, 0, 1920, 1080, &(::updateGraphics));
+
+	//gScreen.init(gThisInst, 1280, 0, 1024, 768, &(::updateGraphics)); // Default setting for the 7T control room
+	gScreen.init(gThisInst, 1920, 0, 1680, 1080, &(::updateGraphics)); // Default setting for the Windows 10 PC
+
 	gScreen.setCenter(Vector2D(0, 0)); // This set the center of the screen where forces are calibrated with zero force // In cm //0,2
 	gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));					// cm/pixel
 
@@ -1287,23 +1289,24 @@ void MyTrial::control() {
 				0);
 
 			gs.showTgLines = 1;	// set screen lines/force bars to show
-			gs.showPrLines = 0;
+			gs.showPrLines = 1;
 			gs.showBsLines = 1;
 			gs.showForces = 0;
 			gs.showForceFixed = 1;
-			gs.showFxCross = 1;
-			gs.showTarget = 0;		// show the targets on the screen (grey bars)
+			gs.showFxCross = 0;
+			gs.showTarget = 1;		// show the targets on the screen (grey bars)
 			gs.boxColor = 5;		// grey baseline box color
 
 		}
 
 		else if (GoNogo == "nogo") {
 			gs.showTgLines = 1;	// set screen lines/force bars to show
-			gs.showPrLines = 0;
+			gs.showPrLines = 1;
 			gs.showBsLines = 1;
 			gs.showForces = 0;
-			gs.showFxCross = 1;
-			gs.showTarget = 0;		// show the targets on the screen (grey bars)
+			gs.showForceFixed = 1;
+			gs.showFxCross = 0;
+			gs.showTarget = 1;		// show the targets on the screen (grey bars)
 			gs.boxColor = 5;		// grey baseline box color
 			//state = WAIT_ITI;
 		}

@@ -1275,7 +1275,7 @@ void MyTrial::control() {
 		/// Because of this wait time, total trial duration in .mov is 500 ms longer 
 		/// than in the .tgt file and stim occurs 500 ms after planTime
 		if (gTimer[3] > baseline_wait_time) {	// turn on visual target after 500ms of holding the baseline
-			gs.showFxCross = 0;
+			gs.showFxCross = 1;
 			gs.showTarget = 1;	// show visual target	
 			gs.showPrLines = 1;
 	/*		indexForceTmp = VERT_SHIFT + forceGain * fGain[fi[0]] * gBox.getForce(fi[0]) + baselineCorrection;
@@ -1360,7 +1360,7 @@ void MyTrial::control() {
 			gs.showBsLines = 1;
 			gs.showForces = 0;
 			gs.showForceFixed = 1;
-			gs.showFxCross = 0;
+			gs.showFxCross = 1;
 			gs.showTarget = 1;		// show the targets on the screen (grey bars)
 			gs.boxColor = 5;		// grey baseline box color
 
@@ -1372,7 +1372,7 @@ void MyTrial::control() {
 			gs.showBsLines = 1;
 			gs.showForces = 0;
 			gs.showForceFixed = 1;
-			gs.showFxCross = 0;
+			gs.showFxCross = 1;
 			gs.showTarget = 1;		// show the targets on the screen (grey bars)
 			gs.boxColor = 5;		// grey baseline box color
 			//state = WAIT_ITI;

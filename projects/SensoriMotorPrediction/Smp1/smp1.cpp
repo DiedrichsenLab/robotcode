@@ -949,16 +949,7 @@ void MyTrial::updateGraphics(int what) {
 
 	
 
-	if (gs.showFxCross == 1) { // show lines
 
-		//// Baseline lines
-		//gScreen.setColor(Screen::red);
-		//gScreen.drawLine(-CROSSW / 2, VERT_SHIFT + CROSSP, CROSSW / 2, VERT_SHIFT + CROSSP);
-		//gScreen.drawLine(0, VERT_SHIFT + CROSSP - CROSSW /2 , 0, VERT_SHIFT + CROSSP + CROSSW/2);
-		
-		fixationCross.setColor(SCR_RED);
-		fixationCross.draw();
-	}
 
 	if (gs.showTgLines == 1) {
 		// Ext Bottom threshold
@@ -985,6 +976,17 @@ void MyTrial::updateGraphics(int what) {
 		gScreen.print("75%", BASELINE_X2 + 0.5, VERT_SHIFT + FLX_BOT_Y1 + 0.75 * FLX_ZONE_WIDTH, 2.5);
 		gScreen.print("0%", BASELINE_X2 + 0.5, VERT_SHIFT + FLX_BOT_Y1, 2.5);
 
+	}
+
+	if (gs.showFxCross == 1) { // show lines
+
+		//// Baseline lines
+		//gScreen.setColor(Screen::red);
+		//gScreen.drawLine(-CROSSW / 2, VERT_SHIFT + CROSSP, CROSSW / 2, VERT_SHIFT + CROSSP);
+		//gScreen.drawLine(0, VERT_SHIFT + CROSSP - CROSSW /2 , 0, VERT_SHIFT + CROSSP + CROSSW/2);
+
+		fixationCross.setColor(SCR_RED);
+		fixationCross.draw();
 	}
 
 

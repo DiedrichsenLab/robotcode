@@ -138,7 +138,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	// 1. initialization window, text display and screen
 	gThisInst = hThisInst;
 	gExp = new MyExperiment("smp2", "smp2", "C:/data/SensoriMotorPrediction/smp2/");
-	//gExp->redirectIOToConsole();
+	gExp->redirectIOToConsole();
 
 	// gExp->redirectIOToConsole();		// I uncommented this!!!
 	tDisp.init(gThisInst, 0, 0, 1000, 30, 9, 2, &(::parseCommand));		// Default setting for the Windows 10 PC

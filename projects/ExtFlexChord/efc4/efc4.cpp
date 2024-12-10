@@ -251,6 +251,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 
 	//gBox[0].filterconst = 0.8;
 	//gBox[1].filterconst = 0.8;
+	gCounter.init3(3, 0, 32); // TTL pulse for counting TR
 
 	gExp->control();
 

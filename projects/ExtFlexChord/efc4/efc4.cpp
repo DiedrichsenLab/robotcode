@@ -722,7 +722,7 @@ void MyTrial::updateTextDisplay() {
 	}
 
 	else {
-		sprintf(buffer, "State : %d   Trial: %d    Hold time: %d  Max hold time: %d", state, gExp->theBlock->trialNum, holdTime, max_holdTime);
+		sprintf(buffer, "State : %d   Trial: %d    Hold time: %d    Max hold time: %d", state, gExp->theBlock->trialNum, holdTime, max_holdTime);
 		tDisp.setText(buffer, 4, 0);
 	}
 	
@@ -778,7 +778,7 @@ void MyTrial::updateGraphics(int what) {
 			}
 			else if (tmpChord == '1') {
 				yPos = (FLX_TOP_Y1 + FLX_BOT_Y1) * 0.5 + VERT_SHIFT;
-				if (gs.fingerCorrectGraphic[i]) {
+				if (state==WAIT_EXEC) {
 					gScreen.setColor(Screen::green);
 					gScreen.drawBox(xSize, ySize, xPos, yPos);
 				}
@@ -789,7 +789,7 @@ void MyTrial::updateGraphics(int what) {
 			}
 			else if (tmpChord == '2') {
 				yPos = -(FLX_TOP_Y1 + FLX_BOT_Y1) * 0.5 + VERT_SHIFT;
-				if (gs.fingerCorrectGraphic[i]) {
+				if (state == WAIT_EXEC) {
 					gScreen.setColor(Screen::green);
 					gScreen.drawBox(xSize, ySize, xPos, yPos);
 				}
@@ -1096,6 +1096,7 @@ void MyTrial::control() {
 		gs.showFxCross = 1;
 		gs.showForces = 1;
 		gs.showLines = 1;
+		gs.showTarget = 0;
 
 		for (i = 0; i < 5; i++) {	// RT is the time of the first finger outside the baseline area
 			fingerForceTmp = VERT_SHIFT + forceGain * fGain[i] * (gBox[0].getForce(i) - gBox[1].getForce(i));

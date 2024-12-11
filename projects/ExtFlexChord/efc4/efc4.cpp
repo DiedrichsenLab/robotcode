@@ -41,6 +41,8 @@ std::vector<double> fingerForceTmp5(5, 0.0);
 
 bool planError = 0;
 
+int holdTime = 0;
+
 ///< Basic imaging parameters
 #define TRTIME 1000				///< timer for simulating timer
 //#define HOLDTIME 1000			///< timer for holding key press
@@ -201,7 +203,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	// 1. initialization window, text display and screen
 	gThisInst = hThisInst;
 	gExp = new MyExperiment("efc4", "efc4", "C:/data/ExtFlexChord/efc4/"); // Marco chmaged to efc2 here
-	gExp->redirectIOToConsole();
+	//gExp->redirectIOToConsole();
 
 	// gExp->redirectIOToConsole();		// I uncommented this!!!
 	tDisp.init(gThisInst, 0, 0, 600, 20, 9, 2, &(::parseCommand));		// Default setting for the Windows 10 PC
@@ -513,7 +515,7 @@ void MyBlock::giveFeedback() {
 	for (i = 0; i < trialNum; i++) { //check each trial
 		tpnr = (MyTrial*)trialVec.at(i);
 		if (tpnr->trialCorr == 1) { //if trial was correct
-			vecMD[i] = tpnr->MD;
+			vecMD[n] = tpnr->MD;
 			n++;	//count correct trials
 		}
 	}
@@ -714,8 +716,16 @@ void MyTrial::updateTextDisplay() {
 	sprintf(buffer, "Time : %2.2f", gTimer[1]);
 	tDisp.setText(buffer, 3, 0);
 
-	sprintf(buffer, "State : %d   Trial: %d    Hold time: %f", state, gExp->theBlock->trialNum, gTimer[3]);
-	tDisp.setText(buffer, 4, 0);
+	if (state == WAIT_EXEC || state == GIVE_FEEDBACK) {
+		sprintf(buffer, "State : %d   Trial: %d    Hold time: %d    Max hold time: %d", state, gExp->theBlock->trialNum, holdTime, max_holdTime);
+		tDisp.setText(buffer, 4, 0);
+	}
+
+	else {
+		sprintf(buffer, "State : %d   Trial: %d    Hold time: %d  Max hold time: %d", state, gExp->theBlock->trialNum, holdTime, max_holdTime);
+		tDisp.setText(buffer, 4, 0);
+	}
+	
 
 	// display forces
 	tDisp.setText("Forces", 6, 0);
@@ -982,7 +992,6 @@ bool planErrorFlag = 0;		// flag for checking if error happens during planning.
 bool chordErrorFlag = 0;	// flag for checking if the chord was correct or not.
 bool fingerCorrect[5] = { 0,0,0,0,0 };
 bool chordCorrect = 0;
-int holdTime = 0;
 bool prev_chordCorrect;
 bool chordStarted = 0;
 void MyTrial::control() {
@@ -1052,6 +1061,9 @@ void MyTrial::control() {
 		break;
 
 	case WAIT_TR: //2
+
+		holdTime = 0;
+		max_holdTime = 0;
 
 		gs.showTarget = 0;
 		gs.showFeedback = 0;

@@ -21,8 +21,8 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{afe7604c-bcc7-4f81-b28d-1eb6a4a4e8de}</ProjectGuid>
-    <RootNamespace>EFCtwoHands</RootNamespace>
+    <ProjectGuid>{2c5edff9-7a35-4930-a8e9-f6fb29169cfc}</ProjectGuid>
+    <RootNamespace>EFCpatternfMRI</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -138,18 +138,19 @@
     <ClCompile Include="..\..\..\source\StimulatorBox.cpp" />
     <ClCompile Include="..\..\..\source\TextDisplay.cpp" />
     <ClCompile Include="..\..\..\source\Timer626.cpp" />
+    <ClCompile Include="..\..\..\source\TRCounter626.cpp" />
     <ClCompile Include="..\..\..\source\WIN626.C" />
-    <ClCompile Include="efc_2hands.cpp" />
+    <ClCompile Include="efcp_behav.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\include\DataManager.h" />
     <ClInclude Include="..\..\..\include\Experiment.h" />
+    <ClInclude Include="..\..\..\include\S626sManager.h" />
     <ClInclude Include="..\..\..\include\Screen.h" />
     <ClInclude Include="..\..\..\include\Serial.h" />
-    <ClInclude Include="..\..\..\include\StimulatorBox.h" />
     <ClInclude Include="..\..\..\include\Timer626.h" />
-    <ClInclude Include="..\..\..\include\Win626.h" />
-    <ClInclude Include="efc_2hands.h" />
+    <ClInclude Include="..\..\..\include\TRCounter626.h" />
+    <ClInclude Include="efcp_behav.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

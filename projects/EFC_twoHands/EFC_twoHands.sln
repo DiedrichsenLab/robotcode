@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.4.33213.308
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EFC_twoHands", "EFC_twoHands\EFC_twoHands.vcxproj", "{F3EE52E0-745D-48CB-BA02-622419363949}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EFC_twoHands", "EFC_twoHands\EFC_twoHands.vcxproj", "{AFE7604C-BCC7-4F81-B28D-1EB6A4A4E8DE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -13,19 +13,19 @@ Global
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{F3EE52E0-745D-48CB-BA02-622419363949}.Debug|x64.ActiveCfg = Debug|x64
-		{F3EE52E0-745D-48CB-BA02-622419363949}.Debug|x64.Build.0 = Debug|x64
-		{F3EE52E0-745D-48CB-BA02-622419363949}.Debug|x86.ActiveCfg = Debug|Win32
-		{F3EE52E0-745D-48CB-BA02-622419363949}.Debug|x86.Build.0 = Debug|Win32
-		{F3EE52E0-745D-48CB-BA02-622419363949}.Release|x64.ActiveCfg = Release|x64
-		{F3EE52E0-745D-48CB-BA02-622419363949}.Release|x64.Build.0 = Release|x64
-		{F3EE52E0-745D-48CB-BA02-622419363949}.Release|x86.ActiveCfg = Release|Win32
-		{F3EE52E0-745D-48CB-BA02-622419363949}.Release|x86.Build.0 = Release|Win32
+		{AFE7604C-BCC7-4F81-B28D-1EB6A4A4E8DE}.Debug|x64.ActiveCfg = Debug|x64
+		{AFE7604C-BCC7-4F81-B28D-1EB6A4A4E8DE}.Debug|x64.Build.0 = Debug|x64
+		{AFE7604C-BCC7-4F81-B28D-1EB6A4A4E8DE}.Debug|x86.ActiveCfg = Debug|Win32
+		{AFE7604C-BCC7-4F81-B28D-1EB6A4A4E8DE}.Debug|x86.Build.0 = Debug|Win32
+		{AFE7604C-BCC7-4F81-B28D-1EB6A4A4E8DE}.Release|x64.ActiveCfg = Release|x64
+		{AFE7604C-BCC7-4F81-B28D-1EB6A4A4E8DE}.Release|x64.Build.0 = Release|x64
+		{AFE7604C-BCC7-4F81-B28D-1EB6A4A4E8DE}.Release|x86.ActiveCfg = Release|Win32
+		{AFE7604C-BCC7-4F81-B28D-1EB6A4A4E8DE}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {131CAAE1-B032-43D6-884A-A43D31B3A4A9}
+		SolutionGuid = {B6707066-51AF-4C35-B941-64191210731D}
 	EndGlobalSection
 EndGlobal

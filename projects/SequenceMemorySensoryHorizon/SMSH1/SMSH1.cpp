@@ -451,7 +451,7 @@ void MyBlock::giveFeedback() {
 
 
 	// print FEEDBACK on the screen 
-	sprintf(buffer, "Acc %3.1f%%           MT %2.0fms", 100 - ERarray[b], medianETarray[b]);
+	sprintf(buffer, "Acc %3.1f%%           ET %2.0fms", 100 - ERarray[b], medianETarray[b]);
 
 	gs.line[1] = buffer;
 	gs.lineColor[1] = 1;
@@ -487,7 +487,7 @@ MyTrial::MyTrial() {
 	waitTime = 3000;						// how long to wait for first trial in block
 	stimOnsetTime = 100;					// stimulus onset time in free-RT task
 	timeStamp = 0;						// when was the pre-movement threshold crossed?
-	useMetronome = 1;//0;
+	useMetronome = 0;//1;
 	startTime = 0;
 	cue = "0";
 	for (int i = 0; i < MAX_PRESS; i++) {
@@ -1089,6 +1089,10 @@ void MyTrial::control() {
 				state = WAIT_RELEASE;
 			}
 			else {
+				for (i = 0; i < seqLength; i++) {
+					gs.seqMask[i] = 0;
+				}
+
 				PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
 				gTimer.reset(2);
 				state = WAIT_PRESS;

@@ -1089,9 +1089,23 @@ void MyTrial::control() {
 				state = WAIT_RELEASE;
 			}
 			else {
-				for (i = 0; i < seqLength; i++) {
-					gs.seqMask[i] = 0;
+				if (isMasked) {
+					for (i = 0; i < seqLength; i++) {
+						gs.seqMask[i] = '*';
+					}
 				}
+				else {
+					for (i = 0; i < seqLength; i++) {
+						if (i < maskCounter + stoi(windowSize)) {
+							gs.seqMask[i] = 0;
+						}
+						else {
+							gs.seqMask[i] = '*';
+						}
+					}
+
+				}
+
 
 				PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
 				gTimer.reset(2);
@@ -1156,7 +1170,9 @@ void MyTrial::control() {
 			//}
 
 			if (seqCounter + stoi(windowSize) < seqLength) {
-				gs.seqMask[seqCounter + stoi(windowSize)] = 0;
+				if (!isMasked) {
+					gs.seqMask[seqCounter + stoi(windowSize)] = 0;
+				}
 			}
 
 

@@ -972,12 +972,14 @@ void MyTrial::control() {
 						press[i] = cue.at(i) - '0';
 						gs.seq[i] = cue.at(i);
 
-						if (i < maskCounter + stoi(windowSize)) {
+						/*if (i < maskCounter + stoi(windowSize)) {
 							gs.seqMask[i] = 0;
 						}
 						else {
 							gs.seqMask[i] = '*';
-						}
+						}*/
+
+						gs.seqMask[i] = ' ';
 
 						//cout << "hand" << hand << '\n';
 						if (show == 1) {
@@ -1002,12 +1004,14 @@ void MyTrial::control() {
 						press[i] = cue.at(i) - '0';
 						gs.seq[i] = cue.at(i);
 
-						if (i < maskCounter + stoi(windowSize)) {
-							gs.seqMask[i] = 0;
-						}
-						else {
-							gs.seqMask[i] = '*';
-						}
+						//if (i < maskCounter + stoi(windowSize)) {
+						//	gs.seqMask[i] = 0;
+						//}
+						//else {
+						//	gs.seqMask[i] = '*';
+						//}
+
+						gs.seqMask[i] = ' ';
 
 						if (show == 1) {
 							if (hand == 2) {
@@ -1064,6 +1068,7 @@ void MyTrial::control() {
 		// CHECK FOR BASELINE FINGER FORCES
 		if (numNewThresCross > 0 && gTimer[1] < precueTime) { // check for pre-movement finger presses
 			timeStamp = gTimer[1];
+			isError = 1;
 			isCross = 1;
 
 			if (startTime == 0) { // display warning message (practice blocks only)
@@ -1074,25 +1079,29 @@ void MyTrial::control() {
 			}
 		}
 
-		if (gTimer[1] > timeStamp + 500) {
-			sprintf(buffer, "");
-			gs.lineColor[0] = 1;
-			gs.line[0] = buffer;
-			gs.lineYpos[0] = 8;
-		}
-
 		if (gTimer[1] >= precueTime) { // give go/nogo signal
-
 			sprintf(buffer, "");
 			gs.lineColor[0] = 1;
 			gs.line[0] = buffer;
 			gs.lineYpos[0] = 8;
 
-			PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
-			gTimer.reset(2);
-
-			state = WAIT_PRESS;
+			if (isCross) {
+				state = WAIT_RELEASE;
+			}
+			else {
+				PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
+				gTimer.reset(2);
+				state = WAIT_PRESS;
+			}
 		}
+
+
+		//if (gTimer[1] > timeStamp + 500) {
+		//	sprintf(buffer, "");
+		//	gs.lineColor[0] = 1;
+		//	gs.line[0] = buffer;
+		//	gs.lineYpos[0] = 8;
+		//}
 		break;
 
 	case WAIT_PRESS: //4
@@ -1217,6 +1226,14 @@ void MyTrial::control() {
 
 
 			}
+			else if (isError ==1 && isCross) {
+				points = -5;
+				PlaySound(TASKSOUNDS[5].c_str(), NULL, SND_ASYNC);
+				gs.clearCues(); sprintf(buffer, "%d", points);
+				gs.lineColor[1] = 1; // white
+				gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
+			}
+
 			else if (isError == 1 && timingError == 0) {
 				points = 0;
 				// PLAY SOUND 
@@ -1233,6 +1250,7 @@ void MyTrial::control() {
 				gs.lineColor[1] = 1; // white
 				gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
 			}
+
 			gTimer.reset(2);
 			state = WAIT_FEEDBACK;
 

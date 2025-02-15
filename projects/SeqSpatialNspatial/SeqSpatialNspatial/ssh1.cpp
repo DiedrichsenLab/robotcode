@@ -966,22 +966,12 @@ void MyTrial::control() {
 			gs.line[i] = "";
 		} // clear screen
 
-		state = WAIT_TR;
+		gTimer.reset(1);					//time for whole trial
+		gTimer.reset(2);					//time for events in the trial
+
+		state = START_FIX;
 		break;
 
-	case WAIT_TR:
-		if (gCounter.readTR() > 0 && gCounter.readTotTime() >= startTime) {
-			startTimeReal = gCounter.readTotTime();
-			startTRReal = gCounter.readTR();
-			startTRtime = gCounter.readTime();
-
-			//dataman.startRecording(); // see around line #660
-			gTimer.reset(1);					//time for whole trial
-			gTimer.reset(2);					//time for events in the trial			
-
-			state = START_FIX;
-		}
-		break;
 
 	case START_FIX: //3 as appears in mov
 		// check for time out

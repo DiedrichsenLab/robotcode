@@ -32,22 +32,22 @@ using namespace std;
 // Enumeration of Trial State 
 ///////////////////////////////////////////////////////////////
 enum TrialState {
-	WAIT_TRIAL,			// 1
-	START_TRIAL,		// 2
-	WAIT_TR,
+	WAIT_TRIAL,			// 0
+	START_TRIAL,		// 1
+
 	//____________________Neda
-	START_FIX,	    	// 3 wait for eye to fixate at the begining of the seq
+	START_FIX,	    	// 2 wait for eye to fixate at the begining of the seq
 	//____________________end
-	//WAIT_ALLRELEASE,	// 4
-	WAIT_GOCUE,		// 5
-	WAIT_PRESS,			// 6
-	WAIT_END_RELEASE,		// 7
-	//WAIT_FEEDBACK,		// 8
-	//END_FIX,            // 9      
-	WAIT_ITI,			// 10
+	//WAIT_ALLRELEASE,	// -
+	WAIT_GOCUE,		// 3
+	WAIT_PRESS,			// 4
+	WAIT_END_RELEASE,		// 5
+	//WAIT_FEEDBACK,		// -
+	//END_FIX,            // -      
+	WAIT_ITI,			// 6
 	//____________________Neda	
-	END_TRIAL,			// 11 wait for eye to fixate at the begining of the seq
-	//CALIB        		// 12 only used for calibration
+	END_TRIAL,			// 7 
+	//CALIB        		// -
 	//____________________end
 };
 

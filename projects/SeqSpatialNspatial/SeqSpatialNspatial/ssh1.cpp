@@ -385,7 +385,7 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 	}
 	// Added by Skim
 	else if (arguments[0] == "krun" || arguments[0] == "KRUN") {
-		if (arguments[1][0] != arguments[2][13]) { //file name shold be "ssh_sx_by.tgt", x and y seqType, blocknumber
+		if (arguments[1][0] != arguments[2][8]) { //file name shold be "ssh_sx_by.tgt", x and y seqType, blocknumber
 			tDisp.print("Use the same block number shown in tgt file");
 		}
 		else if (numArgs != 3) {

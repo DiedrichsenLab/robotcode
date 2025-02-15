@@ -1199,9 +1199,3 @@ void GraphicState::reset(void) {
 		line[i] = "";
 	}
 }
-
-
-
-
-
-

@@ -103,16 +103,19 @@ double timeThreshold[4] = { 800,1100,1500,6000 }; ///< Double and triple chunk t
 double timeThresholdSuper[4] = { 320,560,740,5000 }; ///< Time threshold for super points
 #define FEEDBACKTIME 1500    // time for which the points of the trial is displayed at the end of a trial
 // Neda increased feedback time so that the subject has time to blink
-string FINGERSOUND[6] = { "A.wav", "C.wav", "D.wav", "E.wav", "G.wav" };
-//string TASKSOUNDS[5] = { "../../util/wav/smb_kick.wav",
-//"../../util/wav/smb_bump.wav",
-//"../../util/wav/smb_1-up.wav",
-//"../../util/wav/smb_coin.wav",
-//"../../util/wav/perc2.wav" };
 
-string TASKSOUNDS[2] = { "wav/chord.wav",
-"wav/smb_coin.wav"
+string TASKSOUNDS[8] = {
+	"C:/robotcode/util/wav/ding.wav",			// 0
+		"C:/robotcode/util/wav/smb_coin.wav",		// 1
+		"C:/robotcode/util/wav/chimes.wav",		// 2
+		"C:/robotcode/util/wav/smb_kick.wav",		// 3	
+		"C:/robotcode/util/wav/bump.wav",		// 4
+		"C:/robotcode/util/wav/chord.wav",		// 5
+		"C:/robotcode/util/wav/smb_pipe.wav",		// 6
+		"C:/robotcode/util/wav/error.wav"		// 7
 };
+
+
 
 char TEXT[5] = { '1','2','3','4','5' };
 #define CUE_SEQ 6
@@ -152,15 +155,15 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 
 	///__________________________________________Neda - End
 	gThisInst = hThisInst;
-	// gExp = new MyExperiment("SeqSpatialVis", "ssh_vis", "C:/data/SeqSpatial/ssh_vis");
-	gExp = new MyExperiment("SeqSpat", "_", "C:/data/SeqSpatial_fMRI/ssh");
+	gExp = new MyExperiment("SeqSpat", "_", "C:/data/SeqSpatialNspatial/ssh");
 
 	//gExp->redirectIOToConsole();
 
-	tDisp.init(gThisInst, 100, 0, 400, 20, 5, 2, &(::parseCommand));  // the white interactive window
+	tDisp.init(gThisInst, 0, 0, 400, 20, 9, 2, &(::parseCommand)); // the white interactive window
+
 	tDisp.setText("Subj:", 0, 0);
 
-	gScreen.init(gThisInst, 1280, 0, 1024, 768, &(::updateGraphics)); // the black feedback window
+	gScreen.init(gThisInst, 1920, 0, 1680, 1050, &(::updateGraphics)); ///< Display for subject
 	gScreen.setCenter(Vector2D(0, 0)); // In cm //0,2
 	gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE)); // cm/pixel
 
@@ -177,7 +180,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	//gBox[0].init(BOX_LEFT,"c:/robot/calib/flatbox2_lowforce_LEFT_03-Mar-2017.txt");
 	//gBox[1].init(BOX_RIGHT,"c:/robot/calib/flatbox2_lowforce_RIGHT_06-Jul-2017.txt");
 
-	gBox[1].init(BOX_RIGHT, "c:/robotcode/calib/Flatbox1_highforce_RIGHT_31-July-2017.txt");
+	gBox[1].init(BOX_RIGHT, "c:/robotcode/calib/Flatbox3_lowforce_RIGHT_22_Aug_2024.txt");
 
 
 	gBox[0].filterconst = 0.8;
@@ -269,15 +272,7 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 		tDisp.unlock();
 	}
 
-	//else if (arguments[0] == "diagnostics") {
-	//	if (numArgs != 2) {
-	//		tDisp.print("USAGE: diagnostics on->1 off->0");
-	//	}
-	//	else {
-	//		sscanf(arguments[1].c_str(), "%f", &arg[0]);
-	//		gs.showDiagnostics = arg[0];
-	//	}
-	//}
+
 	// fMRI experiment, SKim
 	else if (arguments[0] == "TR" || arguments[0] == "tr") {
 		if (numArgs != 2) {

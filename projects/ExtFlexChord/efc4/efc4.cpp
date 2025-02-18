@@ -28,6 +28,8 @@ bool gTimerFlagFirst = 0;
 bool startTriggerEMG = 0; // Ali added this: experimental - under construction
 float emgTrigVolt = 2;	// Ali added this: experimental - under construction
 
+bool chordStarted = 0;
+
 FixCross fixationCross;
 
 ForceCursor forceCursor[5];
@@ -505,6 +507,7 @@ void MyBlock::giveFeedback() {
 	gs.showFxCross = 0;
 	gs.showForces = 0;
 	double MD;
+	int max_holdTime;
 	int i, j, n = 0;
 	MyTrial* tpnr;
 	double medianET;
@@ -521,8 +524,11 @@ void MyBlock::giveFeedback() {
 		tpnr = (MyTrial*)trialVec.at(i);
 		if (tpnr->trialCorr == 1) { //if trial was correct
 			vecET[n] = tpnr->ET;
+			max_holdTime = std::round(tpnr->max_holdTime / 2); // take max_holdTime in samples
 
 			vector<vector<double>> X = DataRecord::X[i];
+
+			X.resize(X.size() - max_holdTime); //remove holding time from X
 
 			// Compute MD using calc_md()
 			MD = calc_md(X).first;
@@ -576,11 +582,11 @@ void MyBlock::giveFeedback() {
 	gs.lineColor[1] = 1;
 
 	if (n > 2) {
-		sprintf(buffer, "Median execution time = %.2f N", medianET);
+		sprintf(buffer, "Median Execution Time = %.2f s", medianET);
 		gs.line[2] = buffer;
 		gs.lineColor[2] = 1;
 
-		sprintf(buffer, "Finger synchrony index = %.2f N", 1 / medianMD);
+		sprintf(buffer, "Finger Synchrony = %.2f 1/N", 1 / medianMD);
 		gs.line[3] = buffer;
 		gs.lineColor[3] = 1;
 	}
@@ -741,12 +747,12 @@ void MyTrial::updateTextDisplay() {
 	tDisp.setText(buffer, 3, 0);
 
 	if (state == WAIT_EXEC || state == GIVE_FEEDBACK) {
-		sprintf(buffer, "State : %d   Trial: %d    Hold time: %d    Max hold time: %d", state, gExp->theBlock->trialNum, holdTime, max_holdTime);
+		sprintf(buffer, "State : %d   Trial: %d    Hold time: %d    Max hold time: %d, trialPoint: %d, ET: %4.2f", state, gExp->theBlock->trialNum, holdTime, max_holdTime, trialPoint, ET);
 		tDisp.setText(buffer, 4, 0);
 	}
 
 	else {
-		sprintf(buffer, "State : %d   Trial: %d    Hold time: %d    Max hold time: %d", state, gExp->theBlock->trialNum, holdTime, max_holdTime);
+		sprintf(buffer, "State : %d   Trial: %d    Hold time: %d    Max hold time: %d, trialPoint: %d, ET: %4.2f", state, gExp->theBlock->trialNum, holdTime, max_holdTime, trialPoint, ET);
 		tDisp.setText(buffer, 4, 0);
 	}
 	
@@ -903,40 +909,25 @@ void MyTrial::updateGraphics(int what) {
 	if (gs.showFxCross == 1) { // show lines
 
 		if (gs.rewardTrial == 1 && state == GIVE_FEEDBACK) {
-		//	gScreen.setColor(Screen::blue);
-		//	gScreen.drawLine(-CROSSW / 2, VERT_SHIFT, CROSSW / 2, VERT_SHIFT);
-		//	gScreen.drawLine(0, VERT_SHIFT - CROSSW / 2, 0, VERT_SHIFT + CROSSW / 2);
 			fixationCross.setColor(SCR_GREEN);
-		
 		}
-
 		else if (gs.rewardTrial == 0 && state == GIVE_FEEDBACK) {
-			//	gScreen.setColor(Screen::blue);
-			//	gScreen.drawLine(-CROSSW / 2, VERT_SHIFT, CROSSW / 2, VERT_SHIFT);
-			//	gScreen.drawLine(0, VERT_SHIFT - CROSSW / 2, 0, VERT_SHIFT + CROSSW / 2);
 			fixationCross.setColor(SCR_RED);
 
 		}
-		//	
 		else {
 			fixationCross.setColor(SCR_WHITE);
-		//	gScreen.setColor(Screen::red);
-		//	gScreen.drawLine(-CROSSW / 2, VERT_SHIFT, CROSSW / 2, VERT_SHIFT);
-		//	gScreen.drawLine(0, VERT_SHIFT - CROSSW / 2, 0, VERT_SHIFT + CROSSW / 2);
 		}
-
 		fixationCross.draw();
-
 	}
 
 	if (gs.showForces) {
 		for (i = 0; i < 5; i++) {
 			diffForce[i] = fGain[i] * (gBox[0].getForce(i) - gBox[1].getForce(i));
 		}
-		// Finger forces (difference -> force = f_ext - f_flex)
+
 		for (i = 0; i < 5; i++) {
-			//gScreen.setColor(Screen::red);
-			//gScreen.drawLine(((i * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) + FINGER_SPACING, VERT_SHIFT + forceGain * diffForce[i], (((i + 1) * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) - FINGER_SPACING, VERT_SHIFT + forceGain * diffForce[i]);
+
 			forceCursor[i].position[0] = (((2 * i + 1) * FINGWIDTH) - (FINGWIDTH * N_FINGERS)) / 2.0;;
 			forceCursor[i].position[1] = VERT_SHIFT + forceGain * diffForce[i];
 
@@ -1000,7 +991,7 @@ void MyTrial::updateHaptics() {
 
 	/// record the data at record frequency 
 	if (dataman.isRecording()) {
-		bool x = dataman.record(DataRecord(state, gExp->theBlock->trialNum));
+		bool x = dataman.record(DataRecord(state, gExp->theBlock->trialNum, chordStarted));
 		if (!x) {
 			dataman.stopRecording();
 		}
@@ -1015,8 +1006,6 @@ bool chordErrorFlag = 0;	// flag for checking if the chord was correct or not.
 bool fingerCorrect[5] = { 0,0,0,0,0 };
 bool chordCorrect = 0;
 bool prev_chordCorrect;
-bool chordStarted = 0;
-bool chordReached = 0;
 void MyTrial::control() {
 	int i;
 	double fingerForceTmp;
@@ -1055,13 +1044,12 @@ void MyTrial::control() {
 		gs.showTimer5 = 0;
 		gs.showFxCross = 1;
 		gs.showForces = 1;
-		// gs.showForceBars = 1;
 		gs.boxColor = 5;	// grey baseline box color
-		//gs.planError = 0;
 		gs.chordError = 0;
 		planErrorFlag = 0;	// initialize planErrorFlag variable in the begining of each trial
 		chordErrorFlag = 1;	// initialize chordErrorFlag variable in the begining of each trial
 		startTriggerEMG = 1;	// Ali EMG: starts EMG trigger in the beginning of each trial
+		trialPoint = 0;
 
 		//SetDacVoltage(0, emgTrigVolt);	// Ali EMG - gets ~200us to change digital to analog. Does it interrupt the ADC?
 		SetDIOState(0, 0x0000);
@@ -1130,24 +1118,6 @@ void MyTrial::control() {
 			}
 		}
 
-		
-		// if wait baseline zone was on, the code waits until the subject holds the baseline zone for 500ms and then gives the go cue. 
-		// So in this case, planning error is impossible to happen:
-
-		//if (gTimer[3] >= 500) {	// turn on visual target after 300ms of holding the baseline
-		//	gs.showTarget = 1;	// show visual target	
-		//}
-		//else {
-		//	gs.showTarget = 0;
-		//}
-
-		//if (check_baseline_hold == 0) {
-		//	gs.boxColor = 3;	// baseline zone color becomes red
-		//}
-		//else {
-		//	gs.boxColor = 5;	// baseline zone color becomes grey
-		//}
-
 		// if subjects holds the baseline zone for plan time after visual cue was shown go to execution state:
 		if (gTimer[3] >= planTime) {
 			state = WAIT_EXEC;
@@ -1176,13 +1146,11 @@ void MyTrial::control() {
 				if (fingerForceTmp >= (VERT_SHIFT + baseTHhi) || fingerForceTmp <= (VERT_SHIFT - (baseTHhi))) {
 					RT = gTimer[2];
 					chordStarted = 1;
-					chordReached = 0;
 					break;
 				}
 			}
 		}
 		
-
 		// checking state of each finger
 		for (i = 0; i < 5; i++) {
 			tmpChord = chordID[i];	// required state of finger i -> 0:relaxed , 1:extended , 2:flexed -- chordID comes from the target file
@@ -1206,12 +1174,6 @@ void MyTrial::control() {
 		chordCorrect = fingerCorrect[0];
 		for (i = 1; i < 5; i++) {
 			chordCorrect = chordCorrect && fingerCorrect[i];
-		}
-
-		//// resetting timer 5 every time the whole chord is wrong
-		if (chordCorrect == 1) {
-			ET = gTimer[2] - RT;
-			chordReached = 1;
 		}
 
 		// Measure hold time
@@ -1352,7 +1314,7 @@ void MyTrial::control() {
 /////////////////////////////////////////////////////////////////////////////////////
 /// Data Record: creator records the current data from the device 
 /////////////////////////////////////////////////////////////////////////////////////
-DataRecord::DataRecord(int s, int t) {
+DataRecord::DataRecord(int s, int t, bool started) {
 	int i, j;
 	state = s;
 	trialNum = t;
@@ -1378,7 +1340,7 @@ DataRecord::DataRecord(int s, int t) {
 		currentDiffForce[i] = diffForceMov[i];
 	}
 
-	if (state == 4) {
+	if (state == 4 && started) {
 		X[trialNum].push_back(currentDiffForce);
 	}
 	
@@ -1423,21 +1385,24 @@ GraphicState::GraphicState() {
 
 	// points in block 
 	lineXpos[0] = 0;
-	lineYpos[0] = 6;			// feedback 	
+	lineYpos[0] = 2.4;			// feedback 	
 	lineColor[0] = 1;			// white 
 	size[0] = 5;
 
-	// RT 
 	lineXpos[1] = 0;
-	lineYpos[1] = 5;			// feedback 	
+	lineYpos[1] = .8;			// feedback 	
 	lineColor[1] = 1;			// white 
 	size[1] = 5;
 
-	// total points 
 	lineXpos[2] = 0;
-	lineYpos[2] = 4;			// block points	
+	lineYpos[2] = -.8;			// block points	
 	lineColor[2] = 1;			// white 
 	size[2] = 5;
+
+	lineXpos[3] = 0;
+	lineYpos[3] = -2.4;			// block points	
+	lineColor[3] = 1;			// white 
+	size[3] = 5;
 
 	showLines = true;
 	showBoxes = 0;

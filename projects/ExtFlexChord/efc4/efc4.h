@@ -93,7 +93,7 @@ public:
 class DataRecord {
 public:
 	DataRecord() {}
-	DataRecord(int s, int t);
+	DataRecord(int s, int t, bool started);
 	void write(ostream& out);
 	void calc_MD();
 public:
@@ -167,7 +167,7 @@ private:
 	int trialErrorType;						///< 0: no error , 1: movement during planning , 2: could not execute
 	double RT;								///< Reaction time: time from go cue to full execution of chord
 	double MD;
-	double ET;
+	double ET=0;
 	int trialPoint;							///< point received in each trial
 	int points;
 

@@ -20,6 +20,8 @@
 //#include "SDL.h" // SDL library
 //#include "SDL_mixer.h" // Necessary for playing multiple sounds (added by a-yokoi)
 
+#include <map>
+
 using namespace std;
 
 #define Pi 3.141592654
@@ -91,8 +93,9 @@ public:
 class DataRecord {
 public:
 	DataRecord() {}
-	DataRecord(int s, int t);
+	DataRecord(int s, int t, bool started);
 	void write(ostream& out);
+	void calc_MD();
 public:
 	int state;
 	int trialNum;
@@ -105,8 +108,11 @@ public:
 	int		TR;
 	int		currentSlice;
 	double	TRtime;
+	static map<int, vector<vector<double>>> X;
 
 };
+
+map<int, vector<vector<double>>> DataRecord::X;
 
 ///////////////////////////////////////////////////////////////
 // MyBlock
@@ -161,7 +167,7 @@ private:
 	int trialErrorType;						///< 0: no error , 1: movement during planning , 2: could not execute
 	double RT;								///< Reaction time: time from go cue to full execution of chord
 	double MD;
-	double ET;
+	double ET=0;
 	int trialPoint;							///< point received in each trial
 	int points;
 

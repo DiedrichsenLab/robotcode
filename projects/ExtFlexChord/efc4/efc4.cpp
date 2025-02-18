@@ -28,6 +28,8 @@ bool gTimerFlagFirst = 0;
 bool startTriggerEMG = 0; // Ali added this: experimental - under construction
 float emgTrigVolt = 2;	// Ali added this: experimental - under construction
 
+bool chordStarted = 0;
+
 FixCross fixationCross;
 
 ForceCursor forceCursor[5];
@@ -113,85 +115,6 @@ double gTargetWidth = 0.25;
 double gErrors[2][5] = { {0,0,0,0,0},{0,0,0,0,0} };
 //double execAccTime = 600;
 
-////////////////////////
-////// Stuff to calculate MD online 
-///////////////
-//
-//// Function to calculate the Euclidean norm of a vector
-//double calculate_norm(const std::vector<double>& vec) {
-//	double sum_of_squares = 0.0;
-//	for (double v : vec) {
-//		sum_of_squares += v * v;
-//	}
-//	return std::sqrt(sum_of_squares);
-//}
-//
-//// Function to perform dot product between two vectors
-//double dot_product(const std::vector<double>& a, const std::vector<double>& b) {
-//	double result = 0.0;
-//	for (size_t i = 0; i < a.size(); ++i) {
-//		result += a[i] * b[i];
-//	}
-//	return result;
-//}
-//
-//// Function to scale a vector by a scalar value
-//std::vector<double> scale_vector(const std::vector<double>& vec, double scalar) {
-//	std::vector<double> result(vec.size());
-//	for (size_t i = 0; i < vec.size(); ++i) {
-//		result[i] = vec[i] * scalar;
-//	}
-//	return result;
-//}
-//
-//// Function to subtract two vectors
-//std::vector<double> subtract_vectors(const std::vector<double>& a, const std::vector<double>& b) {
-//	std::vector<double> result(a.size());
-//	for (size_t i = 0; i < a.size(); ++i) {
-//		result[i] = a[i] - b[i];
-//	}
-//	return result;
-//}
-//
-//// Function to calculate MD and distance values
-//std::pair<double, std::vector<double>> calc_md(const std::vector<std::vector<double>>& X) {
-//	size_t N = X.size();
-//	size_t m = X[0].size();
-//
-//	// Initial and final vectors
-//	std::vector<double> F1 = X[0];
-//	std::vector<double> FN = subtract_vectors(X[N - 1], F1);  // Shift the end point
-//
-//	// Shift all points
-//	std::vector<std::vector<double>> shifted_matrix(N, std::vector<double>(m));
-//	for (size_t i = 0; i < N; ++i) {
-//		shifted_matrix[i] = subtract_vectors(X[i], F1);
-//	}
-//
-//	std::vector<double> d;
-//
-//	// Calculate distances
-//	for (size_t t = 1; t < N - 1; ++t) {
-//		std::vector<double> Ft = shifted_matrix[t];
-//
-//		// Project Ft onto the ideal straight line
-//		double proj_scalar = dot_product(Ft, FN) / dot_product(FN, FN);
-//		std::vector<double> proj = scale_vector(FN, proj_scalar);
-//
-//		// Calculate the Euclidean distance
-//		d.push_back(calculate_norm(subtract_vectors(Ft, proj)));
-//	}
-//
-//	// Calculate MD
-//	double MD = std::accumulate(d.begin(), d.end(), 0.0) / d.size();
-//
-//	return { MD, d };
-//}
-//
-///////////////////////////////////////////////////////
-//////////////////// end of MD online /////////////////
-///////////////////////////////////////////////////////
-
 
 ///////////
 ////////////////////////////////////////////////////
@@ -259,6 +182,87 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 
 	return 0;
 }
+
+//////////////////////
+//// Stuff to calculate MD online 
+/////////////
+
+// Function to calculate the Euclidean norm of a vector
+double calculate_norm(const std::vector<double>& vec) {
+	double sum_of_squares = 0.0;
+	for (double v : vec) {
+		sum_of_squares += v * v;
+	}
+	return std::sqrt(sum_of_squares);
+}
+
+// Function to perform dot product between two vectors
+double dot_product(const std::vector<double>& a, const std::vector<double>& b) {
+	double result = 0.0;
+	for (size_t i = 0; i < a.size(); ++i) {
+		result += a[i] * b[i];
+	}
+	return result;
+}
+
+// Function to scale a vector by a scalar value
+std::vector<double> scale_vector(const std::vector<double>& vec, double scalar) {
+	std::vector<double> result(vec.size());
+	for (size_t i = 0; i < vec.size(); ++i) {
+		result[i] = vec[i] * scalar;
+	}
+	return result;
+}
+
+// Function to subtract two vectors
+std::vector<double> subtract_vectors(const std::vector<double>& a, const std::vector<double>& b) {
+	std::vector<double> result(a.size());
+	for (size_t i = 0; i < a.size(); ++i) {
+		result[i] = a[i] - b[i];
+	}
+	return result;
+}
+
+// Function to calculate MD and distance values
+std::pair<double, std::vector<double>> calc_md(const std::vector<std::vector<double>>& X) {
+	size_t N = X.size();
+	size_t m = X[0].size();
+
+	// Initial and final vectors
+	std::vector<double> F1 = X[0];
+	std::vector<double> FN = subtract_vectors(X[N - 1], F1);  // Shift the end point
+
+	// Shift all points
+	std::vector<std::vector<double>> shifted_matrix(N, std::vector<double>(m));
+	for (size_t i = 0; i < N; ++i) {
+		shifted_matrix[i] = subtract_vectors(X[i], F1);
+	}
+
+	std::vector<double> d;
+
+	// Calculate distances
+	for (size_t t = 1; t < N - 1; ++t) {
+		std::vector<double> Ft = shifted_matrix[t];
+
+		// Project Ft onto the ideal straight line
+		double proj_scalar = dot_product(Ft, FN) / dot_product(FN, FN);
+		std::vector<double> proj = scale_vector(FN, proj_scalar);
+
+		// Calculate the Euclidean distance
+		d.push_back(calculate_norm(subtract_vectors(Ft, proj)));
+	}
+
+	// Calculate MD
+	double MD = std::accumulate(d.begin(), d.end(), 0.0) / d.size();
+
+	return { MD, d };
+}
+//
+///////////////////////////////////////////////////////
+//////////////////// end of MD online /////////////////
+///////////////////////////////////////////////////////
+
+
 
 ///////////////////////////////////////////////////////////////
 ///	MyExperiment Class: contains all the additional information on how that specific 
@@ -502,20 +506,35 @@ void MyBlock::giveFeedback() {
 	gs.showLines = 0;
 	gs.showFxCross = 0;
 	gs.showForces = 0;
+	double MD;
+	int max_holdTime;
 	int i, j, n = 0;
 	MyTrial* tpnr;
+	double medianET;
 	double medianMD;
-	double vecMD[2000]; 
+	double vecET[2000];
+	double vecMD[2000];
 	blockFeedbackFlag = 1;
 
 	// putting MD values in an array
 	for (i = 0; i < 2000; i++) {
-		vecMD[i] = 0;
+		vecET[i] = 0;
 	}
 	for (i = 0; i < trialNum; i++) { //check each trial
 		tpnr = (MyTrial*)trialVec.at(i);
 		if (tpnr->trialCorr == 1) { //if trial was correct
-			vecMD[n] = tpnr->MD;
+			vecET[n] = tpnr->ET;
+			max_holdTime = std::round(tpnr->max_holdTime / 2); // take max_holdTime in samples
+
+			vector<vector<double>> X = DataRecord::X[i];
+
+			X.resize(X.size() - max_holdTime); //remove holding time from X
+
+			// Compute MD using calc_md()
+			MD = calc_md(X).first;
+
+			vecMD[n] = MD;
+
 			n++;	//count correct trials
 		}
 	}
@@ -525,6 +544,11 @@ void MyBlock::giveFeedback() {
 		double dummy;
 		for (i = 0; i < n - 1; i++) {
 			for (j = i + 1; j < n; j++) {
+				if (vecET[i] > vecET[j]) {
+					dummy = vecET[i];
+					vecET[i] = vecET[j];
+					vecET[j] = dummy;
+				}
 				if (vecMD[i] > vecMD[j]) {
 					dummy = vecMD[i];
 					vecMD[i] = vecMD[j];
@@ -534,10 +558,12 @@ void MyBlock::giveFeedback() {
 		}
 		if (n % 2 == 0) {
 			i = n / 2;
+			medianET = ((vecET[i - 1] + vecET[i]) / 2);
 			medianMD = ((vecMD[i - 1] + vecMD[i]) / 2);
 		}
 		else {
 			i = (n - 1) / 2;
+			medianET = (vecET[i]);
 			medianMD = (vecMD[i]);
 		}
 	}
@@ -556,9 +582,13 @@ void MyBlock::giveFeedback() {
 	gs.lineColor[1] = 1;
 
 	if (n > 2) {
-		sprintf(buffer, "Median MD = %.2f N", medianMD);
+		sprintf(buffer, "Median Execution Time = %.2f s", medianET);
 		gs.line[2] = buffer;
 		gs.lineColor[2] = 1;
+
+		sprintf(buffer, "Finger Synchrony = %.2f 1/N", 1 / medianMD);
+		gs.line[3] = buffer;
+		gs.lineColor[3] = 1;
 	}
 }
 
@@ -717,12 +747,12 @@ void MyTrial::updateTextDisplay() {
 	tDisp.setText(buffer, 3, 0);
 
 	if (state == WAIT_EXEC || state == GIVE_FEEDBACK) {
-		sprintf(buffer, "State : %d   Trial: %d    Hold time: %d    Max hold time: %d", state, gExp->theBlock->trialNum, holdTime, max_holdTime);
+		sprintf(buffer, "State : %d   Trial: %d    Hold time: %d    Max hold time: %d, trialPoint: %d, ET: %4.2f", state, gExp->theBlock->trialNum, holdTime, max_holdTime, trialPoint, ET);
 		tDisp.setText(buffer, 4, 0);
 	}
 
 	else {
-		sprintf(buffer, "State : %d   Trial: %d    Hold time: %d    Max hold time: %d", state, gExp->theBlock->trialNum, holdTime, max_holdTime);
+		sprintf(buffer, "State : %d   Trial: %d    Hold time: %d    Max hold time: %d, trialPoint: %d, ET: %4.2f", state, gExp->theBlock->trialNum, holdTime, max_holdTime, trialPoint, ET);
 		tDisp.setText(buffer, 4, 0);
 	}
 	
@@ -866,12 +896,10 @@ void MyTrial::updateGraphics(int what) {
 
 	if (gs.showFeedback) {
 		gScreen.setColor(Screen::white);
-		if (gs.rewardTrial == 3)
-			gScreen.print("Point: +3", 0, 7, 4);
-		else if (gs.rewardTrial == 1)
-			gScreen.print("Point: +1", 0, 7, 4);
-		else if (gs.rewardTrial == 0)
-			gScreen.print("Point: 0", 0, 7, 4);
+		if (gs.rewardTrial == 1)
+			sprintf(buffer, "+1, execution time = %.2fs", ET);
+			gs.line[2] = buffer;
+
 		//if (gs.planError)
 			//gScreen.print("-Moved during planning-", 0, 3, 7);
 		//if (gs.chordError)
@@ -881,40 +909,25 @@ void MyTrial::updateGraphics(int what) {
 	if (gs.showFxCross == 1) { // show lines
 
 		if (gs.rewardTrial == 1 && state == GIVE_FEEDBACK) {
-		//	gScreen.setColor(Screen::blue);
-		//	gScreen.drawLine(-CROSSW / 2, VERT_SHIFT, CROSSW / 2, VERT_SHIFT);
-		//	gScreen.drawLine(0, VERT_SHIFT - CROSSW / 2, 0, VERT_SHIFT + CROSSW / 2);
 			fixationCross.setColor(SCR_GREEN);
-		
 		}
-
 		else if (gs.rewardTrial == 0 && state == GIVE_FEEDBACK) {
-			//	gScreen.setColor(Screen::blue);
-			//	gScreen.drawLine(-CROSSW / 2, VERT_SHIFT, CROSSW / 2, VERT_SHIFT);
-			//	gScreen.drawLine(0, VERT_SHIFT - CROSSW / 2, 0, VERT_SHIFT + CROSSW / 2);
 			fixationCross.setColor(SCR_RED);
 
 		}
-		//	
 		else {
 			fixationCross.setColor(SCR_WHITE);
-		//	gScreen.setColor(Screen::red);
-		//	gScreen.drawLine(-CROSSW / 2, VERT_SHIFT, CROSSW / 2, VERT_SHIFT);
-		//	gScreen.drawLine(0, VERT_SHIFT - CROSSW / 2, 0, VERT_SHIFT + CROSSW / 2);
 		}
-
 		fixationCross.draw();
-
 	}
 
 	if (gs.showForces) {
 		for (i = 0; i < 5; i++) {
 			diffForce[i] = fGain[i] * (gBox[0].getForce(i) - gBox[1].getForce(i));
 		}
-		// Finger forces (difference -> force = f_ext - f_flex)
+
 		for (i = 0; i < 5; i++) {
-			//gScreen.setColor(Screen::red);
-			//gScreen.drawLine(((i * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) + FINGER_SPACING, VERT_SHIFT + forceGain * diffForce[i], (((i + 1) * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) - FINGER_SPACING, VERT_SHIFT + forceGain * diffForce[i]);
+
 			forceCursor[i].position[0] = (((2 * i + 1) * FINGWIDTH) - (FINGWIDTH * N_FINGERS)) / 2.0;;
 			forceCursor[i].position[1] = VERT_SHIFT + forceGain * diffForce[i];
 
@@ -978,7 +991,7 @@ void MyTrial::updateHaptics() {
 
 	/// record the data at record frequency 
 	if (dataman.isRecording()) {
-		bool x = dataman.record(DataRecord(state, gExp->theBlock->trialNum));
+		bool x = dataman.record(DataRecord(state, gExp->theBlock->trialNum, chordStarted));
 		if (!x) {
 			dataman.stopRecording();
 		}
@@ -993,7 +1006,6 @@ bool chordErrorFlag = 0;	// flag for checking if the chord was correct or not.
 bool fingerCorrect[5] = { 0,0,0,0,0 };
 bool chordCorrect = 0;
 bool prev_chordCorrect;
-bool chordStarted = 0;
 void MyTrial::control() {
 	int i;
 	double fingerForceTmp;
@@ -1032,13 +1044,12 @@ void MyTrial::control() {
 		gs.showTimer5 = 0;
 		gs.showFxCross = 1;
 		gs.showForces = 1;
-		// gs.showForceBars = 1;
 		gs.boxColor = 5;	// grey baseline box color
-		//gs.planError = 0;
 		gs.chordError = 0;
 		planErrorFlag = 0;	// initialize planErrorFlag variable in the begining of each trial
 		chordErrorFlag = 1;	// initialize chordErrorFlag variable in the begining of each trial
 		startTriggerEMG = 1;	// Ali EMG: starts EMG trigger in the beginning of each trial
+		trialPoint = 0;
 
 		//SetDacVoltage(0, emgTrigVolt);	// Ali EMG - gets ~200us to change digital to analog. Does it interrupt the ADC?
 		SetDIOState(0, 0x0000);
@@ -1096,7 +1107,7 @@ void MyTrial::control() {
 		gs.showFxCross = 1;
 		gs.showForces = 1;
 		gs.showLines = 1;
-		gs.showTarget = 0;
+		gs.showTarget = 1;
 
 		for (i = 0; i < 5; i++) {	// RT is the time of the first finger outside the baseline area
 			fingerForceTmp = VERT_SHIFT + forceGain * fGain[i] * (gBox[0].getForce(i) - gBox[1].getForce(i));
@@ -1106,24 +1117,6 @@ void MyTrial::control() {
 				break;
 			}
 		}
-
-		
-		// if wait baseline zone was on, the code waits until the subject holds the baseline zone for 500ms and then gives the go cue. 
-		// So in this case, planning error is impossible to happen:
-
-		//if (gTimer[3] >= 500) {	// turn on visual target after 300ms of holding the baseline
-		//	gs.showTarget = 1;	// show visual target	
-		//}
-		//else {
-		//	gs.showTarget = 0;
-		//}
-
-		//if (check_baseline_hold == 0) {
-		//	gs.boxColor = 3;	// baseline zone color becomes red
-		//}
-		//else {
-		//	gs.boxColor = 5;	// baseline zone color becomes grey
-		//}
 
 		// if subjects holds the baseline zone for plan time after visual cue was shown go to execution state:
 		if (gTimer[3] >= planTime) {
@@ -1157,12 +1150,7 @@ void MyTrial::control() {
 				}
 			}
 		}
-
-		if (chordStarted == 1) {
-			X.push_back(fingerForceTmp5);
-		}
 		
-
 		// checking state of each finger
 		for (i = 0; i < 5; i++) {
 			tmpChord = chordID[i];	// required state of finger i -> 0:relaxed , 1:extended , 2:flexed -- chordID comes from the target file
@@ -1187,12 +1175,6 @@ void MyTrial::control() {
 		for (i = 1; i < 5; i++) {
 			chordCorrect = chordCorrect && fingerCorrect[i];
 		}
-
-		////// resetting timer 5 every time the whole chord is wrong
-		//if (chordCorrect == 1 && ) {
-		//	ET = gTimer[2] - RT;
-		//	chordReached = 1;
-		//}
 
 		// Measure hold time
 		if (chordCorrect == 1 && prev_chordCorrect == 0) {
@@ -1219,8 +1201,6 @@ void MyTrial::control() {
 				//auto result = calc_md(X);
 				//MD = result.first;
 				MD = 0;
-				RT = 0;
-				ET = 0;
 
 				chordErrorFlag = 0;
 				trialPoint = 1;
@@ -1276,7 +1256,7 @@ void MyTrial::control() {
 		gs.showTarget = 0;			// no visual targets
 		gs.showTimer5 = 0;
 		gs.showFeedback = 0;		// showing feedback (refer to MyTrial::updateGraphics() for details)
-		gs.rewardTrial = trialPoint;	// set reward to zero
+		gs.rewardTrial = trialPoint;	
 		gs.showFxCross = 1;
 		gs.showForces = 1;
 				
@@ -1334,7 +1314,7 @@ void MyTrial::control() {
 /////////////////////////////////////////////////////////////////////////////////////
 /// Data Record: creator records the current data from the device 
 /////////////////////////////////////////////////////////////////////////////////////
-DataRecord::DataRecord(int s, int t) {
+DataRecord::DataRecord(int s, int t, bool started) {
 	int i, j;
 	state = s;
 	trialNum = t;
@@ -1351,10 +1331,19 @@ DataRecord::DataRecord(int s, int t) {
 			fforce[i][j] = gBox[i].getForce(j);
 		}
 	}
+
+	vector<double> currentDiffForce(5);
 	for (i = 0; i < 5; i++) {
 		diffForceMov[i] = (gBox[0].getForce(i) - gBox[1].getForce(i));	// diffForceMov = f_ext - f_flex
 		visualizedForce[i] = VERT_SHIFT + forceGain * (gBox[0].getForce(i) - gBox[1].getForce(i));	// The position of the force bars that are shown on the screen
+
+		currentDiffForce[i] = diffForceMov[i];
 	}
+
+	if (state == 4 && started) {
+		X[trialNum].push_back(currentDiffForce);
+	}
+	
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -1385,6 +1374,7 @@ void DataRecord::write(ostream& out) {
 	out << endl;
 }
 
+
 /////////////////////////////////////////////////////////////////////////////////////
 ///	Graphic State
 /// Collection of current variables relating to what's on the screen 
@@ -1395,21 +1385,24 @@ GraphicState::GraphicState() {
 
 	// points in block 
 	lineXpos[0] = 0;
-	lineYpos[0] = 6;			// feedback 	
+	lineYpos[0] = 2.4;			// feedback 	
 	lineColor[0] = 1;			// white 
 	size[0] = 5;
 
-	// RT 
 	lineXpos[1] = 0;
-	lineYpos[1] = 5;			// feedback 	
+	lineYpos[1] = .8;			// feedback 	
 	lineColor[1] = 1;			// white 
 	size[1] = 5;
 
-	// total points 
 	lineXpos[2] = 0;
-	lineYpos[2] = 4;			// block points	
+	lineYpos[2] = -.8;			// block points	
 	lineColor[2] = 1;			// white 
 	size[2] = 5;
+
+	lineXpos[3] = 0;
+	lineYpos[3] = -2.4;			// block points	
+	lineColor[3] = 1;			// white 
+	size[3] = 5;
 
 	showLines = true;
 	showBoxes = 0;

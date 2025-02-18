@@ -797,12 +797,9 @@ void MyTrial::updateGraphics(int what) {
 		if (state == WAIT_END_RELEASE || state == WAIT_GOCUE) {
 			fixationCross.setColor(SCR_WHITE);
 			fixationCross.draw();
-			//	gScreen.setColor(1);  // White signal, wait for "GO" signal and all fingers are released
-		//	gScreen.printChar('+', 0, -3, SIZE_CUE);
 		}
 		else {
 			if (gTimer[2] < 1000) {
-				//				gScreen.setColor(3); // Green signal
 				fixationCross.setColor(SCR_GREEN);
 			}
 			else {
@@ -816,7 +813,7 @@ void MyTrial::updateGraphics(int what) {
 			// Draw horizon SKim
 			gScreen.setColor(1);
 
-			if (seqType == 1) {  // Visual, vertical
+			if (seqType == 1) {  // Spatially ordered - Spatial cues // AP added
 				//gHorizon.position = Vector2D(0, 3.5 + Horizon);
 				//gHorizon.size = Vector2D(10, 16 - 2 * Horizon);
 				//gHorizon.draw();
@@ -837,7 +834,7 @@ void MyTrial::updateGraphics(int what) {
 				}
 			}
 
-			else if (seqType == 0) { // Vertical, Numbers
+			else if (seqType == 0) { // Spatially ordered - Numerical cues // AP added
 				//gHorizon.position = Vector2D(0, 3.5 + Horizon);
 				//gHorizon.size = Vector2D(10, 16 - 2 * Horizon);
 				//gHorizon.draw();
@@ -850,23 +847,12 @@ void MyTrial::updateGraphics(int what) {
 				}
 			}
 
+
+
+
 		}
 	}
 }
-
-
-
-//else {
-//	for (i = 0; i < seqLength; i++) {  // Edited by SKim
-//		if (gs.cuePress[i] > 0) {
-//			gScreen.setColor(1);
-//			gScreen.printChar(gs.cuePress[i], (i - 4) * WIDTH_CHAR_CUE, CUE_PRESS, SIZE_CUE);
-//			// the number 6.5 is usually the seqLength/2 so that the sequence in centered
-//		}
-//	}
-//}
-
-
 
 
 //////////////////////////////////////////////////////////////////////
@@ -977,14 +963,13 @@ void MyTrial::control() {
 		// check for time out
 		if (gTimer[1] > (PrepTime + MovTimeLim)) {
 			gs.clearCues();
-			//		state = END_TRIAL;
 			state = WAIT_ITI;
-
 		}
 
 		if (released == 5) { // all should be released to start trial //AP added
 			dataman.startRecording();
 			gTimer.reset(2); // timer for events in the trial //AP added
+			PlaySound("wav/ding.wav", NULL, SND_ASYNC | SND_FILENAME); // first beep
 			gs.clearCues();
 			state = WAIT_GOCUE;
 		}
@@ -994,6 +979,10 @@ void MyTrial::control() {
 		if (gTimer[1] > (PrepTime + MovTimeLim)) {
 			gs.clearCues();
 			state = WAIT_ITI;
+		}
+		// play 4 predicatable beeps for a predictable go cue - these are 2nd to 4th beep //AP added
+		if (gTimer[2] == 500 || gTimer[2] == 1000 || gTimer[2] == 1500) { 
+			PlaySound("wav/ding.wav", NULL, SND_ASYNC | SND_FILENAME);
 		}
 		if (released == 5 && gTimer[2] > PrepTime) { // Wait for PrepTime, preplanning
 			gTimer.reset(2);
@@ -1011,7 +1000,7 @@ void MyTrial::control() {
 			state = WAIT_ITI;
 		}
 
-		if (MovTimeLim) {
+		if (MovTimeLim) { // if movement time passed from go cue, remove the cues from the screen
 			if (gTimer[2] > MovTimeLim) {
 				for (i = 0; i < NUMDISPLAYLINES; i++) {
 					gs.clearCues();
@@ -1026,7 +1015,7 @@ void MyTrial::control() {
 			response[seqCounter] = pressedFinger;
 			pressTime[seqCounter] = gTimer[1];
 			if (seqCounter == 0) {
-				RT = gTimer[2];  // Reaction time for the first press, SKedited
+				RT = gTimer[2];  // Reaction time, time of the first finger press from the go cue //AP added
 			}
 			if (response[seqCounter] == press[seqCounter]) { // if press is correct
 				// PLAY SOUND
@@ -1056,8 +1045,8 @@ void MyTrial::control() {
 		// check for time out
 		if ((released == 5) || (gTimer[1] > (PrepTime + MovTimeLim))) {
 
-			MT = gTimer[1] - pressTime[0]; // Calculate total movement time starting from the first press
-			if (isError > 0) {
+			MT = gTimer[1] - pressTime[0]; // Calculate total movement time starting from the first press - RT is removed from MT //AP added
+			if (isError > 0) { // a trial with at least one wrong finger press //AP added
 				gNumErrors++;
 				gNumFingerErrors += nFingerErrors;
 			}
@@ -1068,8 +1057,6 @@ void MyTrial::control() {
 			}
 			gTimer.reset(2);
 			gs.clearCues();
-			//state = WAIT_FEEDBACK;
-	//		state = END_TRIAL;
 			state = WAIT_ITI;
 		}
 		else {

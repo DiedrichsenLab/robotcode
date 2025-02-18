@@ -756,12 +756,12 @@ void MyTrial::updateGraphics(int what) {
 	// Finger forces
 //	gScreen.printChar('+', 0, -3, SIZE_CUE);
 //	fixationCross.position = gScreen.getCenter();
-	fixationCross.position = Vector2D(0, -3);
-	fixationCross.size = Vector2D(FIXCROSS_SIZE, FIXCROSS_SIZE);
-	fixationCross.setShape(SHAPE_PLUS);
+//	fixationCross.position = Vector2D(0, -3);
+//	fixationCross.size = Vector2D(FIXCROSS_SIZE, FIXCROSS_SIZE);
+//	fixationCross.setShape(SHAPE_PLUS);
 
-	fixationCross.setColor(SCR_WHITE);
-	fixationCross.draw();
+//	fixationCross.setColor(SCR_WHITE);
+//	fixationCross.draw();
 
 	if (gs.showLines == 1) {
 		gScreen.setColor(Screen::white); // defines the color of force lines
@@ -794,20 +794,20 @@ void MyTrial::updateGraphics(int what) {
 	//	gScreen.printChar('+', 0, -3, SIZE_CUE);
 	//}
 	if (state == WAIT_END_RELEASE || state == WAIT_GOCUE || state == WAIT_PRESS) {
-		if (state == WAIT_END_RELEASE || state == WAIT_GOCUE) {
-			fixationCross.setColor(SCR_WHITE);
-			fixationCross.draw();
-		}
-		else {
-			if (gTimer[2] < 1000) {
+
+		// NO FIXATION NEEDED //AP added
+		/*if (state == WAIT_GOCUE || state == START_FIX) {
+			if (gTimer[2] <= 100 || (500 <= gTimer[2] && gTimer[2] <= 600) || (1000 <= gTimer[2] && gTimer[2] <= 1100) || (1500 <= gTimer[2] && gTimer[2] <= 1550)) {
 				fixationCross.setColor(SCR_GREEN);
 			}
 			else {
 				fixationCross.setColor(SCR_WHITE);
 			}
+
 			fixationCross.draw();
-			//			gScreen.printChar('+', 0, -3, SIZE_CUE);
-		}
+
+		} */
+
 
 		if (state == WAIT_GOCUE || state == WAIT_PRESS) {
 			// Draw horizon SKim
@@ -968,7 +968,7 @@ void MyTrial::control() {
 
 		if (released == 5) { // all should be released to start trial //AP added
 			dataman.startRecording();
-			gTimer.reset(2); // timer for events in the trial //AP added
+			gTimer.reset(2); // timer for events in the go cue period //AP added
 			PlaySound("wav/ding.wav", NULL, SND_ASYNC | SND_FILENAME); // first beep
 			gs.clearCues();
 			state = WAIT_GOCUE;
@@ -985,7 +985,7 @@ void MyTrial::control() {
 			PlaySound("wav/ding.wav", NULL, SND_ASYNC | SND_FILENAME);
 		}
 		if (released == 5 && gTimer[2] > PrepTime) { // Wait for PrepTime, preplanning
-			gTimer.reset(2);
+			gTimer.reset(2); // timer for trial events // AP added
 			for (i = 0; i < seqLength; i++) { // show targets on the screen - target onset //AP added
 				gs.cuePress[i] = cueP.at(i);
 			}

@@ -982,35 +982,32 @@ void MyTrial::control() {
 
 		}
 
-		if (released == 5) { //gTimer[2] > 1500 makes sure that the cross is being shown for 3 secs
+		if (released == 5) { // all should be released to start trial //AP added
 			dataman.startRecording();
-			gTimer.reset(2); // time for events in the trial
+			gTimer.reset(2); // timer for events in the trial //AP added
 			gs.clearCues();
-			for (i = 0; i < seqLength; i++) {
-				gs.cuePress[i] = cueP.at(i);
-			}
 			state = WAIT_GOCUE;
 		}
 		break;
-	case WAIT_GOCUE:
+	case WAIT_GOCUE: //4 as appears in mov, wait for go cue to come //AP added
 		// check for time out
 		if (gTimer[1] > (PrepTime + MovTimeLim)) {
 			gs.clearCues();
-			//		state = END_TRIAL;
 			state = WAIT_ITI;
 		}
 		if (released == 5 && gTimer[2] > PrepTime) { // Wait for PrepTime, preplanning
 			gTimer.reset(2);
-			//			gs.clearCues();
+			for (i = 0; i < seqLength; i++) { // show targets on the screen - target onset //AP added
+				gs.cuePress[i] = cueP.at(i);
+			}
 			state = WAIT_PRESS;
 		}
 		break;
 
-	case WAIT_PRESS: //5 as appears in mov, Targets are shown here for preplanning
+	case WAIT_PRESS: //5 as appears in mov, after go cue - watining for the key presses from the subject //AP added
 		// check for time out
 		if (gTimer[1] > (PrepTime + MovTimeLim)) {
 			gs.clearCues();
-			//		state = END_TRIAL;
 			state = WAIT_ITI;
 		}
 
@@ -1023,7 +1020,6 @@ void MyTrial::control() {
 		}
 
 		// Wait for the next keypress
-		//*************************Feedback loop was here
 		// Check if sequence is finished
 		//nFingerErrors = 0;  // Initialization of tapping errors, SKim
 		if (numNewpress > 0 && seqCounter < seqLength) {
@@ -1060,7 +1056,7 @@ void MyTrial::control() {
 		// check for time out
 		if ((released == 5) || (gTimer[1] > (PrepTime + MovTimeLim))) {
 
-			MT = gTimer[1] - pressTime[0]; // Calculate total reaction time starting from the first press
+			MT = gTimer[1] - pressTime[0]; // Calculate total movement time starting from the first press
 			if (isError > 0) {
 				gNumErrors++;
 				gNumFingerErrors += nFingerErrors;

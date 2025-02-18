@@ -754,14 +754,14 @@ void MyTrial::updateGraphics(int what) {
 	int i;
 	double height;
 	// Finger forces
-//	gScreen.printChar('+', 0, -3, SIZE_CUE);
-//	fixationCross.position = gScreen.getCenter();
-//	fixationCross.position = Vector2D(0, -3);
-//	fixationCross.size = Vector2D(FIXCROSS_SIZE, FIXCROSS_SIZE);
-//	fixationCross.setShape(SHAPE_PLUS);
+	// gScreen.printChar('+', 0, -3, SIZE_CUE);
+	// fixationCross.position = gScreen.getCenter();
+	fixationCross.position = Vector2D(0, -3);
+	fixationCross.size = Vector2D(FIXCROSS_SIZE, FIXCROSS_SIZE);
+	fixationCross.setShape(SHAPE_PLUS);
 
-//	fixationCross.setColor(SCR_WHITE);
-//	fixationCross.draw();
+	fixationCross.setColor(SCR_WHITE);
+	fixationCross.draw();
 
 	if (gs.showLines == 1) {
 		gScreen.setColor(Screen::white); // defines the color of force lines
@@ -784,39 +784,26 @@ void MyTrial::updateGraphics(int what) {
 			gScreen.print(gs.line[i].c_str(), gs.lineXpos[i], gs.lineYpos[i], gs.size[i] * 1);
 		}
 	}
-	//if (state == WAIT_ALLRELEASE) {
-	//	gScreen.setColor(2);
-	//	gScreen.printChar('+', 0, -6, 2*SIZE_CUE);
-	//	
-	//}
-	//if (state == WAIT_TRIAL || state == START_TRIAL || state == WAIT_TR || state == START_FIX || state==WAIT_ITI || state==END_TRIAL) {
-	//	gScreen.setColor(1);  // White fixation cross
-	//	gScreen.printChar('+', 0, -3, SIZE_CUE);
-	//}
+
 	if (state == WAIT_END_RELEASE || state == WAIT_GOCUE || state == WAIT_PRESS) {
 
-		// NO FIXATION NEEDED //AP added
-		/*if (state == WAIT_GOCUE || state == START_FIX) {
-			if (gTimer[2] <= 100 || (500 <= gTimer[2] && gTimer[2] <= 600) || (1000 <= gTimer[2] && gTimer[2] <= 1100) || (1500 <= gTimer[2] && gTimer[2] <= 1550)) {
-				fixationCross.setColor(SCR_GREEN);
-			}
-			else {
-				fixationCross.setColor(SCR_WHITE);
-			}
-
+		//AP added
+		if (state == WAIT_END_RELEASE || state == WAIT_GOCUE) {
+			fixationCross.setColor(SCR_WHITE);
 			fixationCross.draw();
+		} 
+		else {
+			fixationCross.setColor(SCR_Black);
+			fixationCross.draw();
+		}
 
-		} */
 
-
-		if (state == WAIT_GOCUE || state == WAIT_PRESS) {
+		if (state == WAIT_PRESS) {
 			// Draw horizon SKim
 			gScreen.setColor(1);
 
 			if (seqType == 1) {  // Spatially ordered - Spatial cues // AP added
-				//gHorizon.position = Vector2D(0, 3.5 + Horizon);
-				//gHorizon.size = Vector2D(10, 16 - 2 * Horizon);
-				//gHorizon.draw();
+
 				gScreen.drawLine(-4, -1, -4, 8);
 				gScreen.drawLine(-2.4, -1, -2.4, 8);
 				gScreen.drawLine(-0.8, -1, -0.8, 8);
@@ -829,6 +816,7 @@ void MyTrial::updateGraphics(int what) {
 						double xPos = gs.cuePress[i + seqCounter] - '1';
 						gTarget.position = Vector2D(-3.2 + 1.6 * xPos, -0.0 + i * 1.6);
 						gTarget.size = Vector2D(1.2, 1.2);
+						//gTarget.setColor(5);
 						gTarget.draw();
 					}
 				}

@@ -20,6 +20,8 @@
 //#include "SDL.h" // SDL library
 //#include "SDL_mixer.h" // Necessary for playing multiple sounds (added by a-yokoi)
 
+#include <map>
+
 using namespace std;
 
 #define Pi 3.141592654
@@ -93,6 +95,7 @@ public:
 	DataRecord() {}
 	DataRecord(int s, int t);
 	void write(ostream& out);
+	void calc_MD();
 public:
 	int state;
 	int trialNum;
@@ -105,8 +108,11 @@ public:
 	int		TR;
 	int		currentSlice;
 	double	TRtime;
+	static map<int, vector<vector<double>>> X;
 
 };
+
+map<int, vector<vector<double>>> DataRecord::X;
 
 ///////////////////////////////////////////////////////////////
 // MyBlock

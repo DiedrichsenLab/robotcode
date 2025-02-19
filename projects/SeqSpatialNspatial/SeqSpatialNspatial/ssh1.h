@@ -176,7 +176,7 @@ private:
 	string cueP;							// edited by SKim, using only press cue	
 	//	string cueS, cueC, cueP; 					///< Visual cues for sequence, chunk, and press
 
-	double startTime;					///< Time of the start of the trial 
+	double nPress;					///< Time of the start of the trial 
 	double startTimeReal;				///< Time of the start of the trial 
 
 	DataManager<DataRecord, 30000 / 2> dataman;	///< For data recording for MOV file 

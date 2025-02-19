@@ -509,7 +509,7 @@ MyTrial::MyTrial() {
 ///////////////////////////////////////////////////////////////
 void MyTrial::read(istream& in) {
 	// read from .tgt file
-	(in) >> startTime >> seqType; 
+	(in) >> nPress >> seqType; 
 	for (int i = 0; i < MAX_PRESS; i++) {   // MAX_PRESS = 14--> read presses
 		(in) >> press[i];
 	}
@@ -533,7 +533,7 @@ void MyTrial::writeDat(ostream& out) {
 	out << seqType << "\t"
 		<< Horizon << "\t"
 		<< PrepTime << "\t"
-		<< startTime << "\t" //repeat of target file. if 0, training mode
+		<< nPress << "\t" //repeat of target file. if 0, training mode
 		<< startTimeReal << "\t"; //actual time of the beginning of each trial since T=0
 	for (int i = 0; i < MAX_PRESS; i++) {
 		out << press[i] << "\t";
@@ -573,7 +573,7 @@ void MyTrial::writeHeader(ostream& out) {
 	out << "seqType" << "\t"
 		<< "Horizon" << "\t"
 		<< "PrepTime" << "\t"
-		<< "startTime" << "\t" //repeat of target file: TIME BEGINNING FOR EACH TRIAL SINCE T=0 (1st TTL)
+		<< "nPress" << "\t" //repeat of target file: TIME BEGINNING FOR EACH TRIAL SINCE T=0 (1st TTL)
 		<< "startTimeReal" << "\t"; //actual time of the beginning of each trial since T=0
 	for (int i = 0; i < MAX_PRESS; i++) {
 		sprintf(header, "press%d", i);
@@ -695,15 +695,15 @@ void MyTrial::updateTextDisplay() {
 void MyTrial::updateGraphics(int what) {
 	int i;
 	double height;
-	// Finger forces
-	// gScreen.printChar('+', 0, -3, SIZE_CUE);
-	// fixationCross.position = gScreen.getCenter();
+
 	fixationCross.position = Vector2D(0, -3);
 	fixationCross.size = Vector2D(FIXCROSS_SIZE, FIXCROSS_SIZE);
 	fixationCross.setShape(SHAPE_PLUS);
-
 	fixationCross.setColor(SCR_WHITE);
 	fixationCross.draw();
+
+
+	// Finger forces
 
 	if (gs.showLines == 1) {
 		gScreen.setColor(Screen::white); // defines the color of force lines
@@ -972,8 +972,7 @@ void MyTrial::control() {
 
 		// Wait for the next keypress
 		// Check if sequence is finished
-		//nFingerErrors = 0;  // Initialization of tapping errors, SKim
-		if (numNewpress > 0 && seqCounter < seqLength) {
+		if (numNewpress > 0 && seqCounter < nPress) {
 			response[seqCounter] = pressedFinger;
 			pressTime[seqCounter] = gTimer[1];
 			if (seqCounter == 0) {
@@ -998,7 +997,7 @@ void MyTrial::control() {
 			}
 		}
 
-		if (seqCounter == seqLength && released == 5) {
+		if (seqCounter == nPress && released == 5) {
 			state = WAIT_END_RELEASE;
 		}
 
@@ -1012,7 +1011,7 @@ void MyTrial::control() {
 				gNumErrors++;
 				gNumFingerErrors += nFingerErrors;
 			}
-			else {
+			else { // correct trial //AP added
 				critTime = MT;
 				points = 1;
 				gNumPointsBlock += 1;

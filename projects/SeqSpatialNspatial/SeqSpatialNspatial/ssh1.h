@@ -102,30 +102,9 @@ public:
 	double timeReal;
 	double time;
 
-	//fMRI synchronising variables, SKim, fMRI
-	double	TotTime;
-	int		TR;
-	int		currentSlice;
-	double	TRtime;
-
 	double force_left[5];
 	double force_right[5];
-	///_______________________Neda add
 
-	int eyeTime;						///< eye tracker data - timestamp
-	float eyeX;							///< eye tracker data - x position(easy calibration)
-	float eyeY;							///< eye tracker data - y position(easy calibration)
-	float eyeX_org;						///< eye tracker data - x position(original coordinate of Eyelink)
-	float eyeY_org;						///< eye tracker data - y position(original coordinate of Eyelink)
-	float pupil_size;
-	float PPDx;
-	float PPDy;
-	float eyestatus;
-	float xStart;
-	float xEnd;
-	float eventType;
-	float eventTime;
-	///_________________________Neda end
 };
 
 
@@ -190,7 +169,6 @@ private:
 	int response[MAX_PRESS];				///< Which key is pressed 
 	int points;								///< How many points did you get in a trial 0/1/-1?
 	int seqLength;							///< How long is the sequence (arbitrary)?
-	int chunkLength;						///< How many chunks in the sequence?
 	double pressTime[MAX_PRESS];			///< Time when each finger was pressed 
 	double releaseTime[MAX_PRESS];			///< Time when each finger was release
 
@@ -199,13 +177,6 @@ private:
 	string cueP;							// edited by SKim, using only press cue	
 	//	string cueS, cueC, cueP; 					///< Visual cues for sequence, chunk, and press
 
-		//variables for fMRI synchronisation, SKim
-	int startTRReal;     			///< Ask if this is used
-	double startTRtime;     			///< Ask if this is used
-
-	int startTR;						///< Starting value for TR count
-	//int startSlice;						///< Starting value for slice no. 
-	//int startSlicereal;					///< Starting value for slice no. 
 	double startTime;					///< Time of the start of the trial 
 	double startTimeReal;				///< Time of the start of the trial 
 

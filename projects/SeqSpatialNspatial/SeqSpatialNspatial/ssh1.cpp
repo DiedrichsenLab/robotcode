@@ -803,6 +803,7 @@ void MyTrial::updateGraphics(int what) {
 
 			if (seqType == 1) {  // Spatially ordered - Spatial cues // AP added
 
+				// lines between fingers
 				gScreen.drawLine(-4, -1, -4, 8);
 				gScreen.drawLine(-2.4, -1, -2.4, 8);
 				gScreen.drawLine(-0.8, -1, -0.8, 8);
@@ -828,10 +829,36 @@ void MyTrial::updateGraphics(int what) {
 				}
 			}
 
+
+			else if (seqType == 2) { // NotSpatially ordered (all the cues in the same height, participants forced to use brightness) - spatial cues // AP added
+
+				// lines between fingers
+				gScreen.drawLine(-4, -1, -4, 2);
+				gScreen.drawLine(-2.4, -1, -2.4, 2);
+				gScreen.drawLine(-0.8, -1, -0.8, 2);
+				gScreen.drawLine(0.8, -1, 0.8, 2);
+				gScreen.drawLine(2.4, -1, 2.4, 2);
+				gScreen.drawLine(4, -1, 4, 2);
+
+				for (i = 0; i < min(Horizon, seqLength - seqCounter); i++) {
+					if (gs.cuePress[i] > 0) {
+						double xPos = gs.cuePress[i + seqCounter] - '1';
+						gTarget.position = Vector2D(-3.2 + 1.6 * xPos, 0.0);
+						gTarget.size = Vector2D(1.2, 1.2);
+
+						if (i == 0) { // next imediate target //AP added
+							gTarget.setColor(1);
+						}
+						else if (i == 1) { // second target //AP added
+							gTarget.setColor(17);
+						}
+
+						gTarget.draw();
+					}
+				}
+			}
+
 			else if (seqType == 0) { // Spatially ordered - Numerical cues // AP added
-				//gHorizon.position = Vector2D(0, 3.5 + Horizon);
-				//gHorizon.size = Vector2D(10, 16 - 2 * Horizon);
-				//gHorizon.draw();
 				for (i = 0; i < min(Horizon, seqLength - seqCounter); i++) {  // Edited by SKim
 					if (gs.cuePress[i] > 0) {
 						//						gScreen.printChar(gs.cuePress[i], (i - 4) * WIDTH_CHAR_CUE, CUE_PRESS, SIZE_CUE);

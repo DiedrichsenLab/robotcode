@@ -161,7 +161,6 @@ private:
 	int seqCounter;							///< Which position in the seq are we?
 	int numNewpress;
 	int released;
-	int tempCounter;							///< Which position in the seq are we?
 	int DigPressed;							///< For Horizon-wize digit revealing
 	int isError;							///< Was there an error in the finger presses?
 	int nFingerErrors;						// Number of error tappings, SKim
@@ -204,7 +203,6 @@ public:
 	void draw();
 };
 void FixCross::draw() {
-	//setColor(1);
 	gScreen.setColor(color);
 	gScreen.drawBox(Vector2D(size[0], 0.3), Vector2D(position[0], position[1]));
 	gScreen.drawBox(Vector2D(0.3, size[1]), Vector2D(position[0], position[1]));

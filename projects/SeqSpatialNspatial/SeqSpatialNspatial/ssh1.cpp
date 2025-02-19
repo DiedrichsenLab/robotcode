@@ -17,7 +17,6 @@ TextDisplay tDisp; ///< Text Display
 Screen gScreen; ///< Screen
 StimulatorBox gBox[2]; ///< Stimulator Box
 Target gTarget(SHAPE_DISC, 1); // Draw a white box for visual target, SKim
-//Target gHorizon(SHAPE_BOX, 1); // Draw a white box for visual target, SKim
 
 
 Timer gTimer(UPDATERATE); ///< Timer from S626 board experiments
@@ -100,8 +99,6 @@ int b = 0;
 
 double timeThreshold[4] = { 800,1100,1500,6000 }; ///< Double and triple chunk time threshold
 double timeThresholdSuper[4] = { 320,560,740,5000 }; ///< Time threshold for super points
-#define FEEDBACKTIME 1500    // time for which the points of the trial is displayed at the end of a trial
-// Neda increased feedback time so that the subject has time to blink
 
 string TASKSOUNDS[8] = {
 	"C:/robotcode/util/wav/ding.wav",			// 0
@@ -118,12 +115,8 @@ string TASKSOUNDS[8] = {
 
 char TEXT[5] = { '1','2','3','4','5' };
 #define CUE_SEQ 6
-#define CUE_CHUNK 4.5
 #define CUE_PRESS 2.3 // the Y position of the presses on the screen
 #define SIZE_CUE 9    // the font size of presses
-#define WIDTH_CHAR_CUE 2 // the distance between letters
-#define WIDTH_REC_CUE 6 // SKim
-#define HEIGHT_REC_CUE 3 // SKim
 #define FIXCROSS_SIZE		1
 
 // Force Thresholds
@@ -434,7 +427,6 @@ void MyBlock::giveFeedback() {
 	int n = 0;
 	double MTarray[200];
 	double medianMT = 0;
-	//int gType; // groupType
 	int sType; //seqType
 	MyTrial* tpnr;  //MyTrial object --> inherits class Trial in Experiment.h
 	medianMTarray[0] = 10000;
@@ -446,17 +438,13 @@ void MyBlock::giveFeedback() {
 
 
 		if (tpnr->isError == 0) {
-			MTarray[n] = tpnr->MT; //remember the RT from the correct trials and add them
+			MTarray[n] = tpnr->MT; //remember the MT from the correct trials and add them
 			n++; // remember number of trials
 		}
 		sType = tpnr->seqType;
-
-		//nn++;
 	}
-	//ERarray[b] = 100 * ((double)gNumErrors) / (double)(trialNum); // error rate
-	ERarray[b] = 100 * ((double)gNumFingerErrors) / (double)(trialNum * 14); // error rate, SKim
+	ERarray[b] = 100 * ((double)gNumFingerErrors) / (double)(trialNum * 5); // error rate, SKim
 
-	//for (j = 0; j < 4; j++) {
 	if (n > 0) { // if more than one correct trials for seqlength j
 		medianMTarray[b] = median(MTarray, n);
 
@@ -816,7 +804,6 @@ void MyTrial::updateGraphics(int what) {
 			else if (seqType == 0) { // Spatially ordered - Numerical cues // AP added
 				for (i = 0; i < min(Horizon, seqLength - seqCounter); i++) {  // Edited by SKim
 					if (gs.cuePress[i] > 0) {
-						//						gScreen.printChar(gs.cuePress[i], (i - 4) * WIDTH_CHAR_CUE, CUE_PRESS, SIZE_CUE);
 						gScreen.printChar(gs.cuePress[i + seqCounter], 0, -0.7 + i * 1.6, SIZE_CUE); // -4.7 is matched to -4.0 for visual target type
 						// the number 6.5 is usually the seqLength/2 so that the sequence in centered
 					}
@@ -1044,7 +1031,10 @@ void MyTrial::control() {
 		gTimer.reset(2); // time for events in the trial
 		if (gTimer[1] > (PrepTime + MovTimeLim)) { // TrialTime = PrepTime + MovTimeLim 
 			state = END_TRIAL;
+		}
 
+		if (gTimer[2] > iti) {
+			state = END_TRIAL;
 		}
 
 		break;
@@ -1115,14 +1105,6 @@ GraphicState::GraphicState() {
 	lineYpos[3] = CUE_SEQ; // 6 block points
 	lineColor[3] = 1; // white
 	size[3] = 9;
-	// Commented by SKim
-	//// Chunk Cue
-	//for (i = 0; i < 5; i++) {//(i=0;i<3;i++){
-	// lineXpos[i + 4] = 0;//i*1.4-1.4;
-	// lineYpos[i + 4] = CUE_CHUNK;//4.5;
-	// lineColor[i + 4] = 1; // white
-	// size[i + 4] = 7;  // font size
-	//}
 
 	// Press Cue
 	for (i = 0; i < 9; i++) {//(i=0;i<3;i++){ // edited by SK

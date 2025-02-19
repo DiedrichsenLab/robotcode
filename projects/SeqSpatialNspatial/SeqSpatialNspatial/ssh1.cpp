@@ -8,6 +8,7 @@
 #include "StimulatorBox.h"
 #include "Target.h"
 #include <ctime>
+#include <string>
 ///////////////////////////////////////////////////////////////
 /// Global variables
 ///
@@ -701,10 +702,16 @@ void MyTrial::updateGraphics(int what) {
 	fixationCross.setShape(SHAPE_PLUS);
 	fixationCross.setColor(SCR_WHITE);
 	fixationCross.draw();
+		
+	// Show block instructions: n horizon and n reach
+	/* sprintf(buffer, "n _ r e a c h: %d", 1);
+	gs.line[0] = buffer;
+	gs.lineXpos[0] = -3;
+	gs.lineColor[0] = 1; */
+
 
 
 	// Finger forces
-
 	if (gs.showLines == 1) {
 		gScreen.setColor(Screen::white); // defines the color of force lines
 		for (i = 0; i < 5; i++) {

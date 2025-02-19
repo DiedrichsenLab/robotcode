@@ -571,7 +571,6 @@ void MyTrial::read(istream& in) {
 	cTrial = gTrial;
 	complete = 0;
 	seqLength = cueP.find(zero); // get seqLength
-	// chunkLength = cueC.length(); // get chunkLength
 	if (seqLength < 0) { seqLength = cueP.length(); }
 }
 
@@ -816,7 +815,14 @@ void MyTrial::updateGraphics(int what) {
 						double xPos = gs.cuePress[i + seqCounter] - '1';
 						gTarget.position = Vector2D(-3.2 + 1.6 * xPos, -0.0 + i * 1.6);
 						gTarget.size = Vector2D(1.2, 1.2);
-						//gTarget.setColor(5);
+
+						if (i == 0) { // next imediate target //AP added
+							gTarget.setColor(1);
+						}
+						else if (i == 1) { // second target //AP added
+							gTarget.setColor(17);
+						}
+
 						gTarget.draw();
 					}
 				}

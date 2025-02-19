@@ -84,7 +84,7 @@ public:
 	int showLines;
 
 	char Points[2];
-	char cuePress[14];
+	char cuePress[14]; // I'm gonna need max 3 finger presses, change this based on your task //AP added
 };
 
 

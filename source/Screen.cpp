@@ -61,7 +61,8 @@ Color_t Screen::oceanblue={30,110,255};	    ///< 13
 Color_t Screen::forestgreen={34,102,34};	///< 14
 Color_t Screen::darkred={100,0,0};			///< 15
 Color_t Screen::darkblue={0,0,100};			///< 16
-Color_t Screen::darkgrey={135,135,135};     ///< 17
+Color_t Screen::darkgrey={105,105,105};     ///< 17
+
 
 /******************************************************************************
 Constructor
@@ -360,6 +361,7 @@ void Screen::setColor(int color){
 		setColor(darkgrey);
 		break;
 	} 
+
 	
 } 
 

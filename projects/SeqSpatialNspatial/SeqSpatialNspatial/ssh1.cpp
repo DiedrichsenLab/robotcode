@@ -8,6 +8,7 @@
 #include "StimulatorBox.h"
 #include "Target.h"
 #include <ctime>
+#include <string>
 ///////////////////////////////////////////////////////////////
 /// Global variables
 ///
@@ -17,7 +18,6 @@ TextDisplay tDisp; ///< Text Display
 Screen gScreen; ///< Screen
 StimulatorBox gBox[2]; ///< Stimulator Box
 Target gTarget(SHAPE_DISC, 1); // Draw a white box for visual target, SKim
-//Target gHorizon(SHAPE_BOX, 1); // Draw a white box for visual target, SKim
 
 
 Timer gTimer(UPDATERATE); ///< Timer from S626 board experiments
@@ -48,7 +48,6 @@ GraphicState gs;
 #define RT_POS START_Y+1
 #define JUMP_POS  RT_POS+1
 
-#define TRTIME				2720 // must be adjusted, SKim, fMRI
 
 Color_t defaultCol = { 255,255,255 }; ///< set default color to grey
 Color_t detectCol = { 32,32,32 };
@@ -101,8 +100,6 @@ int b = 0;
 
 double timeThreshold[4] = { 800,1100,1500,6000 }; ///< Double and triple chunk time threshold
 double timeThresholdSuper[4] = { 320,560,740,5000 }; ///< Time threshold for super points
-#define FEEDBACKTIME 1500    // time for which the points of the trial is displayed at the end of a trial
-// Neda increased feedback time so that the subject has time to blink
 
 string TASKSOUNDS[8] = {
 	"C:/robotcode/util/wav/ding.wav",			// 0
@@ -119,12 +116,8 @@ string TASKSOUNDS[8] = {
 
 char TEXT[5] = { '1','2','3','4','5' };
 #define CUE_SEQ 6
-#define CUE_CHUNK 4.5
 #define CUE_PRESS 2.3 // the Y position of the presses on the screen
 #define SIZE_CUE 9    // the font size of presses
-#define WIDTH_CHAR_CUE 2 // the distance between letters
-#define WIDTH_REC_CUE 6 // SKim
-#define HEIGHT_REC_CUE 3 // SKim
 #define FIXCROSS_SIZE		1
 
 // Force Thresholds
@@ -136,15 +129,7 @@ char TEXT[5] = { '1','2','3','4','5' };
 double THRESHOLD[3][5] = { {preTH, preTH, preTH, preTH, preTH}, {relTH, relTH, relTH, relTH, relTH}, {maxTH, maxTH, maxTH, maxTH, maxTH} };
 double fGain[5] = { 1.0,1.0,1.0,1.0,1.0 };  // Increased gains for index and little fingers, SKim
 
-/// <summary>
-///  fMRI counter setup, SKim
-/// </summary>
-TRCounter gCounter;				///< TR counter, simulated and pulse-triggered 
-//char counterSignal = '5';		///< What char is used to count the TR
-int sliceNumber = 32;			///< How many slices do we have
 
-/////// TR counter
-#define TRTIME				2720 // must be adjusted, SKim, fMRI
 
 ///////////////////////////////////////////////////////////////
 /// Main Program: Start the experiment, initialize the robot and run it
@@ -192,9 +177,6 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	//******************************************************************//
 	gTimer.init();
 
-	// TR Counter for fMRI, SKim
-	gCounter.init3(3, 0, sliceNumber); // TTL pulse for counting TR
-	gCounter.simulate(TRTIME);
 
 	gExp->control();
 	return 0;
@@ -272,23 +254,6 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 		tDisp.unlock();
 	}
 
-
-	// fMRI experiment, SKim
-	else if (arguments[0] == "TR" || arguments[0] == "tr") {
-		if (numArgs != 2) {
-			tDisp.print("USAGE: TR delay [ms]");
-		}
-		else {
-			sscanf(arguments[1].c_str(), "%f", &dummy1);
-			if (dummy1 >= 0) {
-				gCounter.simulate(dummy1);
-			}
-			else {
-				gCounter.simulate(0);
-			}
-		}
-
-	}
 	/// Print continusly state of the encodeers
 	else if (arguments[0] == "zeroF") {
 		tDisp.keyPressed = 0;
@@ -443,8 +408,6 @@ Trial* MyBlock::getTrial() {
 /// Called at the start of the block: resets TR Counter
 ///////////////////////////////////////////////////////////////
 void MyBlock::start() {
-	gCounter.reset(); // SKim
-	gCounter.start(); // Skim
 	for (int i = 0; i < NUMDISPLAYLINES; i++) { gs.line[i] = ""; }
 	gs.boxOn = true;
 	gNumErrors = 0;
@@ -465,7 +428,6 @@ void MyBlock::giveFeedback() {
 	int n = 0;
 	double MTarray[200];
 	double medianMT = 0;
-	//int gType; // groupType
 	int sType; //seqType
 	MyTrial* tpnr;  //MyTrial object --> inherits class Trial in Experiment.h
 	medianMTarray[0] = 10000;
@@ -477,17 +439,13 @@ void MyBlock::giveFeedback() {
 
 
 		if (tpnr->isError == 0) {
-			MTarray[n] = tpnr->MT; //remember the RT from the correct trials and add them
+			MTarray[n] = tpnr->MT; //remember the MT from the correct trials and add them
 			n++; // remember number of trials
 		}
 		sType = tpnr->seqType;
-
-		//nn++;
 	}
-	//ERarray[b] = 100 * ((double)gNumErrors) / (double)(trialNum); // error rate
-	ERarray[b] = 100 * ((double)gNumFingerErrors) / (double)(trialNum * 14); // error rate, SKim
+	ERarray[b] = 100 * ((double)gNumFingerErrors) / (double)(trialNum * 5); // error rate, SKim
 
-	//for (j = 0; j < 4; j++) {
 	if (n > 0) { // if more than one correct trials for seqlength j
 		medianMTarray[b] = median(MTarray, n);
 
@@ -534,11 +492,6 @@ MyTrial::MyTrial() {
 	MT = 0; // init total movement time, SKim edited
 	RT = 0; // Added by SKim, reaction time
 
-	startTR = 0; // SKim, fMRI
-	startTRReal = 0; // SKim, fMRI
-	startTRtime = 0; // SKim, fMRI
-	startTime = 0; // SKim, fMRI
-	startTimeReal = 0; // SKim, fMRI
 
 	points = 0;
 	int released = 0;
@@ -557,7 +510,7 @@ MyTrial::MyTrial() {
 ///////////////////////////////////////////////////////////////
 void MyTrial::read(istream& in) {
 	// read from .tgt file
-	(in) >> startTime >> seqType; // SKim, fMRI
+	(in) >> nPress >> seqType; 
 	for (int i = 0; i < MAX_PRESS; i++) {   // MAX_PRESS = 14--> read presses
 		(in) >> press[i];
 	}
@@ -565,13 +518,12 @@ void MyTrial::read(istream& in) {
 	(in) >> cueP >> iti >> Horizon >> PrepTime >> MovTimeLim;
 
 	// do other job
-	TrialTime = PrepTime + MovTimeLim + iti; // added by SKim for fMRI
+	TrialTime = PrepTime + MovTimeLim + iti; // added by SKim
 	string zero("0");
 	gTrial++;
 	cTrial = gTrial;
 	complete = 0;
 	seqLength = cueP.find(zero); // get seqLength
-	// chunkLength = cueC.length(); // get chunkLength
 	if (seqLength < 0) { seqLength = cueP.length(); }
 }
 
@@ -582,10 +534,8 @@ void MyTrial::writeDat(ostream& out) {
 	out << seqType << "\t"
 		<< Horizon << "\t"
 		<< PrepTime << "\t"
-		<< startTime << "\t" //repeat of target file. if 0, training mode
-		<< startTimeReal << "\t" //actual time of the beginning of each trial since T=0
-		<< startTRReal << "\t" // number of TR counted when trial started
-		<< startTRtime << "\t"; // ms since last TR was sensed 
+		<< nPress << "\t" //repeat of target file. if 0, training mode
+		<< startTimeReal << "\t"; //actual time of the beginning of each trial since T=0
 	for (int i = 0; i < MAX_PRESS; i++) {
 		out << press[i] << "\t";
 	}
@@ -624,10 +574,8 @@ void MyTrial::writeHeader(ostream& out) {
 	out << "seqType" << "\t"
 		<< "Horizon" << "\t"
 		<< "PrepTime" << "\t"
-		<< "startTime" << "\t" //repeat of target file: TIME BEGINNING FOR EACH TRIAL SINCE T=0 (1st TTL)
-		<< "startTimeReal" << "\t" //actual time of the beginning of each trial since T=0
-		<< "startTRReal" << "\t" //actual time of the beginning of each trial since T=0
-		<< "startTRtime" << "\t"; //actual time of the beginning of each trial since T=0
+		<< "nPress" << "\t" //repeat of target file: TIME BEGINNING FOR EACH TRIAL SINCE T=0 (1st TTL)
+		<< "startTimeReal" << "\t"; //actual time of the beginning of each trial since T=0
 	for (int i = 0; i < MAX_PRESS; i++) {
 		sprintf(header, "press%d", i);
 		out << header << "\t";
@@ -710,12 +658,7 @@ void MyTrial::updateTextDisplay() {
 
 	sprintf(buffer, "State : %d   Trial: %d", state, gExp->theBlock->trialNum + 1);
 	tDisp.setText(buffer, 2, 0);
-	// fMRI, SKim
-	sprintf(buffer, "TotTime: %d", gCounter.readTotTime());
-	tDisp.setText(buffer, 3, 0);
-	// fMRI, SKim
-	sprintf(buffer, "TR: %d", gCounter.readTR());
-	tDisp.setText(buffer, 4, 0);
+
 
 	sprintf(buffer, "Press:  %d %d %d %d %d", finger[0], finger[1], finger[2], finger[3], finger[4]);
 	tDisp.setText(buffer, 5, 0);
@@ -753,16 +696,22 @@ void MyTrial::updateTextDisplay() {
 void MyTrial::updateGraphics(int what) {
 	int i;
 	double height;
-	// Finger forces
-//	gScreen.printChar('+', 0, -3, SIZE_CUE);
-//	fixationCross.position = gScreen.getCenter();
+
 	fixationCross.position = Vector2D(0, -3);
 	fixationCross.size = Vector2D(FIXCROSS_SIZE, FIXCROSS_SIZE);
 	fixationCross.setShape(SHAPE_PLUS);
-
 	fixationCross.setColor(SCR_WHITE);
 	fixationCross.draw();
+		
+	// Show block instructions: n horizon and n reach
+	/* sprintf(buffer, "n _ r e a c h: %d", 1);
+	gs.line[0] = buffer;
+	gs.lineXpos[0] = -3;
+	gs.lineColor[0] = 1; */
 
+
+
+	// Finger forces
 	if (gs.showLines == 1) {
 		gScreen.setColor(Screen::white); // defines the color of force lines
 		for (i = 0; i < 5; i++) {
@@ -784,42 +733,27 @@ void MyTrial::updateGraphics(int what) {
 			gScreen.print(gs.line[i].c_str(), gs.lineXpos[i], gs.lineYpos[i], gs.size[i] * 1);
 		}
 	}
-	//if (state == WAIT_ALLRELEASE) {
-	//	gScreen.setColor(2);
-	//	gScreen.printChar('+', 0, -6, 2*SIZE_CUE);
-	//	
-	//}
-	//if (state == WAIT_TRIAL || state == START_TRIAL || state == WAIT_TR || state == START_FIX || state==WAIT_ITI || state==END_TRIAL) {
-	//	gScreen.setColor(1);  // White fixation cross
-	//	gScreen.printChar('+', 0, -3, SIZE_CUE);
-	//}
+
 	if (state == WAIT_END_RELEASE || state == WAIT_GOCUE || state == WAIT_PRESS) {
+
+		//AP added
 		if (state == WAIT_END_RELEASE || state == WAIT_GOCUE) {
 			fixationCross.setColor(SCR_WHITE);
 			fixationCross.draw();
-			//	gScreen.setColor(1);  // White signal, wait for "GO" signal and all fingers are released
-		//	gScreen.printChar('+', 0, -3, SIZE_CUE);
-		}
+		} 
 		else {
-			if (gTimer[2] < 1000) {
-				//				gScreen.setColor(3); // Green signal
-				fixationCross.setColor(SCR_GREEN);
-			}
-			else {
-				fixationCross.setColor(SCR_WHITE);
-			}
+			fixationCross.setColor(SCR_Black);
 			fixationCross.draw();
-			//			gScreen.printChar('+', 0, -3, SIZE_CUE);
 		}
 
-		if (state == WAIT_GOCUE || state == WAIT_PRESS) {
+
+		if (state == WAIT_PRESS) {
 			// Draw horizon SKim
 			gScreen.setColor(1);
 
-			if (seqType == 1) {  // Visual, vertical
-				//gHorizon.position = Vector2D(0, 3.5 + Horizon);
-				//gHorizon.size = Vector2D(10, 16 - 2 * Horizon);
-				//gHorizon.draw();
+			if (seqType == 1) {  // Spatially ordered - Spatial cues // AP added
+
+				// lines between fingers
 				gScreen.drawLine(-4, -1, -4, 8);
 				gScreen.drawLine(-2.4, -1, -2.4, 8);
 				gScreen.drawLine(-0.8, -1, -0.8, 8);
@@ -832,41 +766,63 @@ void MyTrial::updateGraphics(int what) {
 						double xPos = gs.cuePress[i + seqCounter] - '1';
 						gTarget.position = Vector2D(-3.2 + 1.6 * xPos, -0.0 + i * 1.6);
 						gTarget.size = Vector2D(1.2, 1.2);
+
+						if (i == 0) { // next imediate target //AP added
+							gTarget.setColor(1);
+						}
+						else if (i == 1) { // second target //AP added
+							gTarget.setColor(17);
+						}
+
 						gTarget.draw();
 					}
 				}
 			}
 
-			else if (seqType == 0) { // Vertical, Numbers
-				//gHorizon.position = Vector2D(0, 3.5 + Horizon);
-				//gHorizon.size = Vector2D(10, 16 - 2 * Horizon);
-				//gHorizon.draw();
+
+			else if (seqType == 2) { // NotSpatially ordered (all the cues in the same height, participants forced to use brightness) - spatial cues // AP added
+
+				// lines between fingers
+				gScreen.drawLine(-4, -1, -4, 2);
+				gScreen.drawLine(-2.4, -1, -2.4, 2);
+				gScreen.drawLine(-0.8, -1, -0.8, 2);
+				gScreen.drawLine(0.8, -1, 0.8, 2);
+				gScreen.drawLine(2.4, -1, 2.4, 2);
+				gScreen.drawLine(4, -1, 4, 2);
+
+				for (i = 0; i < min(Horizon, seqLength - seqCounter); i++) {
+					if (gs.cuePress[i] > 0) {
+						double xPos = gs.cuePress[i + seqCounter] - '1';
+						gTarget.position = Vector2D(-3.2 + 1.6 * xPos, 0.0);
+						gTarget.size = Vector2D(1.2, 1.2);
+
+						if (i == 0) { // next imediate target //AP added
+							gTarget.setColor(1);
+						}
+						else if (i == 1) { // second target //AP added
+							gTarget.setColor(17);
+						}
+
+						gTarget.draw();
+					}
+				}
+			}
+
+			else if (seqType == 0) { // Spatially ordered - Numerical cues // AP added
 				for (i = 0; i < min(Horizon, seqLength - seqCounter); i++) {  // Edited by SKim
 					if (gs.cuePress[i] > 0) {
-						//						gScreen.printChar(gs.cuePress[i], (i - 4) * WIDTH_CHAR_CUE, CUE_PRESS, SIZE_CUE);
 						gScreen.printChar(gs.cuePress[i + seqCounter], 0, -0.7 + i * 1.6, SIZE_CUE); // -4.7 is matched to -4.0 for visual target type
 						// the number 6.5 is usually the seqLength/2 so that the sequence in centered
 					}
 				}
 			}
 
+
+
+
 		}
 	}
 }
-
-
-
-//else {
-//	for (i = 0; i < seqLength; i++) {  // Edited by SKim
-//		if (gs.cuePress[i] > 0) {
-//			gScreen.setColor(1);
-//			gScreen.printChar(gs.cuePress[i], (i - 4) * WIDTH_CHAR_CUE, CUE_PRESS, SIZE_CUE);
-//			// the number 6.5 is usually the seqLength/2 so that the sequence in centered
-//		}
-//	}
-//}
-
-
 
 
 //////////////////////////////////////////////////////////////////////
@@ -885,7 +841,6 @@ void MyTrial::updateHaptics() {
 	gTimer.countup();
 	gTimer.countupReal();
 	s626.updateAD(0);
-	gCounter.update();  // SKim, fMRI
 	gBox[0].update();
 	gBox[1].update();
 	//gBox[1].update();
@@ -977,44 +932,44 @@ void MyTrial::control() {
 		// check for time out
 		if (gTimer[1] > (PrepTime + MovTimeLim)) {
 			gs.clearCues();
-			//		state = END_TRIAL;
 			state = WAIT_ITI;
-
 		}
 
-		if (released == 5) { //gTimer[2] > 1500 makes sure that the cross is being shown for 3 secs
+		if (released == 5) { // all should be released to start trial //AP added
 			dataman.startRecording();
-			gTimer.reset(2); // time for events in the trial
+			gTimer.reset(2); // timer for events in the go cue period //AP added
+			PlaySound("wav/ding.wav", NULL, SND_ASYNC | SND_FILENAME); // first beep
 			gs.clearCues();
-			for (i = 0; i < seqLength; i++) {
-				gs.cuePress[i] = cueP.at(i);
-			}
 			state = WAIT_GOCUE;
 		}
 		break;
-	case WAIT_GOCUE:
+	case WAIT_GOCUE: //4 as appears in mov, wait for go cue to come //AP added
 		// check for time out
 		if (gTimer[1] > (PrepTime + MovTimeLim)) {
 			gs.clearCues();
-			//		state = END_TRIAL;
 			state = WAIT_ITI;
 		}
+		// play 4 predicatable beeps for a predictable go cue - these are 2nd to 4th beep //AP added
+		if (gTimer[2] == 500 || gTimer[2] == 1000 || gTimer[2] == 1500) { 
+			PlaySound("wav/ding.wav", NULL, SND_ASYNC | SND_FILENAME);
+		}
 		if (released == 5 && gTimer[2] > PrepTime) { // Wait for PrepTime, preplanning
-			gTimer.reset(2);
-			//			gs.clearCues();
+			gTimer.reset(2); // timer for trial events // AP added
+			for (i = 0; i < seqLength; i++) { // show targets on the screen - target onset //AP added
+				gs.cuePress[i] = cueP.at(i);
+			}
 			state = WAIT_PRESS;
 		}
 		break;
 
-	case WAIT_PRESS: //5 as appears in mov, Targets are shown here for preplanning
+	case WAIT_PRESS: //5 as appears in mov, after go cue - watining for the key presses from the subject //AP added
 		// check for time out
 		if (gTimer[1] > (PrepTime + MovTimeLim)) {
 			gs.clearCues();
-			//		state = END_TRIAL;
 			state = WAIT_ITI;
 		}
 
-		if (MovTimeLim) {
+		if (MovTimeLim) { // if movement time passed from go cue, remove the cues from the screen
 			if (gTimer[2] > MovTimeLim) {
 				for (i = 0; i < NUMDISPLAYLINES; i++) {
 					gs.clearCues();
@@ -1023,14 +978,12 @@ void MyTrial::control() {
 		}
 
 		// Wait for the next keypress
-		//*************************Feedback loop was here
 		// Check if sequence is finished
-		//nFingerErrors = 0;  // Initialization of tapping errors, SKim
-		if (numNewpress > 0 && seqCounter < seqLength) {
+		if (numNewpress > 0 && seqCounter < nPress) {
 			response[seqCounter] = pressedFinger;
 			pressTime[seqCounter] = gTimer[1];
 			if (seqCounter == 0) {
-				RT = gTimer[2];  // Reaction time for the first press, SKedited
+				RT = gTimer[2];  // Reaction time, time of the first finger press from the go cue //AP added
 			}
 			if (response[seqCounter] == press[seqCounter]) { // if press is correct
 				// PLAY SOUND
@@ -1051,7 +1004,7 @@ void MyTrial::control() {
 			}
 		}
 
-		if (seqCounter == seqLength && released == 5) {
+		if (seqCounter == nPress && released == 5) {
 			state = WAIT_END_RELEASE;
 		}
 
@@ -1060,20 +1013,18 @@ void MyTrial::control() {
 		// check for time out
 		if ((released == 5) || (gTimer[1] > (PrepTime + MovTimeLim))) {
 
-			MT = gTimer[1] - pressTime[0]; // Calculate total reaction time starting from the first press
-			if (isError > 0) {
+			MT = gTimer[1] - pressTime[0]; // Calculate total movement time starting from the first press - RT is removed from MT //AP added
+			if (isError > 0) { // a trial with at least one wrong finger press //AP added
 				gNumErrors++;
 				gNumFingerErrors += nFingerErrors;
 			}
-			else {
+			else { // correct trial //AP added
 				critTime = MT;
 				points = 1;
 				gNumPointsBlock += 1;
 			}
 			gTimer.reset(2);
 			gs.clearCues();
-			//state = WAIT_FEEDBACK;
-	//		state = END_TRIAL;
 			state = WAIT_ITI;
 		}
 		else {
@@ -1086,7 +1037,10 @@ void MyTrial::control() {
 		gTimer.reset(2); // time for events in the trial
 		if (gTimer[1] > (PrepTime + MovTimeLim)) { // TrialTime = PrepTime + MovTimeLim 
 			state = END_TRIAL;
+		}
 
+		if (gTimer[2] > iti) {
+			state = END_TRIAL;
 		}
 
 		break;
@@ -1106,11 +1060,6 @@ DataRecord::DataRecord(int s) {
 	time = gTimer[1];  //culumn 2 of the .mov file
 	timeReal = gTimer.getRealtime();        //culumn 3 of the .mov file
 
-	// SKim, fMRI
-	TotTime = gCounter.readTotTime(); //internally generated time initiated at first TTL pulse
-	TR = gCounter.readTR(); //counted TR pulse
-	TRtime = gCounter.readTime(); //time since last TR
-	currentSlice = 0;//gCounter.readSlice();
 
 	for (i = 0; i < 5; i++) {
 		force_left[i] = gBox[0].getForce(i);//culumn 4-8 of the .mov file
@@ -1124,7 +1073,7 @@ DataRecord::DataRecord(int s) {
 // Writes out the data to the *.mov file
 /////////////////////////////////////////////////////////////////////////////////////
 void DataRecord::write(ostream& out) {
-	out << state << "\t" << timeReal << "\t" << time << "\t" << TotTime << "\t" << TR << "\t" << currentSlice << "\t"
+	out << state << "\t" << timeReal << "\t" << time << "\t"
 		<< force_right[0] << " \t" << force_right[1] << "\t" << force_right[2] << " \t" << force_right[3] << "\t" << force_right[4] << " \t"
 		<< endl;
 }
@@ -1162,14 +1111,6 @@ GraphicState::GraphicState() {
 	lineYpos[3] = CUE_SEQ; // 6 block points
 	lineColor[3] = 1; // white
 	size[3] = 9;
-	// Commented by SKim
-	//// Chunk Cue
-	//for (i = 0; i < 5; i++) {//(i=0;i<3;i++){
-	// lineXpos[i + 4] = 0;//i*1.4-1.4;
-	// lineYpos[i + 4] = CUE_CHUNK;//4.5;
-	// lineColor[i + 4] = 1; // white
-	// size[i + 4] = 7;  // font size
-	//}
 
 	// Press Cue
 	for (i = 0; i < 9; i++) {//(i=0;i<3;i++){ // edited by SK

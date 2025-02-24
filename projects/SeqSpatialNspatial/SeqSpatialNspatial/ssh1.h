@@ -27,7 +27,7 @@ using namespace std;
 #define RECORDRATE 2    // recording update rate
 #define UPDATE_TEXTDISP 60
 #define SCR_SCALE 1.84/72 //3/72 //2.54/72 // cm/pixel 
-#define MAX_PRESS 5 // edited by SKim, fMRI
+#define MAX_PRESS 2 // edited by Armin
 ///////////////////////////////////////////////////////////////
 // Enumeration of Trial State 
 ///////////////////////////////////////////////////////////////
@@ -84,7 +84,7 @@ public:
 	int showLines;
 
 	char Points[2];
-	char cuePress[14];
+	char cuePress[14]; // I'm gonna need max 3 finger presses, change this based on your task //AP added
 };
 
 
@@ -102,30 +102,9 @@ public:
 	double timeReal;
 	double time;
 
-	//fMRI synchronising variables, SKim, fMRI
-	double	TotTime;
-	int		TR;
-	int		currentSlice;
-	double	TRtime;
-
 	double force_left[5];
 	double force_right[5];
-	///_______________________Neda add
 
-	int eyeTime;						///< eye tracker data - timestamp
-	float eyeX;							///< eye tracker data - x position(easy calibration)
-	float eyeY;							///< eye tracker data - y position(easy calibration)
-	float eyeX_org;						///< eye tracker data - x position(original coordinate of Eyelink)
-	float eyeY_org;						///< eye tracker data - y position(original coordinate of Eyelink)
-	float pupil_size;
-	float PPDx;
-	float PPDy;
-	float eyestatus;
-	float xStart;
-	float xEnd;
-	float eventType;
-	float eventTime;
-	///_________________________Neda end
 };
 
 
@@ -182,7 +161,6 @@ private:
 	int seqCounter;							///< Which position in the seq are we?
 	int numNewpress;
 	int released;
-	int tempCounter;							///< Which position in the seq are we?
 	int DigPressed;							///< For Horizon-wize digit revealing
 	int isError;							///< Was there an error in the finger presses?
 	int nFingerErrors;						// Number of error tappings, SKim
@@ -190,7 +168,6 @@ private:
 	int response[MAX_PRESS];				///< Which key is pressed 
 	int points;								///< How many points did you get in a trial 0/1/-1?
 	int seqLength;							///< How long is the sequence (arbitrary)?
-	int chunkLength;						///< How many chunks in the sequence?
 	double pressTime[MAX_PRESS];			///< Time when each finger was pressed 
 	double releaseTime[MAX_PRESS];			///< Time when each finger was release
 
@@ -199,14 +176,7 @@ private:
 	string cueP;							// edited by SKim, using only press cue	
 	//	string cueS, cueC, cueP; 					///< Visual cues for sequence, chunk, and press
 
-		//variables for fMRI synchronisation, SKim
-	int startTRReal;     			///< Ask if this is used
-	double startTRtime;     			///< Ask if this is used
-
-	int startTR;						///< Starting value for TR count
-	//int startSlice;						///< Starting value for slice no. 
-	//int startSlicereal;					///< Starting value for slice no. 
-	double startTime;					///< Time of the start of the trial 
+	double nPress;					///< Time of the start of the trial 
 	double startTimeReal;				///< Time of the start of the trial 
 
 	DataManager<DataRecord, 30000 / 2> dataman;	///< For data recording for MOV file 
@@ -233,7 +203,6 @@ public:
 	void draw();
 };
 void FixCross::draw() {
-	//setColor(1);
 	gScreen.setColor(color);
 	gScreen.drawBox(Vector2D(size[0], 0.3), Vector2D(position[0], position[1]));
 	gScreen.drawBox(Vector2D(0.3, size[1]), Vector2D(position[0], position[1]));

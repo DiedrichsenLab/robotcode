@@ -30,6 +30,8 @@ float emgTrigVolt = 2;	// Ali added this: experimental - under construction
 
 bool chordStarted = 0;
 
+double t1;
+
 FixCross fixationCross;
 
 ForceCursor forceCursor[5];
@@ -38,8 +40,8 @@ ForceCursor forceCursor[5];
 //ForceCursor forceCursor4;
 //ForceCursor forceCursor5;
 
-std::vector<std::vector<double>> X;
-std::vector<double> fingerForceTmp5(5, 0.0);
+//std::vector<std::vector<double>> X;
+//std::vector<double> fingerForceTmp5(5, 0.0);
 
 bool planError = 0;
 
@@ -129,7 +131,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	//gExp->redirectIOToConsole();
 
 	gExp->redirectIOToConsole();		// I uncommented this!!!
-	tDisp.init(gThisInst, 0, 0, 600, 20, 9, 2, &(::parseCommand));		// Default setting for the Windows 10 PC
+	tDisp.init(gThisInst, 0, 0, 800, 30, 9, 2, &(::parseCommand));		
 	tDisp.setText("Subj", 0, 0);
 	gScreen.init(gThisInst, 1920, 0, 1440, 900, &(::updateGraphics));	// Default setting for the Windows 10 PC
 	gScreen.setCenter(Vector2D(0, 0));									// In cm //0,2
@@ -154,28 +156,9 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 
 	gTimer.init(); // Ali Changed Here!!!!
 
-	// 3. stimulation box initialization and calibration
-	// high force 1
-	//gBox[0].init(BOX_LEFT,"c:/robot/calib/Flatbox1_highforce_LEFT_07-Jun-2017.txt");
-	//gBox[1].init(BOX_RIGHT,"c:/robot/calib/Flatbox1_highforce_RIGHT_31-July-2017.txt");
-
-	// STARK
-	//gBox[0].init(BOX_LEFT,"c:/robot/calib/Flatbox1_highforce2_LEFT_12-Feb-2022.txt");
-	//gBox[1].init(BOX_RIGHT,"c:/robot/calib/Flatbox1_highforce2_RIGHT_03-Dec-2021.txt");
-
-	// CHOMSKY
-	//gBox[0].init(BOX_LEFT, "c:/robot/calib/LEFT_lowForce_FlatBox2_24-Jan-2018.txt");
-	//gBox[1].init(BOX_RIGHT, "c:/robot/calib/flatbox2_lowforce_RIGHT_06-Jul-2017.txt");
-
 	gBox[0].init(BOX_LEFT, "c:/robotcode/calib/Flatbox1_highforce2_LEFT_12-Feb-2022.txt");
 	gBox[1].init(BOX_RIGHT, "c:/robotcode/calib/Flatbox1_highforce2_RIGHT_03-Dec-2021.txt");
 
-	// low force
-	//gBox[0].init(BOX_LEFT,"c:/robot/calib/flatbox2_lowforce_LEFT_03-Mar-2017.txt");
-	//gBox[1].init(BOX_RIGHT,"c:/robot/calib/flatbox2_lowforce_RIGHT_06-Jul-2017.txt");
-
-	//gBox[0].filterconst = 0.8;
-	//gBox[1].filterconst = 0.8;
 	gCounter.init3(3, 0, 32); // TTL pulse for counting TR
 
 	gExp->control();
@@ -224,13 +207,14 @@ std::vector<double> subtract_vectors(const std::vector<double>& a, const std::ve
 }
 
 // Function to calculate MD and distance values
-std::pair<double, std::vector<double>> calc_md(const std::vector<std::vector<double>>& X) {
+double calc_md(const std::vector<std::vector<double>>& X) {
 	size_t N = X.size();
 	size_t m = X[0].size();
 
 	// Initial and final vectors
 	std::vector<double> F1 = X[0];
-	std::vector<double> FN = subtract_vectors(X[N - 1], F1);  // Shift the end point
+	//std::vector<double> FN = subtract_vectors(X[N - 1], F1);  // Shift the end point
+	std::vector<double> FN = X[N - 1];
 
 	// Shift all points
 	std::vector<std::vector<double>> shifted_matrix(N, std::vector<double>(m));
@@ -238,24 +222,27 @@ std::pair<double, std::vector<double>> calc_md(const std::vector<std::vector<dou
 		shifted_matrix[i] = subtract_vectors(X[i], F1);
 	}
 
-	std::vector<double> d;
+	double MD = 0.0;
 
 	// Calculate distances
 	for (size_t t = 1; t < N - 1; ++t) {
-		std::vector<double> Ft = shifted_matrix[t];
+		std::vector<double> Ft = X[t];
 
 		// Project Ft onto the ideal straight line
 		double proj_scalar = dot_product(Ft, FN) / dot_product(FN, FN);
 		std::vector<double> proj = scale_vector(FN, proj_scalar);
 
 		// Calculate the Euclidean distance
-		d.push_back(calculate_norm(subtract_vectors(Ft, proj)));
+		double d = calculate_norm(subtract_vectors(Ft, proj));
+
+		MD += d;
+
+		//cout << MD << endl;
 	}
 
-	// Calculate MD
-	double MD = std::accumulate(d.begin(), d.end(), 0.0) / d.size();
+	MD /= (N - 2);
 
-	return { MD, d };
+	return MD;
 }
 //
 ///////////////////////////////////////////////////////
@@ -516,24 +503,25 @@ void MyBlock::giveFeedback() {
 	double vecMD[2000];
 	blockFeedbackFlag = 1;
 
+	
 	// putting MD values in an array
 	for (i = 0; i < 2000; i++) {
 		vecET[i] = 0;
 	}
 	for (i = 0; i < trialNum; i++) { //check each trial
 		tpnr = (MyTrial*)trialVec.at(i);
-		if (tpnr->trialCorr == 1) { //if trial was correct
+		if (tpnr->trialPoint == 1) { //if trial was correct
 			vecET[n] = tpnr->ET;
 			max_holdTime = std::round(tpnr->max_holdTime / 2); // take max_holdTime in samples
 
-			vector<vector<double>> X = DataRecord::X[i];
+			//vector<vector<double>> X = DataRecord::X[i];
 
-			X.resize(X.size() - max_holdTime); //remove holding time from X
+			//X.resize(X.size() - max_holdTime); //remove holding time from X
 
-			// Compute MD using calc_md()
-			MD = calc_md(X).first;
+			//// Compute MD using calc_md()
+			//MD = calc_md(X);
 
-			vecMD[n] = MD;
+			vecMD[n] = tpnr->MD;
 
 			n++;	//count correct trials
 		}
@@ -582,7 +570,7 @@ void MyBlock::giveFeedback() {
 	gs.lineColor[1] = 1;
 
 	if (n > 2) {
-		sprintf(buffer, "Median Execution Time = %.2f s", medianET);
+		sprintf(buffer, "Median Execution Time = %.2f ms", medianET);
 		gs.line[2] = buffer;
 		gs.lineColor[2] = 1;
 
@@ -602,10 +590,12 @@ MyTrial::MyTrial() {
 	int i, j;
 	state = WAIT_TRIAL;
 	///< INIT TRIAL VARIABLE
-	trialCorr = 0;		// flag for tiral being correct or incorrect -> 0: trial error , 1: trial correct
 	trialErrorType = 0;	// flag for the type of trial error -> 0: no error , 1: planning error , 2: execution error
 	RT = 0;
+	ET = 0;
+	MD = 0;
 	fixationCross.setColor(SCR_WHITE);
+	
 }
 
 ///////////////////////////////////////////////////////////////
@@ -746,15 +736,17 @@ void MyTrial::updateTextDisplay() {
 	sprintf(buffer, "Time : %2.2f", gTimer[1]);
 	tDisp.setText(buffer, 3, 0);
 
-	if (state == WAIT_EXEC || state == GIVE_FEEDBACK) {
-		sprintf(buffer, "State : %d   Trial: %d    Hold time: %d    Max hold time: %d, trialPoint: %d, ET: %4.2f", state, gExp->theBlock->trialNum, holdTime, max_holdTime, trialPoint, ET);
-		tDisp.setText(buffer, 4, 0);
-	}
+	//if (state == WAIT_EXEC || state == GIVE_FEEDBACK) {
+	sprintf(buffer, "State : %d   Trial: %d    Hold time: %d    Max hold time: %d, trialPoint: %d, RT: %4.2f, ET: %4.2f, MD: %4.2f", 
+		state, gExp->theBlock->trialNum, holdTime, max_holdTime, trialPoint, RT, ET, MD);
+	tDisp.setText(buffer, 4, 0);
+	//}
 
-	else {
-		sprintf(buffer, "State : %d   Trial: %d    Hold time: %d    Max hold time: %d, trialPoint: %d, ET: %4.2f", state, gExp->theBlock->trialNum, holdTime, max_holdTime, trialPoint, ET);
+	/*else {
+		sprintf(buffer, "State : %d   Trial: %d    Hold time: %d    Max hold time: %d, trialPoint: %d, RT: %4.2f, ET: %4.2f, MD: %4.2f", 
+			state, gExp->theBlock->trialNum, holdTime, max_holdTime, trialPoint, RT, ET, MD);
 		tDisp.setText(buffer, 4, 0);
-	}
+	}*/
 	
 
 	// display forces
@@ -908,14 +900,14 @@ void MyTrial::updateGraphics(int what) {
 
 	if (gs.showFxCross == 1) { // show lines
 
-		if (gs.rewardTrial == 1 && state == GIVE_FEEDBACK) {
+		if (gs.rewardTrial == 1 /*&& state == GIVE_FEEDBACK*/) {
 			fixationCross.setColor(SCR_GREEN);
 		}
-		else if (gs.rewardTrial == 0 && state == GIVE_FEEDBACK) {
+		else if (gs.rewardTrial == 0 /*&& state == GIVE_FEEDBACK*/) {
 			fixationCross.setColor(SCR_RED);
 
 		}
-		else {
+		else if (gs.rewardTrial == -1) {
 			fixationCross.setColor(SCR_WHITE);
 		}
 		fixationCross.draw();
@@ -974,6 +966,14 @@ void MyTrial::updateGraphics(int what) {
 
 }
 
+#include <future>  
+
+std::future<void> mdFuture;  // Future to track async task
+
+void MyTrial::calc_md_async() {
+	mdFuture = std::async(std::launch::async, &MyTrial::calc_md, this);
+}
+
 //////////////////////////////////////////////////////////////////////
 /// updateHaptics: called from Hardware interrupt to allow for regular update intervals 
 //////////////////////////////////////////////////////////////////////
@@ -996,13 +996,87 @@ void MyTrial::updateHaptics() {
 			dataman.stopRecording();
 		}
 	}
+	if (!mdFuture.valid()) {
+		calc_md_async();  // Start first time
+	}
+	else if (mdFuture.valid() && mdFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
+		calc_md_async();  // Start computation asynchronously
+	}
+}
+
+void MyTrial::calc_md() {
+
+	if (state == 5 && trialPoint == 1 && MD_done == FALSE) {
+		MyBlock block;
+
+		int trialNum = gExp->theBlock->trialNum;
+
+		std::cout << "Calculating MD... TrialNum = " << trialNum << std::endl;
+
+		if (DataRecord::X.find(trialNum) == DataRecord::X.end()) {
+			std::cerr << "ERROR: No data for trialNum " << trialNum << std::endl;
+			return;
+		}
+
+		vector<vector<double>> X = DataRecord::X[trialNum];
+
+		if (X.empty()) {
+			std::cerr << "ERROR: X[" << trialNum << "] is empty!" << std::endl;
+			return;
+		}
+
+		else {
+			std::cout << "X has " << X.size() << "timepoints" << trialNum << std::endl;
+		}
+
+		int max_holdTime_samples = std::round(max_holdTime / 2); // take max_holdTime in samples
+
+		X.resize(X.size() - max_holdTime_samples); //remove holding time from X
+
+		size_t N = X.size();
+		size_t m = X[0].size();
+
+		// Initial and final vectors
+		std::vector<double> F1 = X[0];
+		std::vector<double> FN = subtract_vectors(X[N - 1], F1);  // Shift the end point
+
+		// Shift all points
+		std::vector<std::vector<double>> shifted_matrix(N, std::vector<double>(m));
+		for (size_t i = 0; i < N; ++i) {
+			shifted_matrix[i] = subtract_vectors(X[i], F1);
+		}
+
+		MD = 0.0;
+
+		// Calculate distances
+		for (size_t t = 1; t < N - 1; ++t) {
+			std::vector<double> Ft = shifted_matrix[t];
+
+			// Project Ft onto the ideal straight line
+			double proj_scalar = dot_product(Ft, FN) / dot_product(FN, FN);
+			std::vector<double> proj = scale_vector(FN, proj_scalar);
+
+			// Calculate the Euclidean distance
+			double d = calculate_norm(subtract_vectors(Ft, proj));
+
+			MD += d;
+
+			
+		}
+
+		MD /= (N - 2);
+
+		std::cout << "MD Computed: " << MD << std::endl;  // Debug output
+
+		MD_done = TRUE;
+	}
 }
 
 //////////////////////////////////////////////////////////////////////
 // control Trial: A state-driven routine to guide through the process of a trial
 //////////////////////////////////////////////////////////////////////
-bool planErrorFlag = 0;		// flag for checking if error happens during planning.
-bool chordErrorFlag = 0;	// flag for checking if the chord was correct or not.
+//bool planErrorFlag = 0;		// flag for checking if error happens during planning.
+//bool chordErrorFlag = 0;	// flag for checking if the chord was correct or not.
 bool fingerCorrect[5] = { 0,0,0,0,0 };
 bool chordCorrect = 0;
 bool prev_chordCorrect;
@@ -1022,11 +1096,13 @@ void MyTrial::control() {
 		gs.showForces = 1;
 		gs.showDiagnostics = 0;
 		// gs.showForceBars = 1;
-		gs.rewardTrial = 0;
+		gs.rewardTrial = -1;
 		trialPoint = 0;
 		//gs.planError = 0;
 		gs.boxColor = 5;	// grey baseline box color
-		planErrorFlag = 0;
+
+		
+		//planErrorFlag = 0;
 		//SetDacVoltage(0, 0);	// Ali EMG - gets ~200us to change digital to analog. Does it interrupt the ADC?
 		SetDIOState(0, 0xFFFF); // Ali EMG
 
@@ -1046,10 +1122,11 @@ void MyTrial::control() {
 		gs.showForces = 1;
 		gs.boxColor = 5;	// grey baseline box color
 		gs.chordError = 0;
-		planErrorFlag = 0;	// initialize planErrorFlag variable in the begining of each trial
-		chordErrorFlag = 1;	// initialize chordErrorFlag variable in the begining of each trial
+		//planErrorFlag = 0;	// initialize planErrorFlag variable in the begining of each trial
+		//chordErrorFlag = 1;	// initialize chordErrorFlag variable in the begining of each trial
 		startTriggerEMG = 1;	// Ali EMG: starts EMG trigger in the beginning of each trial
 		trialPoint = 0;
+		gs.rewardTrial = -1;
 
 		//SetDacVoltage(0, emgTrigVolt);	// Ali EMG - gets ~200us to change digital to analog. Does it interrupt the ADC?
 		SetDIOState(0, 0x0000);
@@ -1076,6 +1153,8 @@ void MyTrial::control() {
 		holdTime = 0;
 		max_holdTime = 0;
 
+		gs.rewardTrial = -1;
+
 		gs.showTarget = 0;
 		gs.showFeedback = 0;
 		gs.showForces = 1;
@@ -1090,7 +1169,6 @@ void MyTrial::control() {
 			startTimeReal = gCounter.readTotTime();
 			startTRReal = gCounter.readTR(); // number of TR arrived so far
 
-			//dataman.startRecording(); // see around line #660
 			gTimer.reset(1);					//time for whole trial
 			gTimer.reset(2);					//time for events in the trial			
 			gTimer.reset(3);
@@ -1114,6 +1192,7 @@ void MyTrial::control() {
 			//check_baseline_hold = 1;
 			if (fingerForceTmp >= (VERT_SHIFT + baseTHhi) || fingerForceTmp <= (VERT_SHIFT - (baseTHhi))) {
 				planError = 1;
+				gs.rewardTrial = 0;
 				break;
 			}
 		}
@@ -1141,21 +1220,30 @@ void MyTrial::control() {
 		if (chordCorrect == 0 && chordStarted == 0) {
 			for (i = 0; i < 5; i++) {	// RT is the time of the first finger outside the baseline area
 				fingerForceTmp = VERT_SHIFT + forceGain * fGain[i] * (gBox[0].getForce(i) - gBox[1].getForce(i));
-				fingerForceTmp5[i] = fingerForceTmp;
 				//check_baseline_hold = 1;
 				if (fingerForceTmp >= (VERT_SHIFT + baseTHhi) || fingerForceTmp <= (VERT_SHIFT - (baseTHhi))) {
+					diffForceMov1[i] = fingerForceTmp;
 					RT = gTimer[2];
 					chordStarted = 1;
+					std::vector<double> X(5, 0.0);
 					break;
 				}
 			}
+		}
+		else if (chordStarted == 1) {
+			std::vector<double> diffForceMov_offset(5, 0.0);
+			for (i = 0; i < 5; i++) {
+				diffForceMov[i] = (gBox[0].getForce(i) - gBox[1].getForce(i));
+				diffForceMov_offset[i] = diffForceMov[i] - diffForceMov1[i]; // Element-wise subtraction
+			}
+			X.push_back(diffForceMov_offset);  // Append to class member X
 		}
 		
 		// checking state of each finger
 		for (i = 0; i < 5; i++) {
 			tmpChord = chordID[i];	// required state of finger i -> 0:relaxed , 1:extended , 2:flexed -- chordID comes from the target file
 			fingerForceTmp = VERT_SHIFT + forceGain * fGain[i] * (gBox[0].getForce(i) - gBox[1].getForce(i));
-			fingerForceTmp5[i] = fingerForceTmp;
+			//fingerForceTmp5[i] = fingerForceTmp;
 			switch (tmpChord) {
 			case '9':	// finger i should be in the baseline zone (relaxed)
 				fingerCorrect[i] = ((fingerForceTmp <= VERT_SHIFT + baseTHhi) && (fingerForceTmp >= VERT_SHIFT - baseTHhi));
@@ -1182,7 +1270,6 @@ void MyTrial::control() {
 			holdTime = 0;
 			gTimer.reset(3);
 		}
-
 		else if (chordCorrect == 1 && prev_chordCorrect == 1) {
 			holdTime = gTimer[3];
 			if (holdTime > max_holdTime) {
@@ -1194,49 +1281,6 @@ void MyTrial::control() {
 
 		// if subject held the chord for execAccTime (accepting hold time), trial is correct -> go to feedback state:
 		if (gTimer[5] >= execMaxTime) {
-			// chord was executed successfully so error = 0:
-			//chordErrorFlag = !chordCorrect;
-
-			if (chordStarted == 1 && chordCorrect == 1 && planError == 0 && max_holdTime >= success_holdTime) {
-				//auto result = calc_md(X);
-				//MD = result.first;
-				MD = 0;
-
-				chordErrorFlag = 0;
-				trialPoint = 1;
-			}
-			else {
-				MD = 0;
-				RT = 0;
-				ET = 0;
-
-				chordErrorFlag = 1;
-				trialPoint = 0;
-			}
-			
-
-			//if (max_holdTime >= success_holdTime) {
-			//	chordErrorFlag = 0;
-			//	trialPoint = 1;
-			//	
-			//}
-
-			//else {
-			//	chordErrorFlag = 1;
-			//	trialPoint = 0;
-			//}
-
-			trialCorr = trialPoint;
-
-			//if ((ET < lowTime || ET > highTime) && chordCorrect) {
-			//	trialPoint = 1;
-			//}
-			//else if (ET > lowTime && ET < highTime && chordCorrect) {
-			//	trialPoint = 3;
-			//}
-			//else {
-			//	trialPoint = 0;
-			//}
 
 			// go to the give_feedback state:
 			state = GIVE_FEEDBACK;
@@ -1244,6 +1288,8 @@ void MyTrial::control() {
 			// resetting timers:
 			gTimer.reset(2);
 			gTimer.reset(3);
+
+			MD_done = FALSE;
 		}
 
 		break;
@@ -1251,6 +1297,16 @@ void MyTrial::control() {
 	case GIVE_FEEDBACK:
 		//SetDacVoltage(0, 0); // Ali EMG
 		SetDIOState(0, 0xFFFF);
+
+		if (chordStarted == 1 && chordCorrect == 1 && planError == 0 && max_holdTime >= success_holdTime) {
+			trialPoint = 1;
+		}
+		else {
+			MD = 0;
+			RT = 0;
+			ET = 0;
+			trialPoint = 0;
+		}
 
 		gs.showLines = 1;			// no force lines/thresholds
 		gs.showTarget = 0;			// no visual targets
@@ -1272,6 +1328,7 @@ void MyTrial::control() {
 		gs.showForces = 1;
 		gs.showFxCross = 1;
 		gs.showFeedback = 0;
+		gs.rewardTrial = -1;
 		if (gTimer[2] >= iti) {
 			state = ACQUIRE_HRF;
 			dataman.stopRecording();
@@ -1343,8 +1400,12 @@ DataRecord::DataRecord(int s, int t, bool started) {
 	if (state == 4 && started) {
 		X[trialNum].push_back(currentDiffForce);
 	}
-	
+
 }
+
+//double DataRecord::get_MD() const {
+//	return MD;
+//}
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Writes out the data to the *.mov file 

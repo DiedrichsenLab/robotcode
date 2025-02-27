@@ -95,7 +95,8 @@ public:
 	DataRecord() {}
 	DataRecord(int s, int t, bool started);
 	void write(ostream& out);
-	void calc_MD();
+	/*void calc_MD();*/
+	double MD = 0;
 public:
 	int state;
 	int trialNum;
@@ -109,6 +110,8 @@ public:
 	int		currentSlice;
 	double	TRtime;
 	static map<int, vector<vector<double>>> X;
+
+	bool MD_done;
 
 };
 
@@ -147,6 +150,11 @@ public:
 	virtual void writeDat(ostream& out);		// has to be implemented 
 	virtual void writeMov(ostream& out);		// Trial output to data file 
 	friend  void MyBlock::giveFeedback();
+
+	void calc_md();
+	void calc_md_async();
+
+	
 private:
 	TrialState state;						///< State of the Trial 
 
@@ -158,6 +166,9 @@ private:
 	int startTimeReal;
 	int startTRReal;
 	int startTime;
+	double diffForceMov1[5];
+	double diffForceMov[5];
+	std::vector<std::vector<double>> X;
 	//bool chordErrorFlag;
 	int endTime;
 	int feedbackTime;						///< The duration between giveFeedback and giveScore
@@ -167,11 +178,13 @@ private:
 	int trialErrorType;						///< 0: no error , 1: movement during planning , 2: could not execute
 	double RT;								///< Reaction time: time from go cue to full execution of chord
 	double MD;
-	double ET=0;
+	double ET;
 	int trialPoint;							///< point received in each trial
 	int points;
+	bool MD_done = FALSE;
 
 	DataManager<DataRecord, 30000 / 2> dataman;///< For data recording for MOV file 
+	
 };
 
 ///////////////////////////////////////////////////////////////

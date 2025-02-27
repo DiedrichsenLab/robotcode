@@ -92,7 +92,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	LPSTR kposzArgs, int nWinMode)
 {
 	gThisInst = hThisInst;
-	gExp = new MyExperiment("SequenceMemorySensoryHorizon", "SequenceMemorySensoryHorizon", "C:/data/SequenceMemorySensoryHorizon/SMSH1/");
+	gExp = new MyExperiment("SequenceMemorySensoryHorizon", "SequenceMemorySensoryHorizon", "C:/data/SequenceMemorySensoryHorizon/SMSH1_last_session/");
 
 	gExp->redirectIOToConsole();
 

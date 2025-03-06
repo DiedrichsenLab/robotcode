@@ -46,6 +46,7 @@ ForceCursor forceCursor[5];
 bool planError = 0;
 
 int holdTime = 0;
+//int totSuccess = 0;
 
 ///< Basic imaging parameters
 #define TRTIME 1000				///< timer for simulating timer
@@ -557,8 +558,9 @@ void MyBlock::giveFeedback() {
 	}
 
 	// number of correct and wrong trials
-	gNumCorr = n;
-	gNumWrong = trialNum - n;
+	//gNumCorr = n;
+	gNumWrong = trialNum - gNumCorr;
+	//gNumWrong = trialNum - n;
 
 	//gScreen.setColor(Screen::white);
 	sprintf(buffer, "End of Block");
@@ -574,9 +576,9 @@ void MyBlock::giveFeedback() {
 		gs.line[2] = buffer;
 		gs.lineColor[2] = 1;
 
-		sprintf(buffer, "Finger Synchrony = %.2f 1/N", 1 / medianMD);
+		/*sprintf(buffer, "Finger Synchrony = %.2f 1/N", 1 / medianMD);
 		gs.line[3] = buffer;
-		gs.lineColor[3] = 1;
+		gs.lineColor[3] = 1;*/
 	}
 }
 
@@ -737,8 +739,8 @@ void MyTrial::updateTextDisplay() {
 	tDisp.setText(buffer, 3, 0);
 
 	//if (state == WAIT_EXEC || state == GIVE_FEEDBACK) {
-	sprintf(buffer, "State : %d   Trial: %d    Hold time: %d    Max hold time: %d, trialPoint: %d, RT: %4.2f, ET: %4.2f, MD: %4.2f", 
-		state, gExp->theBlock->trialNum, holdTime, max_holdTime, trialPoint, RT, ET, MD);
+	sprintf(buffer, "State : %d   Trial: %d    Hold time: %d    Max hold time: %d, trialPoint: %d, RT: %4.2f, ET: %4.2f, MD: %4.2f, nCorr: %d", 
+		state, gExp->theBlock->trialNum, holdTime, max_holdTime, trialPoint, RT, ET, MD, gNumCorr);
 	tDisp.setText(buffer, 4, 0);
 	//}
 
@@ -1319,6 +1321,7 @@ void MyTrial::control() {
 		if (gTimer[2] >= feedbackTime) {
 			state = WAIT_ITI;
 			gTimer.reset(2);
+			gNumCorr = gNumCorr + trialPoint;
 		}
 		break;
 
@@ -1392,9 +1395,9 @@ DataRecord::DataRecord(int s, int t, bool started) {
 	vector<double> currentDiffForce(5);
 	for (i = 0; i < 5; i++) {
 		diffForceMov[i] = (gBox[0].getForce(i) - gBox[1].getForce(i));	// diffForceMov = f_ext - f_flex
-		visualizedForce[i] = VERT_SHIFT + forceGain * (gBox[0].getForce(i) - gBox[1].getForce(i));	// The position of the force bars that are shown on the screen
+		visualizedForce[i] = VERT_SHIFT + forceGain * fGain[i] * (gBox[0].getForce(i) - gBox[1].getForce(i));	// The position of the force bars that are shown on the screen
 
-		currentDiffForce[i] = diffForceMov[i];
+		currentDiffForce[i] = forceGain * fGain[i] * (gBox[0].getForce(i) - gBox[1].getForce(i));
 	}
 
 	if (state == 4 && started) {

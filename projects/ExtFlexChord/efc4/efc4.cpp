@@ -512,7 +512,7 @@ void MyBlock::giveFeedback() {
 	for (i = 0; i < trialNum; i++) { //check each trial
 		tpnr = (MyTrial*)trialVec.at(i);
 		if (tpnr->trialPoint == 1) { //if trial was correct
-			vecET[n] = tpnr->ET;
+			vecET[n] = tpnr->ET + tpnr->RT;
 			max_holdTime = std::round(tpnr->max_holdTime / 2); // take max_holdTime in samples
 
 			//vector<vector<double>> X = DataRecord::X[i];

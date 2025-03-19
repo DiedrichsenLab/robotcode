@@ -499,9 +499,9 @@ void MyBlock::giveFeedback() {
 	int i, j, n = 0;
 	MyTrial* tpnr;
 	double medianET;
-	double medianMD;
+	//double medianMD;
 	double vecET[2000];
-	double vecMD[2000];
+	//double vecMD[2000];
 	blockFeedbackFlag = 1;
 
 	
@@ -511,24 +511,16 @@ void MyBlock::giveFeedback() {
 	}
 	for (i = 0; i < trialNum; i++) { //check each trial
 		tpnr = (MyTrial*)trialVec.at(i);
-		if (tpnr->trialPoint == 1) { //if trial was correct
-			vecET[n] = tpnr->ET + tpnr->RT;
-			max_holdTime = std::round(tpnr->max_holdTime / 2); // take max_holdTime in samples
+		vecET[n] = tpnr->ET + tpnr->RT;
+		n++;
+		//if (tpnr->trialPoint == 1) { //if trial was correct
+		//	vecMD[n] = tpnr->MD;
 
-			//vector<vector<double>> X = DataRecord::X[i];
-
-			//X.resize(X.size() - max_holdTime); //remove holding time from X
-
-			//// Compute MD using calc_md()
-			//MD = calc_md(X);
-
-			vecMD[n] = tpnr->MD;
-
-			n++;	//count correct trials
-		}
+		//		//count correct trials
+		//}
 	}
 
-	// calculating the median MD
+	// calculating the median ET and MD
 	if (n > 2) {
 		double dummy;
 		for (i = 0; i < n - 1; i++) {
@@ -538,22 +530,22 @@ void MyBlock::giveFeedback() {
 					vecET[i] = vecET[j];
 					vecET[j] = dummy;
 				}
-				if (vecMD[i] > vecMD[j]) {
-					dummy = vecMD[i];
-					vecMD[i] = vecMD[j];
-					vecMD[j] = dummy;
-				}
+				//if (vecMD[i] > vecMD[j]) {
+				//	dummy = vecMD[i];
+				//	vecMD[i] = vecMD[j];
+				//	vecMD[j] = dummy;
+				//}
 			}
 		}
 		if (n % 2 == 0) {
 			i = n / 2;
 			medianET = ((vecET[i - 1] + vecET[i]) / 2);
-			medianMD = ((vecMD[i - 1] + vecMD[i]) / 2);
+			//medianMD = ((vecMD[i - 1] + vecMD[i]) / 2);
 		}
 		else {
 			i = (n - 1) / 2;
 			medianET = (vecET[i]);
-			medianMD = (vecMD[i]);
+			//medianMD = (vecMD[i]);
 		}
 	}
 
@@ -571,15 +563,15 @@ void MyBlock::giveFeedback() {
 	gs.line[1] = buffer;
 	gs.lineColor[1] = 1;
 
-	if (n > 2) {
-		sprintf(buffer, "Median Execution Time = %.2f ms", medianET);
-		gs.line[2] = buffer;
-		gs.lineColor[2] = 1;
+	//if (n > 2) {
+	sprintf(buffer, "Median Execution Time = %.2f ms", medianET);
+	gs.line[2] = buffer;
+	gs.lineColor[2] = 1;
 
 		/*sprintf(buffer, "Finger Synchrony = %.2f 1/N", 1 / medianMD);
 		gs.line[3] = buffer;
 		gs.lineColor[3] = 1;*/
-	}
+	//}
 }
 
 ///////////////////////////////////////////////////////////////
@@ -1306,7 +1298,7 @@ void MyTrial::control() {
 		else {
 			MD = 0;
 			RT = 0;
-			ET = 0;
+			ET = execMaxTime;
 			trialPoint = 0;
 		}
 

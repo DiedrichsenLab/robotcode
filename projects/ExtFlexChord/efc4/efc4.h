@@ -84,6 +84,7 @@ public:
 	int boxColor;
 	int rewardTrial;
 	bool showDiagnostics;
+	bool flipscreen = false;
 };
 
 ///////////////////////////////////////////////////////////////

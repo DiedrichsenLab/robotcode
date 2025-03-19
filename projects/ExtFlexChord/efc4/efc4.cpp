@@ -28,6 +28,8 @@ bool gTimerFlagFirst = 0;
 bool startTriggerEMG = 0; // Ali added this: experimental - under construction
 float emgTrigVolt = 2;	// Ali added this: experimental - under construction
 
+Matrix2D 	TransforMatrix(1, 0, 0, 1);	///< adjusts for the fact that subject screen is flipped. used in angles (0,1,1,0)
+
 bool chordStarted = 0;
 
 double t1;
@@ -134,7 +136,9 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	gExp->redirectIOToConsole();		// I uncommented this!!!
 	tDisp.init(gThisInst, 0, 0, 800, 30, 9, 2, &(::parseCommand));		
 	tDisp.setText("Subj", 0, 0);
-	gScreen.init(gThisInst, 1920, 0, 1440, 900, &(::updateGraphics));	// Default setting for the Windows 10 PC
+	//gScreen.init(gThisInst, 1920, 0, 1440, 900, &(::updateGraphics));	// Default setting for the Windows 10 PC (Behav training/testing)
+	//gScreen.init(gThisInst, 1280, 0, 1024, 768, &(::updateGraphics)); // Default setting for the 7T control room
+	gScreen.init(gThisInst, 1920, 0, 1680, 1080, &(::updateGraphics)); // Default setting for the Windows 10 PC (Mock scanner)
 	gScreen.setCenter(Vector2D(0, 0));									// In cm //0,2
 	gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));					// cm/pixel
 
@@ -409,6 +413,12 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 				fGain[i] = arg[0];
 			}
 		}
+	}
+
+	else if (arguments[0] == "flipscreen" || arguments[0] == "FLIPSCREEN") {
+
+		gs.flipscreen = !gs.flipscreen;
+
 	}
 
 	/// reset the centers
@@ -778,7 +788,18 @@ void MyTrial::updateGraphics(int what) {
 
 	if (blockFeedbackFlag) {
 		gScreen.setCenter(Vector2D(0, 0));    // In cm //0,2
-		gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));
+		if (gs.flipscreen == 1) {
+			TransforMatrix = Matrix2D(0, 1, 1, 0);
+			gScreen.setScale(Vector2D(-SCR_SCALE, SCR_SCALE)); // this is the flipped
+			//flipscreen = true;
+		}
+
+		else { // flipscreen is true, is in mri mode, going to training mode
+			TransforMatrix = Matrix2D(1, 0, 0, 1);
+			gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));
+			//flipscreen = false;
+		}
+
 	}
 
 	if (gs.showTarget == 1) {
@@ -817,7 +838,17 @@ void MyTrial::updateGraphics(int what) {
 		}
 	}
 
-	
+	if (gs.flipscreen == 1) {
+		TransforMatrix = Matrix2D(0, 1, 1, 0);
+		gScreen.setScale(Vector2D(-SCR_SCALE, SCR_SCALE)); // this is the flipped
+		//flipscreen = true;
+	}
+
+	else { // flipscreen is true, is in mri mode, going to training mode
+		TransforMatrix = Matrix2D(1, 0, 0, 1);
+		gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));
+		//flipscreen = false;
+	}
 
 	if (gs.showLines == 1) {
 		// Baseline box

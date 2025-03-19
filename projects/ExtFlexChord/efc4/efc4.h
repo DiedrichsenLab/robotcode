@@ -183,6 +183,10 @@ private:
 	int trialPoint;							///< point received in each trial
 	int points;
 	bool MD_done = FALSE;
+	bool planError;
+	int day;
+	string session;
+	int week;
 
 	DataManager<DataRecord, 30000 / 2> dataman;///< For data recording for MOV file 
 	

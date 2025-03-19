@@ -45,8 +45,6 @@ ForceCursor forceCursor[5];
 //std::vector<std::vector<double>> X;
 //std::vector<double> fingerForceTmp5(5, 0.0);
 
-bool planError = 0;
-
 int holdTime = 0;
 //int totSuccess = 0;
 
@@ -508,7 +506,7 @@ void MyBlock::giveFeedback() {
 	int max_holdTime;
 	int i, j, n = 0;
 	MyTrial* tpnr;
-	double medianET;
+	double medianET=0;
 	//double medianMD;
 	double vecET[2000];
 	//double vecMD[2000];
@@ -615,7 +613,11 @@ void MyTrial::read(istream& in) {
 		>> feedbackTime
 		>> iti
 		>> startTime
-		>> endTime;
+		>> endTime
+		>> session
+		>> day
+		>> week;
+		
 		
 
 }
@@ -652,6 +654,10 @@ void MyTrial::writeDat(ostream& out) {
 		<< MD << "\t"
 		<< ET << "\t"
 		<< trialPoint << "\t"					// points received in each trial
+		<< planError << "\t"
+		<< day << "\t"
+		<< week << "\t"
+		<< session << "\t"
 		<< endl;
 }
 
@@ -687,6 +693,10 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "MD" << "\t"
 		<< "ET" << '\t'
 		<< "trialPoint" << "\t"
+		<< "planError" << "\t"
+		<< "day" << "\t"
+		<< "week" << "\t"
+		<< "session" << "\t"
 		<< endl;
 }
 
@@ -1152,6 +1162,7 @@ void MyTrial::control() {
 		startTriggerEMG = 1;	// Ali EMG: starts EMG trigger in the beginning of each trial
 		trialPoint = 0;
 		gs.rewardTrial = -1;
+		planError = 0;
 
 		//SetDacVoltage(0, emgTrigVolt);	// Ali EMG - gets ~200us to change digital to analog. Does it interrupt the ADC?
 		SetDIOState(0, 0x0000);

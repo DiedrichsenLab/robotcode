@@ -571,15 +571,16 @@ void MyBlock::giveFeedback() {
 	gs.line[1] = buffer;
 	gs.lineColor[1] = 1;
 
-	//if (n > 2) {
-	sprintf(buffer, "Median Execution Time = %.2f ms", medianET);
-	gs.line[2] = buffer;
-	gs.lineColor[2] = 1;
+	if (n > 2) {
+		sprintf(buffer, "Median Execution Time = %.2f ms", medianET);
+		gs.line[2] = buffer;
+		gs.lineColor[2] = 1;
 
 		/*sprintf(buffer, "Finger Synchrony = %.2f 1/N", 1 / medianMD);
 		gs.line[3] = buffer;
 		gs.lineColor[3] = 1;*/
-	//}
+		//}
+	}
 }
 
 ///////////////////////////////////////////////////////////////

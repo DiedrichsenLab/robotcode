@@ -2,6 +2,7 @@
 /// Bimanual wrist movement for fMRI experiment
 /// 
 /// Atsushi Yokoi, 2014
+/// Ali Ghavampour, 2022
 /////////////////////////////////////////////////////////////
 
 #include "Experiment.h"

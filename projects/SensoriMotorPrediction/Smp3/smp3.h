@@ -189,6 +189,12 @@ private:
 	double forceDiff;
 	double RT = 0;
 	int points = 0;
+	int stimTrigExec;
+	int stimTrigPlan;
+	int stimTrigBaseline;
+	bool TrigExec;
+	bool TrigPlan;
+	bool TrigBaseline;
 
 
 	DataManager<DataRecord, 30000 / 2> dataman;///< For data recording for MOV file //up to 30 s of data are recorded per trial

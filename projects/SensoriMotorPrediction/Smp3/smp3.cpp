@@ -137,7 +137,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 {
 	// 1. initialization window, text display and screen
 	gThisInst = hThisInst;
-	gExp = new MyExperiment("smp2", "smp2", "C:/data/SensoriMotorPrediction/smp2/");
+	gExp = new MyExperiment("smp3", "smp3", "C:/data/SensoriMotorPrediction/smp3/");
 	gExp->redirectIOToConsole();
 
 	// gExp->redirectIOToConsole();		// I uncommented this!!!
@@ -145,7 +145,8 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	tDisp.setText("Subj", 0, 0);
 	//gScreen.init(gThisInst, 1920, 0, 1920, 1080, &(::updateGraphics));
 
-	gScreen.init(gThisInst, 1280, 0, 1024, 768, &(::updateGraphics)); // Default setting for the 7T control room
+	gScreen.init(gThisInst, 1920, 0, 1440, 900, &(::updateGraphics));	// Default setting for the Windows 10 PC (Behav training/testing)
+	//gScreen.init(gThisInst, 1280, 0, 1024, 768, &(::updateGraphics)); // Default setting for the 7T control room
 	//gScreen.init(gThisInst, 1920, 0, 1680, 1080, &(::updateGraphics)); // Default setting for the Windows 10 PC
 
 	gScreen.setCenter(Vector2D(0, 0)); // This set the center of the screen where forces are calibrated with zero force // In cm //0,2
@@ -643,9 +644,15 @@ void MyTrial::read(istream& in) {
 		>> feedbackTime
 		>> iti
 		>> trialLabel
-		>> GoNogo
+		//>> GoNogo
 		>> endTime
-		>> startTime;
+		>> startTime
+		>> TrigExec
+		>> TrigPlan
+		>> TrigBaseline
+		>> stimTrigExec
+		>> stimTrigPlan
+		>> stimTrigBaseline;
 }
 
 ///////////////////////////////////////////////////////////////
@@ -663,7 +670,7 @@ void MyTrial::writeDat(ostream& out) {
 		<< startTime << "\t"
 		<< startTimeReal << "\t"
 		<< startTRReal << "\t"
-		<< GoNogo << "\t"
+		//<< GoNogo << "\t"
 		<< iti << "\t"
 		<< baseline_wait_time << "\t"
 		<< trialLabel << "\t"
@@ -701,7 +708,7 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "startTime" << "\t"
 		<< "startTimeReal" << "\t"
 		<< "startTRReal" << "\t"
-		<< "GoNogo" << "\t"
+		//<< "GoNogo" << "\t"
 		<< "iti" << "\t"
 		<< "baselineWait" << "\t"
 		<< "trialLabel" << "\t"
@@ -776,7 +783,7 @@ void MyTrial::updateTextDisplay() {
 	sprintf(buffer, "Time : %2.2f", gTimer[2]);
 	tDisp.setText(buffer, 3, 0);
 
-	tDisp.setText("Experiment: Smp1", 2, 1);
+	tDisp.setText("Experiment: Smp3", 2, 1);
 
 	sprintf(buffer, "State : %d   Trial: %d   Block state: %d   GoNogo: %s", state, gExp->theBlock->trialNum, gExp->theBlock->state, GoNogo.c_str());
 	tDisp.setText(buffer, 4, 0);
@@ -1206,7 +1213,7 @@ void MyTrial::control() {
 		rewThresh2 = rewThresh2_global;
 
 		//SetDacVoltage(0, emgTrigVolt);	// Ali EMG - gets ~200us to change digital to analog. Does it interrupt the ADC?
-		SetDIOState(0, 0x0000);
+		//SetDIOState(0, 0x0000);
 
 		for (i = 0; i < 5; i++) {
 			gs.fingerCorrectGraphic[i] = 0;
@@ -1262,6 +1269,16 @@ void MyTrial::control() {
 		gs.showForces = 1;
 		gs.showFxCross = 1;
 
+		if (gTimer[3] >= 500 + stimTrigPlan && TrigPlan == 1) {
+			//SetDacVoltage(0, emgTrigVolt);	// trigger to TMS
+			SetDIOState(0, 0x0000);
+		}
+
+		if (gTimer[3] >= 500 + stimTrigPlan + 100 && TrigPlan == 1) {
+			//SetDacVoltage(0, emgTrigVolt);	// trigger to TMS
+			SetDIOState(0, 0xFFFF);
+		}
+
 
 		for (i = 0; i < 2; i++) {	// check fingers' states -> fingers should stay in the baseline during planning
 			fingerForceTmp = VERT_SHIFT + forceGain * fGain[fi[i]] * gBox.getForce(fi[i]) + baselineCorrection;
@@ -1304,7 +1321,7 @@ void MyTrial::control() {
 			gs.showPrLines = 0;
 		}
 
-		if (check_baseline_hold == 0 && session == "training") {
+		if (check_baseline_hold == 0) {
 			gs.boxColor = 3;	// baseline zone color becomes red
 		}
 		else {
@@ -1339,6 +1356,16 @@ void MyTrial::control() {
 
 	case WAIT_EXEC: //3
 
+		if (gTimer[3] >= 500 + stimTrigExec && TrigExec == 1) {
+			//SetDacVoltage(0, emgTrigVolt);	// trigger to TMS
+			SetDIOState(0, 0x0000);
+		}
+
+		if (gTimer[3] >= 500 + stimTrigExec + 100 && TrigExec == 1) {
+			//SetDacVoltage(0, emgTrigVolt);	// trigger to TMS
+			SetDIOState(0, 0xFFFF);
+		}
+
 
 		// deliver finger perturbation
 		for (i = 0; i < 5; i++) {
@@ -1349,36 +1376,36 @@ void MyTrial::control() {
 
 		}
 
-		if (GoNogo == "go") {
+		//if (GoNogo == "go") {
 
-			gBox.setVolts(0,
-				gVolts[1],
-				0,
-				gVolts[3],
-				0);
+		gBox.setVolts(0,
+			gVolts[1],
+			0,
+			gVolts[3],
+			0);
 
-			gs.showTgLines = 1;	// set screen lines/force bars to show
-			gs.showPrLines = 1;
-			gs.showBsLines = 1;
-			gs.showForces = 0;
-			gs.showForceFixed = 1;
-			gs.showFxCross = 1;
-			gs.showTarget = 1;		// show the targets on the screen (grey bars)
-			gs.boxColor = 5;		// grey baseline box color
+		gs.showTgLines = 1;	// set screen lines/force bars to show
+		gs.showPrLines = 1;
+		gs.showBsLines = 1;
+		gs.showForces = 0;
+		gs.showForceFixed = 1;
+		gs.showFxCross = 1;
+		gs.showTarget = 1;		// show the targets on the screen (grey bars)
+		gs.boxColor = 5;		// grey baseline box color
 
-		}
+		//}
 
-		else if (GoNogo == "nogo") {
-			gs.showTgLines = 1;	// set screen lines/force bars to show
-			gs.showPrLines = 1;
-			gs.showBsLines = 1;
-			gs.showForces = 0;
-			gs.showForceFixed = 1;
-			gs.showFxCross = 1;
-			gs.showTarget = 1;		// show the targets on the screen (grey bars)
-			gs.boxColor = 5;		// grey baseline box color
-			//state = WAIT_ITI;
-		}
+		//else if (GoNogo == "nogo") {
+		//	gs.showTgLines = 1;	// set screen lines/force bars to show
+		//	gs.showPrLines = 1;
+		//	gs.showBsLines = 1;
+		//	gs.showForces = 0;
+		//	gs.showForceFixed = 1;
+		//	gs.showFxCross = 1;
+		//	gs.showTarget = 1;		// show the targets on the screen (grey bars)
+		//	gs.boxColor = 5;		// grey baseline box color
+		//	//state = WAIT_ITI;
+		//}
 
 
 		if (gTimer[3] > 500) {
@@ -1393,20 +1420,20 @@ void MyTrial::control() {
 			for (i = 0; i < 2; i++) {
 				fingerForceTmp = VERT_SHIFT + forceGain * fGain[fi[i]] * gBox.getForce(fi[i]) + baselineCorrection;
 				if (fingerForceTmp > RT_thresh_exec) {
-					if (GoNogo == "go") {
-						RT = gTimer[3];
-						resp = 1;
-						if (stimFinger[fi[i]] == '1') {
-							wrongResp = 0;
-						}
-						else {
-							wrongResp = 1;
-						}
+					//if (GoNogo == "go") {
+					RT = gTimer[3];
+					resp = 1;
+					if (stimFinger[fi[i]] == '1') {
+						wrongResp = 0;
 					}
 					else {
-						RT = -1;
-						resp = 1;
+						wrongResp = 1;
 					}
+					//}
+					//else {
+					//	RT = -1;
+					//	resp = 1;
+					//}
 
 				}
 			}
@@ -1441,14 +1468,14 @@ void MyTrial::control() {
 				nRT++;
 			}
 			else {
-				if (GoNogo == "go") {
-					points = 0;
-					sPoints = "0";
-				}
-				else {
-					points = 1;
-					sPoints = "+1";
-				}
+				//if (GoNogo == "go") {
+				points = 0;
+				sPoints = "0";
+				//}
+				//else {
+				//	points = 1;
+				//	sPoints = "+1";
+				//}
 
 			}
 
@@ -1466,7 +1493,7 @@ void MyTrial::control() {
 
 	case GIVE_FEEDBACK: //4
 		//SetDacVoltage(0, 0); // Ali EMG
-		SetDIOState(0, 0xFFFF);
+		//SetDIOState(0, 0xFFFF);
 
 		// end finger perturbation
 		gVolts[1] = 0;
@@ -1511,6 +1538,16 @@ void MyTrial::control() {
 		}
 		break;
 
+		if (gTimer[3] >= 500 + stimTrigBaseline && TrigBaseline == 1) {
+			//SetDacVoltage(0, emgTrigVolt);	// trigger to TMS
+			SetDIOState(0, 0x0000);
+		}
+
+		if (gTimer[3] >= 500 + stimTrigBaseline + 100 && TrigBaseline == 1) {
+			//SetDacVoltage(0, emgTrigVolt);	// trigger to TMS
+			SetDIOState(0, 0xFFFF);
+		}
+
 	case ACQUIRE_HRF: //6
 
 		i = gCounter.readTotTime();
@@ -1544,25 +1581,6 @@ void MyTrial::control() {
 		break;
 
 	}
-	//}
-
-	//else if (maxF == 1) {
-
-	//	forceFinger = finger[0];
-	//	currentForce = gBox.getForce(forceFinger);
-	//	if (currentForce > maxForce[forceFinger]) {
-	//		maxForce[forceFinger] = currentForce;
-	//	}
-	//	fGain[forceFinger] = abs(baselineCorrection) / (bsForce * maxForce[forceFinger]);
-
-	//	forceFinger = finger[1];
-	//	currentForce = gBox.getForce(forceFinger);
-	//	if (currentForce > maxForce[forceFinger]) {
-	//		maxForce[forceFinger] = currentForce;
-	//	}
-	//	fGain[forceFinger] = abs(baselineCorrection) / (bsForce * maxForce[forceFinger]);
-	//}
-
 }
 
 /////////////////////////////////////////////////////////////////////////////////////

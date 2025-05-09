@@ -1,6 +1,7 @@
 ///////////////////////////////////////////////////////////////////////
 /// Bimanual wrist movement fmri mode only, minimal version
 /// Diogo Duarte, based on complete version by Atsushi Yokoi and me 
+/// Ali Ghavampour upgraded in 2022.
 ////////////////////////////////////////////////////////////////////////
 #include "BimanualWrist_MR.h"
 #include <chrono>

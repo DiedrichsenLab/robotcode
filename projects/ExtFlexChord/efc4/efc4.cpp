@@ -7,6 +7,12 @@
 #include <vector>
 #include <iostream>
 #include <numeric>
+#include <iostream>
+#include <chrono>
+#include <ctime>
+#include <iomanip>
+#include <sstream>
+#include <string>
 
 ///////////////////////////////////////////////////////////////
 /// Global variables 
@@ -117,6 +123,13 @@ bool gKeyPressed;
 double gTargetWidth = 0.25;
 double gErrors[2][5] = { {0,0,0,0,0},{0,0,0,0,0} };
 //double execAccTime = 600;
+
+std::string get_current_time() {
+	char buffer[20];
+	std::time_t now = std::time(nullptr);
+	std::strftime(buffer, sizeof(buffer), "%d-%m-%Y %H:%M:%S", std::localtime(&now));
+	return std::string(buffer);
+}
 
 
 ///////////
@@ -652,13 +665,14 @@ void MyTrial::writeDat(ostream& out) {
 		<< VERT_SHIFT - (FLX_TOP_Y1) << "\t"	// flex top threshold
 		<< VERT_SHIFT - FLX_BOT_Y1 << "\t"		// flex bot threshold
 		<< RT << "\t"							// reaction time of each trial. 
-		<< MD << "\t"
+		//<< MD << "\t"
 		<< ET << "\t"
 		<< trialPoint << "\t"					// points received in each trial
 		<< planError << "\t"
 		<< day << "\t"
 		<< week << "\t"
 		<< session << "\t"
+		<< current_time << "\t"
 		<< endl;
 }
 
@@ -691,13 +705,14 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "flexTopThresh" << '\t'
 		<< "flexBotThresh" << '\t'
 		<< "RT" << "\t"
-		<< "MD" << "\t"
+		//<< "MD" << "\t"
 		<< "ET" << '\t'
 		<< "trialPoint" << "\t"
 		<< "planError" << "\t"
 		<< "day" << "\t"
 		<< "week" << "\t"
 		<< "session" << "\t"
+		<< "DateTime" << "\t"
 		<< endl;
 }
 
@@ -1102,7 +1117,7 @@ void MyTrial::calc_md() {
 
 		MD /= (N - 2);
 
-		std::cout << "MD Computed: " << MD << std::endl;  // Debug output
+		//std::cout << "MD Computed: " << MD << std::endl;  // Debug output
 
 		MD_done = TRUE;
 	}
@@ -1136,7 +1151,6 @@ void MyTrial::control() {
 		trialPoint = 0;
 		//gs.planError = 0;
 		gs.boxColor = 5;	// grey baseline box color
-
 		
 		//planErrorFlag = 0;
 		//SetDacVoltage(0, 0);	// Ali EMG - gets ~200us to change digital to analog. Does it interrupt the ADC?
@@ -1210,6 +1224,8 @@ void MyTrial::control() {
 			gTimer.reset(2);					//time for events in the trial			
 			gTimer.reset(3);
 			state = WAIT_PLAN;
+
+			current_time = get_current_time();
 
 			planError = 0;
 

@@ -185,6 +185,7 @@ private:
 	bool MD_done = FALSE;
 	bool planError;
 	int day;
+    string current_time;
 	string session;
 	int week;
 

@@ -49,11 +49,16 @@ double timeThreshold = 3500; 			///< Time threshold for normal points (+0)
 double timeThresholdSuper = 2940;		///< Time threshold for super points (+3)
 double tempThres1 = timeThreshold;
 double tempThres2 = timeThresholdSuper;
+double estimated_ET_mean = 0;	///< Estimated mean of ETs
+double estimated_ET_std = 0;	///< Estimated variance of ETs
+double tempMean = estimated_ET_mean;	///< Estimated mean of ETs
+double tempStd = estimated_ET_std;	///< Estimated variance of ETs
 double responseArray[11] = { 1,1,1,1,1,1,1,1,1,1,1 };
 //int symbolColor = 1;
 
 
 double medianETarray[50];			///< blocks per subject, preallocate array to keep track of ETs within session
+double StdETarray[50];				///< blocks per subject, preallocate array to keep track of ETs within session
 double ERarray[50];					///< blocks per subject, preallocate array to keep track of ERs within session
 
 
@@ -181,6 +186,9 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	gCounter.init3();
 	gCounter.simulate(TR);
 	gExp->control();
+
+	// Seed the random number generator
+	srand(time(NULL));
 
 	return 0;
 }
@@ -390,6 +398,35 @@ void MyBlock::start() {
 }
 
 ///////////////////////////////////////////////////////////////
+/// Calculating ET mean of the block 
+///////////////////////////////////////////////////////////////
+double mean(double array[],int num_val) { 
+	double sum = 0; 
+	for (int i=0;i<num_val;i++) { 
+		sum+=array[i]; 
+	} 
+	return(sum/num_val);
+}
+
+
+///////////////////////////////////////////////////////////////
+/// Calculating ET standard deviation of the block 
+///////////////////////////////////////////////////////////////
+double std(double array[],int num_val) { 
+	double sum = 0; 
+	double mean = 0; 
+	for (int i=0;i<num_val;i++) { 
+		sum+=array[i]; 
+	} 
+	mean=sum/num_val;
+	sum=0;
+	for (int i=0;i<num_val;i++) { 
+		sum+=pow(array[i]-mean,2); 
+	} 
+	return(sqrt(sum/(num_val-1))); // sample std
+} 
+
+///////////////////////////////////////////////////////////////
 /// giveFeedback and put it to the graphic state 
 ///////////////////////////////////////////////////////////////
 void MyBlock::giveFeedback() {
@@ -403,6 +440,7 @@ void MyBlock::giveFeedback() {
 	MyTrial* tpnr;
 
 	medianETarray[0] = 20000;	//initialize ET array for the 0th block to be 20000 (impossible value, we have no median ET before that)
+	stdETarray[0] = 0;			//initialize std array for the 0th block to be 0
 	ERarray[0] = 0;			//initialize ER array for the 0th block to be 0 
 
 
@@ -416,12 +454,16 @@ void MyBlock::giveFeedback() {
 	}
 
 	// before eventual thres update, store the previous thres for writing in the .dat file
-	tempThres1 = timeThreshold;
-	tempThres2 = timeThresholdSuper;
+	// tempThres1 = timeThreshold;
+	// tempThres2 = timeThresholdSuper;
+
+	tempMean = estimated_ET_mean;
+	tempStd = estimated_ET_std;
 
 	if (n > 0) { //if at least one correct trial
 		b = b++; //increase counter of block number
 		medianETarray[b] = median(ETarray, n); //median of movement times	
+		stdETarray[b] = std(ETarray, n); //std of movement times
 		ERarray[b] = (((double)gNumErrorsBlock) / (double)(nn) * 100); //error rate
 
 
@@ -434,18 +476,24 @@ void MyBlock::giveFeedback() {
 		//	}
 		//}
 
-		if ((ERarray[b] <= ERthreshold) && (ERarray[b - 1] <= ERthreshold)) { //if ER on previous block <20%	
-			if (medianETarray[b] < (timeThreshold / (timeThresPercent / 100))) { //adjust only if ET of current block faster than ET that generated current threshold
-				timeThreshold = medianETarray[b] * (timeThresPercent / 100); //previous ET+5%
-				timeThresholdSuper = medianETarray[b] * (superThresPercent / 100); //previous ET-5%
-			}
-		}
+		// if ((ERarray[b] <= ERthreshold) && (ERarray[b - 1] <= ERthreshold)) { //if ER on previous block <20%	
+		// 	if (medianETarray[b] < (timeThreshold / (timeThresPercent / 100))) { //adjust only if ET of current block faster than ET that generated current threshold
+		// 		timeThreshold = medianETarray[b] * (timeThresPercent / 100); //previous ET+5%
+		// 		timeThresholdSuper = medianETarray[b] * (superThresPercent / 100); //previous ET-5%
+		// 	}
+		// }
+
+		estimated_ET_mean = medianETarray[b]; //update the estimated mean
+		estimated_ET_std = stdETarray[b]; //update the estimated std
+
+
 
 
 	}
 	else {
 		b = b++;
 		medianETarray[b] = 0;
+		stdETarray[b] = 0;
 		ERarray[b] = 100;
 	}
 
@@ -541,6 +589,9 @@ void MyTrial::writeDat(ostream& out) {
 	out << tempThres1 << "\t"
 		<< tempThres2 << "\t"
 
+		<< tempMean << "\t"
+		<< tempStd << "\t"
+
 		<< startTime << "\t"
 		<< startTimeReal << "\t"
 		<< trialDur << "\t"
@@ -593,6 +644,8 @@ void MyTrial::writeHeader(ostream& out) {
 
 	out << "timeThreshold" << "\t"
 		<< "timeThresholdSuper" << "\t"
+		<< "estimatedMean" << "\t"
+		<< "estimatedStd" << "\t"
 		<< "startTime" << "\t"
 		<< "startTimeReal" << "\t"
 		<< "trialDur" << "\t"
@@ -1233,14 +1286,41 @@ void MyTrial::control() {
 
 			if (isError == 0) {
 
-				if (ET < timeThresholdSuper) {
-					points = 3;
-				}
-				else if (ET < timeThreshold) {
-					points = 1;
+				// if (ET < timeThresholdSuper) {
+				// 	points = 3;
+				// }
+				// else if (ET < timeThreshold) {
+				// 	points = 1;
+				// }
+				// else {
+				// 	points = 0;
+				// }
+
+				if (isTrain){
+					if (ET < estimated_ET_mean - estimated_ET_std) {
+						points = 3;
+					}
+					else if (ET < estimated_ET_mean - 1/2 * estimated_ET_std) {
+						points = 1;
+					}
+					else if (ET > estimated_ET_mean + 1/2 * estimated_ET_std) {
+						points = 0;
+					}
+					else {
+						// randomly assing point (either 0 or 1)
+						points = rand() % 2;
+					}
 				}
 				else {
-					points = 0;
+					if (ET < timeThresholdSuper) {
+						points = 3;
+					}
+					else if (ET < timeThreshold) {
+						points = 1;
+					}
+					else {
+						points = 0;
+					}
 				}
 
 				gs.clearCues();

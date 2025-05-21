@@ -1,6 +1,7 @@
 #include <windows.h>
 #include <conio.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -103,6 +104,8 @@ public:
 	virtual Trial* getTrial();		// create a new Trial 
 	virtual void giveFeedback();
 	virtual void start();
+	virtual void mean(double array[], int num_val); 
+	virtual void std(double array[], int num_val);
 };
 
 ///////////////////////////////////////////////////////////////

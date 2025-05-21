@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////
-/// SensoryMemoryIntegration Project - ....
+/// SequenceLearningReward Project - ....
 ///////////////////////////////////////////////////////////////
 
 #include "slr1.h" 
@@ -58,7 +58,7 @@ double responseArray[11] = { 1,1,1,1,1,1,1,1,1,1,1 };
 
 
 double medianETarray[50];			///< blocks per subject, preallocate array to keep track of ETs within session
-double StdETarray[50];				///< blocks per subject, preallocate array to keep track of ETs within session
+double stdETarray[50];				///< blocks per subject, preallocate array to keep track of ETs within session
 double ERarray[50];					///< blocks per subject, preallocate array to keep track of ERs within session
 
 
@@ -353,6 +353,19 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 		}
 	}
 
+	else if (arguments[0] == "mean") {
+		if (numArgs != 2) {
+			tDisp.print("USAGE: mean ET")
+		}
+		else {
+			//todo: fix this 
+		}
+	}
+
+	else if (arguments[0] == "std") {
+		//todo: fix this
+	}
+
 	else {
 		return false; /// Command not recognized
 	}
@@ -400,7 +413,7 @@ void MyBlock::start() {
 ///////////////////////////////////////////////////////////////
 /// Calculating ET mean of the block 
 ///////////////////////////////////////////////////////////////
-double mean(double array[],int num_val) { 
+double MyBlock::mean(double array[],int num_val) { 
 	double sum = 0; 
 	for (int i=0;i<num_val;i++) { 
 		sum+=array[i]; 
@@ -412,7 +425,7 @@ double mean(double array[],int num_val) {
 ///////////////////////////////////////////////////////////////
 /// Calculating ET standard deviation of the block 
 ///////////////////////////////////////////////////////////////
-double std(double array[],int num_val) { 
+double MyBlock::std(double array[],int num_val) { 
 	double sum = 0; 
 	double mean = 0; 
 	for (int i=0;i<num_val;i++) { 

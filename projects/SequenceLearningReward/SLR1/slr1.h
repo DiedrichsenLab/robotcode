@@ -200,7 +200,9 @@ private:
 	double ET;								///< Execution time (RT + MT)
 	double MT;								///< Movement time 
 
-	string global_start_time; 					///< Global start time of the trial
+	//string global_start_time; 					///< Global start time of the trial
+	char global_start_time[40]; 					///< Global start time of the trial
+
 
 
 

@@ -1179,7 +1179,11 @@ void MyTrial::control() {
 					dataman.startRecording();
 					time_t now = time(NULL);
 					struct tm *utc = gmtime(&now); // UTC time
-					global_start_time = asctime(utc);
+					//global_start_time = asctime(utc);
+					// Format without newline
+					strftime(global_start_time, sizeof(global_start_time), "%a %b %d %H:%M:%S %Y", utc);
+
+					
 					state = WAIT_PREP;
 				}
 			}
@@ -1204,7 +1208,9 @@ void MyTrial::control() {
 					dataman.startRecording();
 					time_t now = time(NULL);
 					struct tm *utc = gmtime(&now); // UTC time
-					global_start_time = asctime(utc);
+					//global_start_time = asctime(utc);
+					// Format without newline
+					strftime(global_start_time, sizeof(global_start_time), "%a %b %d %H:%M:%S %Y", utc);
 					state = WAIT_PREP;
 				}
 			}

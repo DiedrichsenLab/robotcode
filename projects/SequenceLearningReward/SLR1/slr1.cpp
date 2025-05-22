@@ -1629,6 +1629,15 @@ GraphicState::GraphicState() {
 	lineColor[2] = 1;			// white 
 	size[2] = 5;
 
+	// Ensure all leaderboard lines have positions and size
+    for (int i = 3; i < MAX_LEADERBOARD_LINE; ++i) {
+        lineXpos[i] = 0;
+        lineYpos[i] = 4 - (i - 2); // Stack downward, or adjust as needed
+        lineColor[i] = 1;
+        size[i] = 3; // Slightly smaller than main feedback
+    }
+
+
 	clearCues();
 
 	boxOn = false;

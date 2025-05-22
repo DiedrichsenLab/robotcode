@@ -633,15 +633,16 @@ void MyBlock::giveFeedback() {
 	gs.lineColor[1] = 1;
 
 
-	////print leaderboard of all participants on the screen
-	//sprintf(buffer, "Leaderboard: ");
-	//gs.line[2] = buffer;
-	//gs.lineColor[2] = 1;
-	//for (int i = 0; i < leaderboard.size(); i++) {
-	//	sprintf(buffer, "%s: %d", leaderboard[i].first.c_str(), leaderboard[i].second);
-	//	gs.line[3 + i] = buffer;
-	//	gs.lineColor[3 + i] = 1;
-	//}
+	//print leaderboard of all participants on the screen
+	sprintf(buffer, "Leaderboard: ");
+	gs.line[2] = buffer;
+	gs.lineColor[2] = 1;
+	for (int i = 0; i < leaderboard.size(); i++) {
+		sprintf(buffer, "%s: %0.2f", leaderboard[i].first.c_str(), leaderboard[i].second);
+		printf("Leaderboard Entry %d: %s\n", i, buffer);
+		gs.line[3 + i] = buffer;
+		gs.lineColor[3 + i] = 1;
+	}
 
 	
 
@@ -857,7 +858,7 @@ void MyTrial::updateTextDisplay() {
 	// sprintf(buffer, "est mean ET: %d  est std ET: %d", estimated_ET_mean, estimated_ET_std);
 	// tDisp.setText(buffer, 2, 0);
 	
-	sprintf(buffer, "est perc low: %f  est perc high: %f est perc low super: %f", estimated_ET_percentile_low, estimated_ET_percentile_high, estimated_ET_percentile_low_super);
+	sprintf(buffer, "est perc low: %.2f  est perc high: %.2f est perc low super: %.2f", estimated_ET_percentile_low, estimated_ET_percentile_high, estimated_ET_percentile_low_super);
 	tDisp.setText(buffer, 2, 0);
 
 	sprintf(buffer, "gTimer1: %2.2f   gTimer2: %2.2f   gTimer5: %2.2f", gTimer[1], gTimer[2], gTimer[5]);

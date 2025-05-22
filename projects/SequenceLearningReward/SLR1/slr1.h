@@ -16,6 +16,8 @@
 #include "TRCounter626.h" 
 #include "Win626.h"
 #include <gl/glut.h>
+#include <utility>
+#include <vector>
 //#include "SDL.h" // SDL library
 //#include "SDL_mixer.h" // Necessary for playing multiple sounds (added by a-yokoi)
 

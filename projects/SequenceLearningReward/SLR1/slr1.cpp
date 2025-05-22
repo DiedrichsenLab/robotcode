@@ -8,6 +8,7 @@
 #include <string>
 #include <chrono>
 
+
 ///////////////////////////////////////////////////////////////
 /// Global variables 
 ///////////////////////////////////////////////////////////////
@@ -366,7 +367,7 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 		}
 	}
 	
-		else if (arguments[0] == 'percentile') {
+		else if (arguments[0] == "percentile") {
 		if (numArgs != 4) {
 			tDisp.print("USAGE: percentile low high low_super");
 		}
@@ -383,7 +384,7 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 
 	else if (arguments[0] == "mean") {
 		if (numArgs != 2) {
-			tDisp.print("USAGE: mean ET")
+			tDisp.print("USAGE: mean ET");
 		}
 		else {
 			//todo: fix this 
@@ -582,46 +583,46 @@ void MyBlock::giveFeedback() {
 	}
 
 
-	// update/create subjecNum points in the leaderboard
-	vector <pair <string, double>> leaderboard;
-	ifstream infile(gExp->dataDir + "leaderboard.txt");
-	string line;
-	while (getline(infile, line)) {
-		istringstream iss(line);
-		string name;
-		double points;
-		if (iss >> name >> points) {
-			leaderboard.push_back(make_pair(name, points));
-		}
-	}
-	infile.close();
+	//// update/create subjecNum points in the leaderboard
+	//vector <pair <string, double>> leaderboard;
+	//ifstream infile(gExp->dataDir + "leaderboard.txt");
+	//string line;
+	//while (getline(infile, line)) {
+	//	istringstream iss(line);
+	//	string name;
+	//	double points;
+	//	if (iss >> name >> points) {
+	//		leaderboard.push_back(make_pair(name, points));
+	//	}
+	//}
+	//infile.close();
 
-	// Update the leaderboard with the current subject's points
-	// Check if the subject is already in the leaderboard
-	bool found = false;
-	for (auto& entry : leaderboard) {
-		if (entry.first == gExp->subjectName) {
-			entry.second += gNumPointsBlock; // Update points
-			found = true;
-			break;
-		}
-	}
-	// If not found, add the subject to the leaderboard
-	if (!found) {
-		leaderboard.push_back(make_pair(gExp->subjectName, gNumPointsBlock));
-	}
+	//// Update the leaderboard with the current subject's points
+	//// Check if the subject is already in the leaderboard
+	//bool found = false;
+	//for (auto& entry : leaderboard) {
+	//	if (entry.first == gExp->subjectName) {
+	//		entry.second += gNumPointsBlock; // Update points
+	//		found = true;
+	//		break;
+	//	}
+	//}
+	//// If not found, add the subject to the leaderboard
+	//if (!found) {
+	//	leaderboard.push_back(make_pair(gExp->subjectName, gNumPointsBlock));
+	//}
 
-	// Sort the leaderboard by points in descending order
-	sort(leaderboard.begin(), leaderboard.end(), [](const pair<string, double>& a, const pair<string, double>& b) {
-		return a.second > b.second;
-	});
+	//// Sort the leaderboard by points in descending order
+	//sort(leaderboard.begin(), leaderboard.end(), [](const pair<string, double>& a, const pair<string, double>& b) {
+	//	return a.second > b.second;
+	//});
 
-	// Write the updated leaderboard to the file
-	ofstream outfile(gExp->dataDir + "leaderboard.txt");
-	for (const auto& entry : leaderboard) {
-		outfile << entry.first << " " << entry.second << endl;
-	}
-	outfile.close();
+	//// Write the updated leaderboard to the file
+	//ofstream outfile(gExp->dataDir + "leaderboard.txt");
+	//for (const auto& entry : leaderboard) {
+	//	outfile << entry.first << " " << entry.second << endl;
+	//}
+	//outfile.close();
 
 
 
@@ -632,15 +633,15 @@ void MyBlock::giveFeedback() {
 	gs.lineColor[1] = 1;
 
 
-	//print leaderboard of all participants on the screen
-	sprintf(buffer, "Leaderboard: ");
-	gs.line[2] = buffer;
-	gs.lineColor[2] = 1;
-	for (int i = 0; i < leaderboard.size(); i++) {
-		sprintf(buffer, "%s: %d", leaderboard[i].first.c_str(), leaderboard[i].second);
-		gs.line[3 + i] = buffer;
-		gs.lineColor[3 + i] = 1;
-	}
+	////print leaderboard of all participants on the screen
+	//sprintf(buffer, "Leaderboard: ");
+	//gs.line[2] = buffer;
+	//gs.lineColor[2] = 1;
+	//for (int i = 0; i < leaderboard.size(); i++) {
+	//	sprintf(buffer, "%s: %d", leaderboard[i].first.c_str(), leaderboard[i].second);
+	//	gs.line[3 + i] = buffer;
+	//	gs.lineColor[3 + i] = 1;
+	//}
 
 	
 

@@ -106,6 +106,7 @@ public:
 	virtual void start();
 	virtual double mean(double array[], int num_val); 
 	virtual double std(double array[], int num_val);
+	virtual double percentile(double array[], int num_val, int percent);
 };
 
 ///////////////////////////////////////////////////////////////
@@ -192,6 +193,10 @@ private:
 	double RT;								///< Reaction time (from go cue)
 	double ET;								///< Execution time (RT + MT)
 	double MT;								///< Movement time 
+
+	string global_start_time; 					///< Global start time of the trial
+
+
 
 	string cue;							///< Visual cue for sequences
 	//string seqMask;							///< Mask for visual cues

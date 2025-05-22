@@ -49,10 +49,23 @@ double timeThreshold = 3500; 			///< Time threshold for normal points (+0)
 double timeThresholdSuper = 2940;		///< Time threshold for super points (+3)
 double tempThres1 = timeThreshold;
 double tempThres2 = timeThresholdSuper;
-double estimated_ET_mean = 0;	///< Estimated mean of ETs
-double estimated_ET_std = 0;	///< Estimated variance of ETs
-double tempMean = estimated_ET_mean;	///< Estimated mean of ETs
-double tempStd = estimated_ET_std;	///< Estimated variance of ETs
+// double estimated_ET_mean = 0;	///< Estimated mean of ETs
+// double estimated_ET_std = 0;	///< Estimated variance of ETs
+// double tempMean = estimated_ET_mean;	///< Estimated mean of ETs
+// double tempStd = estimated_ET_std;	///< Estimated variance of ETs
+
+int percentile_low = 35;	///< Lower percentile for ETs
+int percentile_high = 65;	///< Upper percentile for ETs
+int percentile_low_super = 15;	///< Lower percentile for ETs
+
+double estimated_ET_percentile_low = 0;	///< Estimated lower percentile of ETs
+double estimated_ET_percentile_high = 0;	///< Estimated upper percentile of ETs
+double estimated_ET_percentile_low_super = 0;	///< Estimated lower percentile of ETs
+
+double temp_ET_percentile_low = estimated_ET_percentile_low;	///< Estimated lower percentile of ETs
+double temp_ET_percentile_high = estimated_ET_percentile_high;	///< Estimated upper percentile of ETs
+double temp_ET_percentile_low_super = estimated_ET_percentile_low_super;	///< Estimated lower percentile of ETs
+
 double responseArray[11] = { 1,1,1,1,1,1,1,1,1,1,1 };
 //int symbolColor = 1;
 
@@ -352,6 +365,21 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 			timeThresholdSuper = (arg[0] * (superThresPercent / 100));
 		}
 	}
+	
+		else if (arguments[0] == 'percentile') {
+		if (numArgs != 4) {
+			tDisp.print("USAGE: percentile low high low_super");
+		}
+		else {
+			sscanf(arguments[1].c_str(), "%f", &arg[0]);
+			sscanf(arguments[2].c_str(), "%f", &arg[1]);
+			sscanf(arguments[3].c_str(), "%f", &arg[2]);
+			percentile_low = arg[0];
+			percentile_high = arg[1];
+			percentile_low_super = arg[2];
+		}
+	}
+
 
 	else if (arguments[0] == "mean") {
 		if (numArgs != 2) {
@@ -439,6 +467,33 @@ double MyBlock::std(double array[],int num_val) {
 	return(sqrt(sum/(num_val-1))); // sample std
 } 
 
+
+///////////////////////////////////////////////////////////////
+/// Calculating ET percentile of the block 
+///////////////////////////////////////////////////////////////
+double MyBlock::percentile(double array[],int num_val, int percent) { 
+	// sort the array
+	double temp;
+	for (int i = 0; i < num_val; i++) {
+		for (int j = i + 1; j < num_val; j++) {
+			if (array[i] > array[j]) {
+				temp = array[i];
+				array[i] = array[j];
+				array[j] = temp;
+			}
+		}
+	}
+	// return the value at the given percentile
+	int index = (int)(num_val * percent / 100.0);
+	if (index >= num_val) {
+		index = num_val - 1;
+	}
+	return array[index];
+
+} 
+
+
+
 ///////////////////////////////////////////////////////////////
 /// giveFeedback and put it to the graphic state 
 ///////////////////////////////////////////////////////////////
@@ -470,14 +525,27 @@ void MyBlock::giveFeedback() {
 	// tempThres1 = timeThreshold;
 	// tempThres2 = timeThresholdSuper;
 
-	tempMean = estimated_ET_mean;
-	tempStd = estimated_ET_std;
+	// tempMean = estimated_ET_mean;
+	// tempStd = estimated_ET_std;
+
+	temp_ET_percentile_low = estimated_ET_percentile_low;
+	temp_ET_percentile_high = estimated_ET_percentile_high;
+	temp_ET_percentile_low_super = estimated_ET_percentile_low_super;
+
+
+
 
 	if (n > 0) { //if at least one correct trial
 		b = b++; //increase counter of block number
 		medianETarray[b] = median(ETarray, n); //median of movement times	
-		stdETarray[b] = std(ETarray, n); //std of movement times
+		// stdETarray[b] = std(ETarray, n); //std of movement times
 		ERarray[b] = (((double)gNumErrorsBlock) / (double)(nn) * 100); //error rate
+
+		estimated_ET_percentile_high = percentile(ETarray, n, percentile_high); //upper percentile of ETs
+		estimated_ET_percentile_low = percentile(ETarray, n, percentile_low); //lower percentile of ETs
+		estimated_ET_percentile_low_super = percentile(ETarray, n, percentile_low_super); //lower percentile of ETs for super points
+
+		
 
 
 		//todo: change the update on ET thresholds
@@ -496,8 +564,8 @@ void MyBlock::giveFeedback() {
 		// 	}
 		// }
 
-		estimated_ET_mean = medianETarray[b]; //update the estimated mean
-		estimated_ET_std = stdETarray[b]; //update the estimated std
+		// estimated_ET_mean = medianETarray[b]; //update the estimated mean
+		// estimated_ET_std = stdETarray[b]; //update the estimated std
 
 
 
@@ -506,9 +574,54 @@ void MyBlock::giveFeedback() {
 	else {
 		b = b++;
 		medianETarray[b] = 0;
-		stdETarray[b] = 0;
+		// stdETarray[b] = 0;
 		ERarray[b] = 100;
+		estimated_ET_percentile_high = 0; //upper percentile of ETs
+		estimated_ET_percentile_low = 0; //lower percentile of ETs
+		estimated_ET_percentile_low_super = 0; //lower percentile of ETs for super points
 	}
+
+
+	// update/create subjecNum points in the leaderboard
+	vector <pair <string, double>> leaderboard;
+	ifstream infile(gExp->dataDir + "leaderboard.txt");
+	string line;
+	while (getline(infile, line)) {
+		istringstream iss(line);
+		string name;
+		double points;
+		if (iss >> name >> points) {
+			leaderboard.push_back(make_pair(name, points));
+		}
+	}
+	infile.close();
+
+	// Update the leaderboard with the current subject's points
+	// Check if the subject is already in the leaderboard
+	bool found = false;
+	for (auto& entry : leaderboard) {
+		if (entry.first == gExp->subjectName) {
+			entry.second += gNumPointsBlock; // Update points
+			found = true;
+			break;
+		}
+	}
+	// If not found, add the subject to the leaderboard
+	if (!found) {
+		leaderboard.push_back(make_pair(gExp->subjectName, gNumPointsBlock));
+	}
+
+	// Sort the leaderboard by points in descending order
+	sort(leaderboard.begin(), leaderboard.end(), [](const pair<string, double>& a, const pair<string, double>& b) {
+		return a.second > b.second;
+	});
+
+	// Write the updated leaderboard to the file
+	ofstream outfile(gExp->dataDir + "leaderboard.txt");
+	for (const auto& entry : leaderboard) {
+		outfile << entry.first << " " << entry.second << endl;
+	}
+	outfile.close();
 
 
 
@@ -517,6 +630,19 @@ void MyBlock::giveFeedback() {
 	sprintf(buffer, "Acc %3.1f%%		   PTS %2.1f", 100 - ERarray[b], gNumPointsBlock);
 	gs.line[1] = buffer;
 	gs.lineColor[1] = 1;
+
+
+	//print leaderboard of all participants on the screen
+	sprintf(buffer, "Leaderboard: ");
+	gs.line[2] = buffer;
+	gs.lineColor[2] = 1;
+	for (int i = 0; i < leaderboard.size(); i++) {
+		sprintf(buffer, "%s: %d", leaderboard[i].first.c_str(), leaderboard[i].second);
+		gs.line[3 + i] = buffer;
+		gs.lineColor[3 + i] = 1;
+	}
+
+	
 
 
 
@@ -602,8 +728,11 @@ void MyTrial::writeDat(ostream& out) {
 	out << tempThres1 << "\t"
 		<< tempThres2 << "\t"
 
-		<< tempMean << "\t"
-		<< tempStd << "\t"
+		// << tempMean << "\t"
+		// << tempStd << "\t"
+		<< temp_ET_percentile_high << "\t"
+		<< temp_ET_percentile_low << "\t"
+		<< temp_ET_percentile_low_super << "\t"
 
 		<< startTime << "\t"
 		<< startTimeReal << "\t"
@@ -613,6 +742,7 @@ void MyTrial::writeDat(ostream& out) {
 		<< useMetronome << "\t"
 		<< isCross << "\t"			//whether pre-movement threshold has been crossed in this trial
 		<< timeStamp << "\t"
+		<< global_start_time << "\t"
 		<< endl;
 }
 
@@ -657,8 +787,11 @@ void MyTrial::writeHeader(ostream& out) {
 
 	out << "timeThreshold" << "\t"
 		<< "timeThresholdSuper" << "\t"
-		<< "estimatedMean" << "\t"
-		<< "estimatedStd" << "\t"
+		// << "estimatedMean" << "\t"
+		// << "estimatedStd" << "\t"
+		<< "estimatedPercentileHigh" << "\t"
+		<< "estimatedPercentileLow" << "\t"
+		<< "estimatedPercentileLowSuper" << "\t"
 		<< "startTime" << "\t"
 		<< "startTimeReal" << "\t"
 		<< "trialDur" << "\t"
@@ -667,6 +800,7 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "useMetronome" << "\t"
 		<< "isCross" << "\t"
 		<< "crossTime" << "\t"
+		<< "globalStartTime" << "\t"
 		<< endl;
 }
 
@@ -719,7 +853,10 @@ void MyTrial::updateTextDisplay() {
 	// sprintf(buffer, "time: %2.2f   TRtime: %d   slice:%d   metronome: %d ", gCounter.readTotTime(), gCounter.readTR(), gCounter.readSlice(), timeMet);
 	// tDisp.setText(buffer, 2, 0);
 
-	sprintf(buffer, "est mean ET: %d  est std ET: %d", estimated_ET_mean, estimated_ET_std);
+	// sprintf(buffer, "est mean ET: %d  est std ET: %d", estimated_ET_mean, estimated_ET_std);
+	// tDisp.setText(buffer, 2, 0);
+	
+	sprintf(buffer, "est perc low: %d  est perc high: %d est perc low super: %d", estimated_ET_percentile_low, estimated_ET_percentile_high, estimated_ET_percentile_low_super);
 	tDisp.setText(buffer, 2, 0);
 
 	sprintf(buffer, "gTimer1: %2.2f   gTimer2: %2.2f   gTimer5: %2.2f", gTimer[1], gTimer[2], gTimer[5]);
@@ -1038,6 +1175,9 @@ void MyTrial::control() {
 
 					gTimer.reset(1); gTimer.reset(2); gTimer.reset(5);
 					dataman.startRecording();
+					time_t now = time(NULL);
+					struct tm *utc = gmtime(&now); // UTC time
+					global_start_time = asctime(utc);
 					state = WAIT_PREP;
 				}
 			}
@@ -1060,6 +1200,9 @@ void MyTrial::control() {
 					}
 					gTimer.reset(1); gTimer.reset(2); gTimer.reset(5);
 					dataman.startRecording();
+					time_t now = time(NULL);
+					struct tm *utc = gmtime(&now); // UTC time
+					global_start_time = asctime(utc);
 					state = WAIT_PREP;
 				}
 			}
@@ -1313,13 +1456,13 @@ void MyTrial::control() {
 				// }
 
 				if (isTrain){
-					if (ET < estimated_ET_mean - estimated_ET_std) {
+					if (ET < estimated_ET_percentile_low_super) {
 						points = 3;
 					}
-					else if (ET < estimated_ET_mean - 1/2 * estimated_ET_std) {
+					else if (ET < estimated_ET_percentile_low) {
 						points = 1;
 					}
-					else if (ET > estimated_ET_mean + 1/2 * estimated_ET_std) {
+					else if (ET > estimated_ET_percentile_high) {
 						points = 0;
 					}
 					else {

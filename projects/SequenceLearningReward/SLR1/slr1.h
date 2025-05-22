@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <string>
 #include "TextDisplay.h"
 #include "Screen.h"
@@ -18,6 +19,7 @@
 #include <gl/glut.h>
 #include <utility>
 #include <vector>
+#include <algorithm>
 //#include "SDL.h" // SDL library
 //#include "SDL_mixer.h" // Necessary for playing multiple sounds (added by a-yokoi)
 

@@ -583,46 +583,46 @@ void MyBlock::giveFeedback() {
 	}
 
 
-	//// update/create subjecNum points in the leaderboard
-	//vector <pair <string, double>> leaderboard;
-	//ifstream infile(gExp->dataDir + "leaderboard.txt");
-	//string line;
-	//while (getline(infile, line)) {
-	//	istringstream iss(line);
-	//	string name;
-	//	double points;
-	//	if (iss >> name >> points) {
-	//		leaderboard.push_back(make_pair(name, points));
-	//	}
-	//}
-	//infile.close();
+	// update/create subjecNum points in the leaderboard
+	vector <pair <string, double>> leaderboard;
+	ifstream infile(gExp->dataDir + "leaderboard.txt");
+	string line;
+	while (getline(infile, line)) {
+		istringstream iss(line);
+		string name;
+		double points;
+		if (iss >> name >> points) {
+			leaderboard.push_back(make_pair(name, points));
+		}
+	}
+	infile.close();
 
-	//// Update the leaderboard with the current subject's points
-	//// Check if the subject is already in the leaderboard
-	//bool found = false;
-	//for (auto& entry : leaderboard) {
-	//	if (entry.first == gExp->subjectName) {
-	//		entry.second += gNumPointsBlock; // Update points
-	//		found = true;
-	//		break;
-	//	}
-	//}
-	//// If not found, add the subject to the leaderboard
-	//if (!found) {
-	//	leaderboard.push_back(make_pair(gExp->subjectName, gNumPointsBlock));
-	//}
+	// Update the leaderboard with the current subject's points
+	// Check if the subject is already in the leaderboard
+	bool found = false;
+	for (auto& entry : leaderboard) {
+		if (entry.first == gExp->subjectName) {
+			entry.second += gNumPointsBlock; // Update points
+			found = true;
+			break;
+		}
+	}
+	// If not found, add the subject to the leaderboard
+	if (!found) {
+		leaderboard.push_back(make_pair(gExp->subjectName, gNumPointsBlock));
+	}
 
-	//// Sort the leaderboard by points in descending order
-	//sort(leaderboard.begin(), leaderboard.end(), [](const pair<string, double>& a, const pair<string, double>& b) {
-	//	return a.second > b.second;
-	//});
+	// Sort the leaderboard by points in descending order
+	sort(leaderboard.begin(), leaderboard.end(), [](const pair<string, double>& a, const pair<string, double>& b) {
+		return a.second > b.second;
+	});
 
-	//// Write the updated leaderboard to the file
-	//ofstream outfile(gExp->dataDir + "leaderboard.txt");
-	//for (const auto& entry : leaderboard) {
-	//	outfile << entry.first << " " << entry.second << endl;
-	//}
-	//outfile.close();
+	// Write the updated leaderboard to the file
+	ofstream outfile(gExp->dataDir + "leaderboard.txt");
+	for (const auto& entry : leaderboard) {
+		outfile << entry.first << " " << entry.second << endl;
+	}
+	outfile.close();
 
 
 
@@ -857,7 +857,7 @@ void MyTrial::updateTextDisplay() {
 	// sprintf(buffer, "est mean ET: %d  est std ET: %d", estimated_ET_mean, estimated_ET_std);
 	// tDisp.setText(buffer, 2, 0);
 	
-	sprintf(buffer, "est perc low: %d  est perc high: %d est perc low super: %d", estimated_ET_percentile_low, estimated_ET_percentile_high, estimated_ET_percentile_low_super);
+	sprintf(buffer, "est perc low: %f  est perc high: %f est perc low super: %f", estimated_ET_percentile_low, estimated_ET_percentile_high, estimated_ET_percentile_low_super);
 	tDisp.setText(buffer, 2, 0);
 
 	sprintf(buffer, "gTimer1: %2.2f   gTimer2: %2.2f   gTimer5: %2.2f", gTimer[1], gTimer[2], gTimer[5]);

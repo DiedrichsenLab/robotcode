@@ -1480,10 +1480,10 @@ void MyTrial::control() {
 				}
 				else {
 					if (ET < timeThresholdSuper) {
-						points = 3;
+						points = 0;
 					}
 					else if (ET < timeThreshold) {
-						points = 1;
+						points = 0;
 					}
 					else {
 						points = 0;

@@ -700,10 +700,13 @@ void MyTrial::copyHaptics() {
 /// updateTextDisp: called from TextDisplay 
 ///////////////////////////////////////////////////////////////
 void MyTrial::updateTextDisplay() {
-	sprintf(buffer, "startTime: %d   TR: %2.0f", startTime, TR);
-	tDisp.setText(buffer, 1, 0);
+	// sprintf(buffer, "startTime: %d   TR: %2.0f", startTime, TR);
+	// tDisp.setText(buffer, 1, 0);
 
-	sprintf(buffer, "time: %2.2f   TRtime: %d   slice:%d   metronome: %d ", gCounter.readTotTime(), gCounter.readTR(), gCounter.readSlice(), timeMet);
+	// sprintf(buffer, "time: %2.2f   TRtime: %d   slice:%d   metronome: %d ", gCounter.readTotTime(), gCounter.readTR(), gCounter.readSlice(), timeMet);
+	// tDisp.setText(buffer, 2, 0);
+
+	sprintf(buffer, "est mean ET: %d  est std ET: %d", estimated_ET_mean, estimated_ET_std);
 	tDisp.setText(buffer, 2, 0);
 
 	sprintf(buffer, "gTimer1: %2.2f   gTimer2: %2.2f   gTimer5: %2.2f", gTimer[1], gTimer[2], gTimer[5]);
@@ -1010,14 +1013,14 @@ void MyTrial::control() {
 
 
 						//cout << "hand" << hand << '\n';
-						if (show == 1) {
-							if (hand == 2) {
-								responseArray[i] = 6; // orange for the right
-							}
-							else {
-								responseArray[i] = 9; // light blue for the left
-							}
-						}
+						// if (show == 1) {
+						// 	if (hand == 2) {
+						// 		responseArray[i] = 6; // orange for the right
+						// 	}
+						// 	else {
+						// 		responseArray[i] = 9; // light blue for the left
+						// 	}
+						// }
 					}
 
 					gTimer.reset(1); gTimer.reset(2); gTimer.reset(5);
@@ -1033,14 +1036,14 @@ void MyTrial::control() {
 						gs.seqMask[i] = ' ';
 
 
-						if (show == 1) {
-							if (hand == 2) {
-								responseArray[i] = 6; // orange for the right
-							}
-							else {
-								responseArray[i] = 9; // light blue for the left
-							}
-						}
+						// if (show == 1) {
+						// 	if (hand == 2) {
+						// 		responseArray[i] = 6; // orange for the right
+						// 	}
+						// 	else {
+						// 		responseArray[i] = 9; // light blue for the left
+						// 	}
+						// }
 					}
 					gTimer.reset(1); gTimer.reset(2); gTimer.reset(5);
 					dataman.startRecording();
@@ -1176,16 +1179,16 @@ void MyTrial::control() {
 	case WAIT_PRESS: //4
 		//----------------------------------
 		// REVEAL HAND AT GO CUE ONLY
-		for (i = 0; i < seqLength; i++) {
-			if (show == 2) {
-				if (hand == 2) {
-					responseArray[i] = 6; // orange for the right
-				}
-				else {
-					responseArray[i] = 9; // light blue for the left
-				}
-			}
-		}
+		// for (i = 0; i < seqLength; i++) {
+		// 	if (show == 2) {
+		// 		if (hand == 2) {
+		// 			responseArray[i] = 6; // orange for the right
+		// 		}
+		// 		else {
+		// 			responseArray[i] = 9; // light blue for the left
+		// 		}
+		// 	}
+		// }
 		//if (useMetronome > 0 && gTimer[2] > timeMet * (execTime / MAX_PRESS) && timeMet < MAX_PRESS + 1) {
 		//	timeMet++;	// update counter
 		//};

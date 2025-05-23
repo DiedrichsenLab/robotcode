@@ -367,19 +367,36 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 		}
 	}
 	
-		else if (arguments[0] == "percentile") {
+
+	/////update percentile thresholds
+	//else if (arguments[0] == "percentile") {
+	//	if (numArgs != 4) {
+	//		tDisp.print("USAGE: percentile low high low_super");
+	//	}
+	//	else {
+	//		sscanf(arguments[1].c_str(), "%f", &arg[0]);
+	//		sscanf(arguments[2].c_str(), "%f", &arg[1]);
+	//		sscanf(arguments[3].c_str(), "%f", &arg[2]);
+	//		percentile_low = arg[0];
+	//		percentile_high = arg[1];
+	//		percentile_low_super = arg[2];
+	//	}
+	//}
+
+	///update estimated ET percentile thresholds
+	else if (arguments[0] == "ET_percentile") {
 		if (numArgs != 4) {
-			tDisp.print("USAGE: percentile low high low_super");
+			tDisp.print("USAGE: ET_percentile low high low_super");
 		}
 		else {
 			sscanf(arguments[1].c_str(), "%f", &arg[0]);
 			sscanf(arguments[2].c_str(), "%f", &arg[1]);
 			sscanf(arguments[3].c_str(), "%f", &arg[2]);
-			percentile_low = arg[0];
-			percentile_high = arg[1];
-			percentile_low_super = arg[2];
+			estimated_ET_percentile_low = arg[0];
+			estimated_ET_percentile_high = arg[1];
+			estimated_ET_percentile_low_super = arg[2];
 		}
-	}
+		}
 
 
 	else if (arguments[0] == "mean") {
@@ -1490,30 +1507,16 @@ void MyTrial::control() {
 						points = 0;
 					}
 				}
-
-				if (points == 3){
-					PlaySound(TASKSOUNDS[1].c_str(), NULL, SND_ASYNC);
-					gs.lineColor[1] = 10; // purple
-				}
-				else if (points == 1) {
-					PlaySound(TASKSOUNDS[2].c_str(), NULL, SND_ASYNC);
-					gs.lineColor[1] = 3; // purple
-
-				}
-				else{
-					gs.lineColor[1] = 1; //white
-				}
-
 				gs.clearCues();
 				sprintf(buffer, "+%d", points);
 
 				if (points == 3){
 					PlaySound(TASKSOUNDS[1].c_str(), NULL, SND_ASYNC);
-					gs.lineColor[1] = 10; // purple
+					gs.lineColor[1] = 10; // blue
 				}
 				else if (points == 1) {
 					PlaySound(TASKSOUNDS[2].c_str(), NULL, SND_ASYNC);
-					gs.lineColor[1] = 3; // purple
+					gs.lineColor[1] = 3; // green
 
 				}
 				else{

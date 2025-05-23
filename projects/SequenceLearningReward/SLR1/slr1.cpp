@@ -55,9 +55,9 @@ double tempThres2 = timeThresholdSuper;
 // double tempMean = estimated_ET_mean;	///< Estimated mean of ETs
 // double tempStd = estimated_ET_std;	///< Estimated variance of ETs
 
-int percentile_low = 35;	///< Lower percentile for ETs
-int percentile_high = 65;	///< Upper percentile for ETs
-int percentile_low_super = 15;	///< Lower percentile for ETs
+int percentile_low = 45;	///< Lower percentile for ETs
+int percentile_high = 80;	///< Upper percentile for ETs
+int percentile_low_super = 10;	///< Lower percentile for ETs
 
 double estimated_ET_percentile_low = 0;	///< Estimated lower percentile of ETs
 double estimated_ET_percentile_high = 0;	///< Estimated upper percentile of ETs
@@ -1468,7 +1468,8 @@ void MyTrial::control() {
 						points = 3;
 					}
 					else if (ET < estimated_ET_percentile_low) {
-						points = 1;
+						//randomly asssign point (either 1 or 3)
+						points = (rand() % 2) * 2 + 1;
 					}
 					else if (ET > estimated_ET_percentile_high) {
 						points = 0;
@@ -1490,18 +1491,43 @@ void MyTrial::control() {
 					}
 				}
 
+				if (points == 3){
+					PlaySound(TASKSOUNDS[1].c_str(), NULL, SND_ASYNC);
+					gs.lineColor[1] = 10; // purple
+				}
+				else if (points == 1) {
+					PlaySound(TASKSOUNDS[2].c_str(), NULL, SND_ASYNC);
+					gs.lineColor[1] = 3; // purple
+
+				}
+				else{
+					gs.lineColor[1] = 1; //white
+				}
+
 				gs.clearCues();
 				sprintf(buffer, "+%d", points);
-				gs.lineColor[1] = 1; // white
-				gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
 
+				if (points == 3){
+					PlaySound(TASKSOUNDS[1].c_str(), NULL, SND_ASYNC);
+					gs.lineColor[1] = 10; // purple
+				}
+				else if (points == 1) {
+					PlaySound(TASKSOUNDS[2].c_str(), NULL, SND_ASYNC);
+					gs.lineColor[1] = 3; // purple
+
+				}
+				else{
+					gs.lineColor[1] = 1; //white
+				}				
+
+				gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
 
 			}
 			else if (isError == 1 && isCross) {
 				points = -5;
 				PlaySound(TASKSOUNDS[5].c_str(), NULL, SND_ASYNC);
 				gs.clearCues(); sprintf(buffer, "%d", points);
-				gs.lineColor[1] = 1; // white
+				gs.lineColor[1] = 2; // red
 				gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
 			}
 
@@ -1510,7 +1536,7 @@ void MyTrial::control() {
 				// PLAY SOUND 
 				PlaySound(TASKSOUNDS[5].c_str(), NULL, SND_ASYNC);
 				gs.clearCues(); sprintf(buffer, "%d", points);
-				gs.lineColor[1] = 1; // white
+				gs.lineColor[1] = 2; // red
 				gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
 			}
 			//else if (isError == 1 && timingError == 1) {

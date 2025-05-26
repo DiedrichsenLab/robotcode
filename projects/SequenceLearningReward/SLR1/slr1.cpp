@@ -1508,6 +1508,7 @@ void MyTrial::control() {
 					}
 				}
 				gs.clearCues();
+				gs.size[1] = 8; // size of feedback text
 				sprintf(buffer, "+%d", points);
 
 				if (points == 3){

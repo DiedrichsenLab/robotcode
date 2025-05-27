@@ -77,7 +77,7 @@ double ERarray[50];					///< blocks per subject, preallocate array to keep track
 
 
 
-string TASKSOUNDS[8] = {
+string TASKSOUNDS[9] = {
 	"C:/robotcode/util/wav/ding.wav",			// 0
 		"C:/robotcode/util/wav/smb_coin.wav",	// 1
 		"C:/robotcode/util/wav/chimes.wav",		// 2
@@ -85,7 +85,10 @@ string TASKSOUNDS[8] = {
 		"C:/robotcode/util/wav/bump.wav",		// 4
 		"C:/robotcode/util/wav/chord.wav",		// 5
 		"C:/robotcode/util/wav/smb_pipe.wav",	// 6
-		"C:/robotcode/util/wav/error.wav"		// 7
+		"C:/robotcode/util/wav/error.wav",		// 7
+		"C:/robotcode/util/wav/cashregister.wav"		// 8
+
+
 };
 
 // timings	 
@@ -1512,7 +1515,7 @@ void MyTrial::control() {
 				sprintf(buffer, "+%d", points);
 
 				if (points == 3){
-					PlaySound(TASKSOUNDS[1].c_str(), NULL, SND_ASYNC);
+					PlaySound(TASKSOUNDS[8].c_str(), NULL, SND_ASYNC);
 					gs.lineColor[1] = 3; // Green
 				}
 				else if (points == 1) {

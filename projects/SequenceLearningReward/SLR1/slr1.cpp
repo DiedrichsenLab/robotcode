@@ -1513,11 +1513,11 @@ void MyTrial::control() {
 
 				if (points == 3){
 					PlaySound(TASKSOUNDS[1].c_str(), NULL, SND_ASYNC);
-					gs.lineColor[1] = 10; // blue
+					gs.lineColor[1] = 3; // Green
 				}
 				else if (points == 1) {
 					PlaySound(TASKSOUNDS[2].c_str(), NULL, SND_ASYNC);
-					gs.lineColor[1] = 3; // green
+					gs.lineColor[1] = 7; // yellow
 
 				}
 				else{

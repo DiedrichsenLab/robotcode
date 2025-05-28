@@ -648,21 +648,21 @@ void MyBlock::giveFeedback() {
 
 
 	// print FEEDBACK on the screen 
-	sprintf(buffer, "Acc %3.1f%%		   PTS %2.1f", 100 - ERarray[b], gNumPointsBlock);
+	sprintf(buffer, "Acc %3.1f%%     ET %2.0fms     PTS %2.1f", 100 - ERarray[b], medianETarray[b], gNumPointsBlock);
 	gs.line[1] = buffer;
 	gs.lineColor[1] = 1;
 
 
-	//print leaderboard of all participants on the screen
-	sprintf(buffer, "Leaderboard: ");
-	gs.line[2] = buffer;
-	gs.lineColor[2] = 1;
-	for (int i = 0; i < leaderboard.size(); i++) {
-		sprintf(buffer, "%s: %0.2f", leaderboard[i].first.c_str(), leaderboard[i].second);
-		printf("Leaderboard Entry %d: %s\n", i, buffer);
-		gs.line[3 + i] = buffer;
-		gs.lineColor[3 + i] = 1;
-	}
+	////print leaderboard of all participants on the screen
+	//sprintf(buffer, "Leaderboard: ");
+	//gs.line[2] = buffer;
+	//gs.lineColor[2] = 1;
+	//for (int i = 0; i < leaderboard.size(); i++) {
+	//	sprintf(buffer, "%s: %0.2f", leaderboard[i].first.c_str(), leaderboard[i].second);
+	//	printf("Leaderboard Entry %d: %s\n", i, buffer);
+	//	gs.line[3 + i] = buffer;
+	//	gs.lineColor[3 + i] = 1;
+	//}
 
 	
 
@@ -1389,10 +1389,10 @@ void MyTrial::control() {
 				gTimer.reset(5);
 			}
 			if (response[seqCounter] == press[seqCounter] && handPressed[seqCounter] == hand) { // correct press	
-				//responseArray[seqCounter] = 3; // green
+				responseArray[seqCounter] = 3; // green
 			}
 			else { // error: wrong key pressed
-				//responseArray[seqCounter] = 2; // red
+				responseArray[seqCounter] = 3; // green
 				isError = 1;
 			}
 

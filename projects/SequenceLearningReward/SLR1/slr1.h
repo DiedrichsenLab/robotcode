@@ -199,6 +199,7 @@ private:
 	double RT;								///< Reaction time (from go cue)
 	double ET;								///< Execution time (RT + MT)
 	double MT;								///< Movement time 
+	int zone;								///< zone in the ET percentiles
 
 	//string global_start_time; 					///< Global start time of the trial
 	char global_start_time[40]; 					///< Global start time of the trial

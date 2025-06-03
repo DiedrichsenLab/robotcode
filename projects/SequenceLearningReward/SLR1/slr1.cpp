@@ -690,6 +690,7 @@ MyTrial::MyTrial() {
 	MT = 0;						// init sequence Movement Time
 	RT = 0;								// init reaction time
 	ET = 0;								// init sequence execution time
+	zone = 0;							// zone in ET percentiles
 	points = 0;							// init points gained
 	waitTime = 3000;						// how long to wait for first trial in block
 	stimOnsetTime = 100;					// stimulus onset time in free-RT task
@@ -733,7 +734,8 @@ void MyTrial::writeDat(ostream& out) {
 		<< MT << "\t"
 		<< isError << "\t"
 		<< timingError << "\t"
-		<< points << "\t";
+		<< points << "\t"
+		<< zone << "\t";
 
 	for (i = 0; i < MAX_PRESS; i++) {
 		out << response[i] << "\t";
@@ -789,7 +791,8 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "MT" << "\t"
 		<< "isError" << "\t"
 		<< "timingError" << "\t"
-		<< "points" << "\t";
+		<< "points" << "\t"
+		<< "zone" << "\t";
 
 	for (i = 0; i < MAX_PRESS; i++) {
 		sprintf(header, "response%d", i + 1);
@@ -924,7 +927,9 @@ void MyTrial::updateTextDisplay() {
 #define preTH 1.5//1.5				// Press threshold
 #define relTH 0.8//1.0//1.0		// Release threshold
 #define baseTHhi  0.5 //0.8//1.0		// Baseline higher threshold (to check for premature movements during sequence planning phase)
-#define baseTHlow 0 //0.8//1.0		// Baseline lower threshold (to check for premature movements during sequence planning phase)
+//#define baseTHlow 0 //0.8//1.0		// Baseline lower threshold (to check for premature movements during sequence planning phase)
+#define baseTHlow -0.2 //0.8//1.0		// Baseline lower threshold (to check for premature movements during sequence planning phase)
+
 
 double THRESHOLD[2][5] = { {preTH, preTH, preTH, preTH, preTH}, {relTH, relTH, relTH, relTH, relTH} };
 double BASE_THRESHOLD_HI[2][5] = { {baseTHhi, baseTHhi, baseTHhi, baseTHhi, baseTHhi}, {baseTHhi - 0.1, baseTHhi - 0.1, baseTHhi - 0.1, baseTHhi - 0.1, baseTHhi - 0.1} };
@@ -1130,7 +1135,7 @@ void MyTrial::control() {
 			released++;
 		}
 
-		if (force >= BASE_THRESHOLD_HI[0][f - 5]) {
+		if (force >= BASE_THRESHOLD_HI[0][f - 5] || force <= BASE_THRESHOLD_LOW[0][f-5]) {
 			numNewThresCross++;
 		}
 	}
@@ -1486,17 +1491,21 @@ void MyTrial::control() {
 				if (isTrain){
 					if (ET < estimated_ET_percentile_low_super) {
 						points = 3;
+						zone = 1;
 					}
 					else if (ET < estimated_ET_percentile_low) {
 						//randomly asssign point (either 1 or 3)
 						points = (rand() % 2) * 2 + 1;
+						zone = 2;
 					}
 					else if (ET > estimated_ET_percentile_high) {
 						points = 0;
+						zone = 4;
 					}
 					else {
 						// randomly assing point (either 0 or 1)
 						points = rand() % 2;
+						zone = 3;
 					}
 				}
 				else {

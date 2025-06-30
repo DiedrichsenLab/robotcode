@@ -645,14 +645,14 @@ void MyTrial::read(istream& in) {
 		>> iti
 		>> trialLabel
 		//>> GoNogo
-		>> endTime
-		>> startTime
+		//>> endTime
 		>> TrigExec
 		>> TrigPlan
 		>> TrigBaseline
 		>> stimTrigExec
 		>> stimTrigPlan
-		>> stimTrigBaseline;
+		>> stimTrigBaseline
+		>> startTime;
 }
 
 ///////////////////////////////////////////////////////////////
@@ -785,7 +785,7 @@ void MyTrial::updateTextDisplay() {
 
 	tDisp.setText("Experiment: Smp3", 2, 1);
 
-	sprintf(buffer, "State : %d   Trial: %d   Block state: %d   GoNogo: %s", state, gExp->theBlock->trialNum, gExp->theBlock->state, GoNogo.c_str());
+	sprintf(buffer, "State : %d   Trial: %d   Block state: %d   Exec: %d  Plan: %d  Rest: %d", state, gExp->theBlock->trialNum, gExp->theBlock->state, TrigExec, TrigPlan, TrigBaseline);
 	tDisp.setText(buffer, 4, 0);
 
 	tDisp.setText("Fingers in task: " + fingerTask[0] + " " + fingerTask[1], 4, 1);
@@ -1538,13 +1538,11 @@ void MyTrial::control() {
 		}
 		break;
 
-		if (gTimer[3] >= 500 + stimTrigBaseline && TrigBaseline == 1) {
-			//SetDacVoltage(0, emgTrigVolt);	// trigger to TMS
+		if (gTimer[2] >= stimTrigBaseline && TrigBaseline == 1) {
 			SetDIOState(0, 0x0000);
 		}
 
-		if (gTimer[3] >= 500 + stimTrigBaseline + 100 && TrigBaseline == 1) {
-			//SetDacVoltage(0, emgTrigVolt);	// trigger to TMS
+		if (gTimer[2] >= stimTrigBaseline + 100 && TrigBaseline == 1) {
 			SetDIOState(0, 0xFFFF);
 		}
 

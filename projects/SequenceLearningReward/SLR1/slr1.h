@@ -1,8 +1,10 @@
 #include <windows.h>
 #include <conio.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <string>
 #include "TextDisplay.h"
 #include "Screen.h"
@@ -15,6 +17,9 @@
 #include "TRCounter626.h" 
 #include "Win626.h"
 #include <gl/glut.h>
+#include <utility>
+#include <vector>
+#include <algorithm>
 //#include "SDL.h" // SDL library
 //#include "SDL_mixer.h" // Necessary for playing multiple sounds (added by a-yokoi)
 
@@ -55,6 +60,8 @@ public:
 };
 
 #define NUMDISPLAYLINES 100 //20
+#define MAX_LEADERBOARD_LINE 20
+
 ///////////////////////////////////////////////////////////////
 // Define graphics state: collection of variables that define the graphic scene 
 ///////////////////////////////////////////////////////////////
@@ -103,6 +110,9 @@ public:
 	virtual Trial* getTrial();		// create a new Trial 
 	virtual void giveFeedback();
 	virtual void start();
+	virtual double mean(double array[], int num_val); 
+	virtual double std(double array[], int num_val);
+	virtual double percentile(double array[], int num_val, int percent);
 };
 
 ///////////////////////////////////////////////////////////////
@@ -189,6 +199,13 @@ private:
 	double RT;								///< Reaction time (from go cue)
 	double ET;								///< Execution time (RT + MT)
 	double MT;								///< Movement time 
+	int zone;								///< zone in the ET percentiles
+
+	//string global_start_time; 					///< Global start time of the trial
+	char global_start_time[40]; 					///< Global start time of the trial
+
+
+
 
 	string cue;							///< Visual cue for sequences
 	//string seqMask;							///< Mask for visual cues

@@ -425,12 +425,12 @@ void MyBlock::giveFeedback() {
 		ERarray[b] = (((double)gNumErrorsBlock) / (double)(nn) * 100); //error rate
 
 
-		//if ((ERarray[b] <= ERthreshold) && (ERarray[b - 1] >= ERthreshold)) { //if ER on previous block > 20%
-		//	if (medianETarray[b] < (timeThreshold / (timeThresPercent / 100))) { //adjust only if ET of current block faster than ET that generated current threshold
-		//		timeThreshold = medianETarray[b] * (timeThresPercent / 100); //previous ET+5%
-		//		timeThresholdSuper = medianETarray[b] * (superThresPercent / 100); //previous ET-5% 	
-		//	}
-		//}
+		if ((ERarray[b] <= ERthreshold) && (ERarray[b - 1] >= ERthreshold)) { //if ER on previous block > 20%
+			if (medianETarray[b] < (timeThreshold / (timeThresPercent / 100))) { //adjust only if ET of current block faster than ET that generated current threshold
+				timeThreshold = medianETarray[b] * (timeThresPercent / 100); //previous ET+5%
+				timeThresholdSuper = medianETarray[b] * (superThresPercent / 100); //previous ET-5% 	
+			}
+		}
 
 		if ((ERarray[b] <= ERthreshold) && (ERarray[b - 1] <= ERthreshold)) { //if ER on previous block <20%	
 			if (medianETarray[b] < (timeThreshold / (timeThresPercent / 100))) { //adjust only if ET of current block faster than ET that generated current threshold

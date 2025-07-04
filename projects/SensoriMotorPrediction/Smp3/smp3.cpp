@@ -1105,7 +1105,7 @@ void MyTrial::updateGraphics(int what) {
 		}
 
 		gScreen.setColor(Screen::white);
-		gScreen.print(stateString, -21, 12, 5);
+		gScreen.print(stateString, -0, 0, 5);
 	}
 }
 
@@ -1269,12 +1269,12 @@ void MyTrial::control() {
 		gs.showForces = 1;
 		gs.showFxCross = 1;
 
-		if (gTimer[3] >= 500 + stimTrigPlan && TrigPlan == 1) {
+		if (gTimer[3] >= stimTrigPlan && TrigPlan == 1) {
 			//SetDacVoltage(0, emgTrigVolt);	// trigger to TMS
 			SetDIOState(0, 0x0000);
 		}
 
-		if (gTimer[3] >= 500 + stimTrigPlan + 100 && TrigPlan == 1) {
+		if (gTimer[3] >= stimTrigPlan + 100 && TrigPlan == 1) {
 			//SetDacVoltage(0, emgTrigVolt);	// trigger to TMS
 			SetDIOState(0, 0xFFFF);
 		}
@@ -1356,12 +1356,12 @@ void MyTrial::control() {
 
 	case WAIT_EXEC: //3
 
-		if (gTimer[3] >= 500 + stimTrigExec && TrigExec == 1) {
+		if (gTimer[3] >= stimTrigExec && TrigExec == 1) {
 			//SetDacVoltage(0, emgTrigVolt);	// trigger to TMS
 			SetDIOState(0, 0x0000);
 		}
 
-		if (gTimer[3] >= 500 + stimTrigExec + 100 && TrigExec == 1) {
+		if (gTimer[3] >= stimTrigExec + 100 && TrigExec == 1) {
 			//SetDacVoltage(0, emgTrigVolt);	// trigger to TMS
 			SetDIOState(0, 0xFFFF);
 		}
@@ -1526,18 +1526,6 @@ void MyTrial::control() {
 
 	case WAIT_ITI:
 
-		gs.showTgLines = 1;	// set screen lines/force bars to show
-		gs.showBsLines = 1;
-		gs.showFxCross = 1;
-		gs.showForces = 0;
-		gs.showTarget = 0;
-		gs.showFeedback = 0;
-		if (gTimer[2] >= iti) {
-			state = ACQUIRE_HRF;
-			gTimer.reset(2);
-		}
-		break;
-
 		if (gTimer[2] >= stimTrigBaseline && TrigBaseline == 1) {
 			SetDIOState(0, 0x0000);
 		}
@@ -1545,6 +1533,18 @@ void MyTrial::control() {
 		if (gTimer[2] >= stimTrigBaseline + 100 && TrigBaseline == 1) {
 			SetDIOState(0, 0xFFFF);
 		}
+
+		gs.showTgLines = 1;	// set screen lines/force bars to show
+		gs.showBsLines = 1;
+		gs.showFxCross = 1;
+		gs.showForces = 1;
+		gs.showTarget = 0;
+		gs.showFeedback = 0;
+		if (gTimer[2] >= iti) {
+			state = ACQUIRE_HRF;
+			gTimer.reset(2);
+		}
+		break;
 
 	case ACQUIRE_HRF: //6
 

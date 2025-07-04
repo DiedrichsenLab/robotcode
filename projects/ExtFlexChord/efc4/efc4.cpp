@@ -147,9 +147,9 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	gExp->redirectIOToConsole();		// I uncommented this!!!
 	tDisp.init(gThisInst, 0, 0, 800, 30, 9, 2, &(::parseCommand));		
 	tDisp.setText("Subj", 0, 0);
-	//gScreen.init(gThisInst, 1920, 0, 1440, 900, &(::updateGraphics));	// Default setting for the Windows 10 PC (Behav training/testing)
+	gScreen.init(gThisInst, 1920, 0, 1440, 900, &(::updateGraphics));	// Default setting for the Windows 10 PC (Behav training/testing)
 	//gScreen.init(gThisInst, 1280, 0, 1024, 768, &(::updateGraphics)); // Default setting for the 7T control room
-	gScreen.init(gThisInst, 1920, 0, 1680, 1080, &(::updateGraphics)); // Default setting for the Windows 10 PC (Mock scanner)
+	//gScreen.init(gThisInst, 1920, 0, 1680, 1080, &(::updateGraphics)); // Default setting for the Windows 10 PC (Mock scanner)
 	gScreen.setCenter(Vector2D(0, 0));									// In cm //0,2
 	gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));					// cm/pixel
 

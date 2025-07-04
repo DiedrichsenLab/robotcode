@@ -20,6 +20,8 @@
 //#include "SDL.h" // SDL library
 //#include "SDL_mixer.h" // Necessary for playing multiple sounds (added by a-yokoi)
 
+#include <map>
+
 using namespace std;
 
 #define Pi 3.141592654
@@ -34,12 +36,14 @@ using namespace std;
 ///////////////////////////////////////////////////////////////
 enum TrialState {
 	WAIT_TRIAL,			// 0
-	START_TRIAL,		// 1
-	WAIT_PLAN,			// 2
-	WAIT_EXEC,			// 3
-	GIVE_FEEDBACK,		// 4
-	WAIT_ITI,			// 5
-	END_TRIAL			// 6
+	WAIT_TR,			// 1
+	START_TRIAL,		// 2
+	WAIT_PLAN,			// 3
+	WAIT_EXEC,			// 4
+	GIVE_FEEDBACK,		// 5
+	WAIT_ITI,			// 6
+	ACQUIRE_HRF,		// 7
+	END_TRIAL			// 8
 };
 
 ///////////////////////////////////////////////////////////////
@@ -68,8 +72,9 @@ public:
 	bool showBoxes;
 	bool showLines;
 	bool showTarget;
-	bool showForces;
+	bool showFxCross;
 	bool planCue;
+	bool showForces;
 	bool planError;
 	bool chordError;
 	bool showForceBars;
@@ -79,6 +84,7 @@ public:
 	int boxColor;
 	int rewardTrial;
 	bool showDiagnostics;
+	bool flipscreen = false;
 };
 
 ///////////////////////////////////////////////////////////////
@@ -88,8 +94,10 @@ public:
 class DataRecord {
 public:
 	DataRecord() {}
-	DataRecord(int s);
+	DataRecord(int s, int t, bool started);
 	void write(ostream& out);
+	/*void calc_MD();*/
+	double MD = 0;
 public:
 	int state;
 	int trialNum;
@@ -98,7 +106,17 @@ public:
 	double fforce[2][5];
 	double diffForceMov[5];
 	double visualizedForce[5];
+	double	TotTime;
+	int		TR;
+	int		currentSlice;
+	double	TRtime;
+	static map<int, vector<vector<double>>> X;
+
+	bool MD_done;
+
 };
+
+map<int, vector<vector<double>>> DataRecord::X;
 
 ///////////////////////////////////////////////////////////////
 // MyBlock
@@ -133,28 +151,46 @@ public:
 	virtual void writeDat(ostream& out);		// has to be implemented 
 	virtual void writeMov(ostream& out);		// Trial output to data file 
 	friend  void MyBlock::giveFeedback();
+
+	void calc_md();
+	void calc_md_async();
+
+
 private:
 	TrialState state;						///< State of the Trial 
 
 	int subNum;								///< Subjet number
 	int planTime;							///< Duration between cue onset (visual stimulus) and go onset
 	int execMaxTime;						///< Maximum duration for execution of the chord
+	int success_holdTime;
+	int max_holdTime = 0;
+	int startTimeReal;
+	int startTRReal;
+	int startTime;
+	double diffForceMov1[5];
+	double diffForceMov[5];
+	std::vector<std::vector<double>> X;
+	//bool chordErrorFlag;
+	int endTime;
 	int feedbackTime;						///< The duration between giveFeedback and giveScore
 	int iti;								///< inter trial interval
-	double stimTrigPlan;
-	double stimTrigBaseline;
-	bool TrigPlan;
-	bool TrigBaseline;
-	string session;
-	int week;
-	int day;
 	string chordID;							///< Chord identifier. 0: neutral , 1: flexion , 2: extension
 	bool trialCorr;							///< 1: trial is correct , 2: trial is not correct
 	int trialErrorType;						///< 0: no error , 1: movement during planning , 2: could not execute
 	double RT;								///< Reaction time: time from go cue to full execution of chord
+	double MD;
+	double ET;
 	int trialPoint;							///< point received in each trial
+	int points;
+	bool MD_done = FALSE;
+	bool planError;
+	int day;
+	string current_time;
+	string session;
+	int week;
 
 	DataManager<DataRecord, 30000 / 2> dataman;///< For data recording for MOV file 
+
 };
 
 ///////////////////////////////////////////////////////////////
@@ -174,6 +210,17 @@ public:
 void SetDacVoltage(WORD channel, DOUBLE volts);
 void SetDIOState(WORD group, WORD states);
 
+//////////////////////////////////////////////////////////////
+class FixCross : public Target {
+public:
+	void draw();
+};
+void FixCross::draw() {
+	//setColor(1);
+	gScreen.setColor(color);
+	gScreen.drawBox(Vector2D(size[0], 0.3), Vector2D(position[0], position[1]));
+	gScreen.drawBox(Vector2D(0.3, size[1]), Vector2D(position[0], position[1]));
+}
 
 class ForceCursor : public Target {
 public:
@@ -184,3 +231,4 @@ void ForceCursor::draw() {
 	gScreen.setColor(color);
 	gScreen.drawBox(Vector2D(size[0], 0.3), Vector2D(position[0], position[1]));
 }
+

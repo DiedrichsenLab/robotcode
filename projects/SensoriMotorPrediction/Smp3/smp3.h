@@ -195,6 +195,7 @@ private:
 	bool TrigExec;
 	bool TrigPlan;
 	bool TrigBaseline;
+	bool TrigStart;
 
 
 	DataManager<DataRecord, 30000 / 2> dataman;///< For data recording for MOV file //up to 30 s of data are recorded per trial

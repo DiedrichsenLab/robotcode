@@ -1176,7 +1176,7 @@ void MyTrial::control() {
 		gs.boxColor = 5;	// grey baseline box color
 		//planErrorFlag = 0;
 		//SetDacVoltage(0, 0);	// Ali EMG - gets ~200us to change digital to analog. Does it interrupt the ADC?
-		SetDIOState(0, 0xFFFF); // Ali EMG
+		SetDIOState(0, 0xFFFFFF); // Ali EMG
 
 		for (i = 0; i < NUMDISPLAYLINES; i++) {
 			if (!gs.line[i].empty()) {
@@ -1256,6 +1256,7 @@ void MyTrial::control() {
 			gTimer.reset(2);					//time for events in the trial			
 			gTimer.reset(3);
 			state = WAIT_PLAN;
+			TrigStart = 0;
 			n = 1;
 			//forceDiff = 0;
 		}
@@ -1269,14 +1270,25 @@ void MyTrial::control() {
 		gs.showForces = 1;
 		gs.showFxCross = 1;
 
+		if (gTimer[3] >= 0 && TrigStart == 0) {
+			//SetDacVoltage(0, emgTrigVolt);	// trigger to TMS
+			SetDIOState(0, 0xFFFFF0);
+		}
+
+		if (gTimer[3] >= 500 && TrigStart == 0) {
+			//SetDacVoltage(0, emgTrigVolt);	// trigger to TMS
+			SetDIOState(0, 0xFFFFFF);
+			TrigStart = 1;
+		}
+
 		if (gTimer[3] >= stimTrigPlan && TrigPlan == 1) {
 			//SetDacVoltage(0, emgTrigVolt);	// trigger to TMS
-			SetDIOState(0, 0x0000);
+			SetDIOState(0, 0xFFFF0F);
 		}
 
 		if (gTimer[3] >= stimTrigPlan + 100 && TrigPlan == 1) {
 			//SetDacVoltage(0, emgTrigVolt);	// trigger to TMS
-			SetDIOState(0, 0xFFFF);
+			SetDIOState(0, 0xFFFFFF);
 		}
 
 
@@ -1358,12 +1370,12 @@ void MyTrial::control() {
 
 		if (gTimer[3] >= stimTrigExec && TrigExec == 1) {
 			//SetDacVoltage(0, emgTrigVolt);	// trigger to TMS
-			SetDIOState(0, 0x0000);
+			SetDIOState(0, 0xFFFF0F);
 		}
 
 		if (gTimer[3] >= stimTrigExec + 100 && TrigExec == 1) {
 			//SetDacVoltage(0, emgTrigVolt);	// trigger to TMS
-			SetDIOState(0, 0xFFFF);
+			SetDIOState(0, 0xFFFFFF);
 		}
 
 
@@ -1527,11 +1539,11 @@ void MyTrial::control() {
 	case WAIT_ITI:
 
 		if (gTimer[2] >= stimTrigBaseline && TrigBaseline == 1) {
-			SetDIOState(0, 0x0000);
+			SetDIOState(0, 0xFFFF0F);
 		}
 
 		if (gTimer[2] >= stimTrigBaseline + 100 && TrigBaseline == 1) {
-			SetDIOState(0, 0xFFFF);
+			SetDIOState(0, 0xFFFFFF);
 		}
 
 		gs.showTgLines = 1;	// set screen lines/force bars to show

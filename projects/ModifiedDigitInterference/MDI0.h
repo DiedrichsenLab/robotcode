@@ -65,7 +65,9 @@ public:
 	int lineColor[NUMDISPLAYLINES];
 	int boxColor[2];
 	GLfloat size[NUMDISPLAYLINES];
-	bool boxOn;
+	//bool boxOn;
+	bool showDiagnostics;
+	bool showSequence;
 };
 
 
@@ -127,6 +129,7 @@ private:
 	int startTR;							///< Which TR should the trial Start? 
 	int startTRReal;
 	int startTimeReal;
+	int feedbackTime;
 	//int lastTrial;							///< Is that the last Trial? (important for scanning to the the last TRs)
 	int startTime;							///< When should the next trail start? is independent of TR time!
 	int planTime;

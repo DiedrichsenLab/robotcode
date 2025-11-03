@@ -268,10 +268,10 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 		else {
 			sscanf(arguments[1].c_str(), "%f", &arg[0]);
 			stMT = arg[0];
-			for (i = 0; i < 17; i++) { //loop over all possible sequences and 
-				seqMT[0][i] = stMT;
-				seqMT[1][i] = stMT;
-			}
+			//for (i = 0; i < 17; i++) { //loop over all possible sequences and 
+			//	seqMT[0][i] = stMT;
+			//	seqMT[1][i] = stMT;
+			//}
 		}
 	}
 	else {
@@ -308,7 +308,7 @@ Trial* MyBlock::getTrial() {
 ///////////////////////////////////////////////////////////////
 void MyBlock::start() {
 	for (int i = 0; i < NUMDISPLAYLINES; i++) { gs.line[i] = ""; }
-	gs.boxOn = true;
+	//gs.boxOn = true;
 	gCounter.reset();
 	gCounter.start();
 	gNumErrors = 0;
@@ -321,7 +321,7 @@ void MyBlock::start() {
 /// giveFeedback and put it to the graphic state 
 ///////////////////////////////////////////////////////////////
 void MyBlock::giveFeedback() {
-	gs.boxOn = false;
+	//gs.boxOn = false;
 	int i, j;
 	double n[2] = { 0, 0 };
 	double nn[2] = { 0, 0 };
@@ -331,50 +331,48 @@ void MyBlock::giveFeedback() {
 	avrgMT[0] = 0;
 	avrgMT[1] = 0;
 	//reset the sequence time 
-	for (i = 1; i < 17; i++) {
-		for (j = 0; j < 2; j++) {
-			seqMT[j][i] = 0;
-			seqGood[j][i] = 0;
-			seqForce[j][i] = 0;
-		}
-	}
-	//make the left right box black
-	for (i = 0; i < 2; i++) { gs.boxColor[i] = 0; }
+	//for (i = 1; i < 17; i++) {
+	//	for (j = 0; j < 2; j++) {
+	//		seqMT[j][i] = 0;
+	//		seqGood[j][i] = 0;
+	//		seqForce[j][i] = 0;
+	//	}
+	//}
 
-	for (i = 0; i < trialNum; i++) {
-		tpnr = (MyTrial*)trialVec.at(i);
-		if (tpnr->announce == 0 & tpnr->lastTrial == 0) {
-			if (tpnr->errorFlag == 0 & tpnr->incomplete == 0) {
-				avrgMT[tpnr->hand] += tpnr->MT; //remember the RT from the trials and add them
-				n[tpnr->hand]++; // remember number of trials
-				//sequence movement time
-				//cout<<tpnr ->startTR<<tpnr->MT<<endl;
+	//for (i = 0; i < trialNum; i++) {
+	//	tpnr = (MyTrial*)trialVec.at(i);
+	//	if (tpnr->announce == 0 & tpnr->lastTrial == 0) {
+	//		if (tpnr->errorFlag == 0 & tpnr->incomplete == 0) {
+	//			avrgMT[tpnr->hand] += tpnr->MT; //remember the RT from the trials and add them
+	//			n[tpnr->hand]++; // remember number of trials
+	//			//sequence movement time
+	//			//cout<<tpnr ->startTR<<tpnr->MT<<endl;
 
-				seqMT[tpnr->hand][tpnr->seqType] += tpnr->MT; //get the movement times for the sequence
-				seqGood[tpnr->hand][tpnr->seqType]++; //remeber how often the seq was produced correct
-				seqForce[tpnr->hand][tpnr->seqType] += tpnr->Force;
-			}
-			nn[tpnr->hand]++; //count task trials
-		}
-	}
-	if (n[0] > 0)
-		avrgMT[0] /= (n[0]);
+	//			seqMT[tpnr->hand][tpnr->seqType] += tpnr->MT; //get the movement times for the sequence
+	//			seqGood[tpnr->hand][tpnr->seqType]++; //remeber how often the seq was produced correct
+	//			seqForce[tpnr->hand][tpnr->seqType] += tpnr->Force;
+	//		}
+	//		nn[tpnr->hand]++; //count task trials
+	//	}
+	//}
+	//if (n[0] > 0)
+	//	avrgMT[0] /= (n[0]);
 
-	if (n[1] > 0)
-		avrgMT[1] /= (n[1]);
+	//if (n[1] > 0)
+	//	avrgMT[1] /= (n[1]);
 
-	for (i = 0; i < 17; i++) { //loop over all possible sequences and 
-		for (j = 0; j < 2; j++) {
-			if (seqGood[j][i] > 0) {
-				seqMT[j][i] /= (seqGood[j][i]);
-				seqForce[j][i] /= (seqGood[j][i]);
-			}
-			else {
-				seqMT[j][i] = stMT;
-				seqForce[j][i] = 0;
-			}
-		}
-	}
+	//for (i = 0; i < 17; i++) { //loop over all possible sequences and 
+	//	for (j = 0; j < 2; j++) {
+	//		if (seqGood[j][i] > 0) {
+	//			seqMT[j][i] /= (seqGood[j][i]);
+	//			seqForce[j][i] /= (seqGood[j][i]);
+	//		}
+	//		else {
+	//			seqMT[j][i] = stMT;
+	//			seqForce[j][i] = 0;
+	//		}
+	//	}
+	//}
 
 
 	// print FEEDBACK on the screen 
@@ -402,27 +400,27 @@ void MyBlock::giveFeedback() {
 // Constructor 
 ///////////////////////////////////////////////////////////////
 MyTrial::MyTrial() {
-	state = WAIT_TRIAL;
+	//state = WAIT_TRIAL;
 	//INIT TRIAL VARIABLE
 
-	errorFlag = 0;						// init error flag
-	lateFlag = 0;
-	hardPress = 0;						// init hard press flag
-	incomplete = 0;						// init if seq was produced incomplete but correct so fare
-	seqCounter = 0;						// init the sequence index variable
-	inactiveFinger = 0;					// init the inactive Finger counter
-	MT = 0;								// init total reaction time
-	Force = 0;
-	pointState = 0;
-	superFast = 0;						// init super fast flag
-	allPressed = 0;						// are all fingers on the board?
-	for (int i = 0; i < 5; i++) {
-		releaseState[i] = 1;				// init the release state of the fingerpress 
-		RT[i] = 0;						//		& reaction time	
-		response[i] = 0;					//		& finger response
-		pressT[i] = 0;					//		& duration of finger press
-		hardpressKnown[i] = 0;			//		& hardpress knowlege	
-	}
+	//errorFlag = 0;						// init error flag
+	//lateFlag = 0;
+	//hardPress = 0;						// init hard press flag
+	//incomplete = 0;						// init if seq was produced incomplete but correct so fare
+	//seqCounter = 0;						// init the sequence index variable
+	//inactiveFinger = 0;					// init the inactive Finger counter
+	//MT = 0;								// init total reaction time
+	//Force = 0;
+	//pointState = 0;
+	//superFast = 0;						// init super fast flag
+	//allPressed = 0;						// are all fingers on the board?
+	//for (int i = 0; i < 5; i++) {
+	//	releaseState[i] = 1;				// init the release state of the fingerpress 
+	//	RT[i] = 0;						//		& reaction time	
+	//	response[i] = 0;					//		& finger response
+	//	pressT[i] = 0;					//		& duration of finger press
+	//	hardpressKnown[i] = 0;			//		& hardpress knowlege	
+	//
 }
 
 ///////////////////////////////////////////////////////////////
@@ -433,9 +431,9 @@ void MyTrial::read(istream& in) {
 		>> startTime
 		>> planTime
 		>> execTime
-		>> sequence
-		//>> feedback
-		>> iti;
+        >> feedbackTime
+		>> iti
+	>> sequence;
 }
 
 ///////////////////////////////////////////////////////////////
@@ -565,7 +563,7 @@ void MyTrial::updateTextDisplay() {
 
 	//sprintf(buffer,"TIME : %1.4f:", gScreen.lastCycle);
 	//tDisp.setText(buffer,4,0);
-	sprintf(buffer, "State : %d", state);
+	sprintf(buffer, "State : %d  State time: %2.1f", state, gTimer[1]);
 	tDisp.setText(buffer, 4, 0);
 
 	sprintf(buffer, "read : %2.1f   readReal : %2.1f", gTimer[0], gTimer.readReal(1));
@@ -577,39 +575,6 @@ void MyTrial::updateTextDisplay() {
 	sprintf(buffer, "Force RIGHT:  %2.2f %2.2f %2.2f %2.2f %2.2f", gBox.getForce(0), gBox.getForce(1), gBox.getForce(2), gBox.getForce(3), gBox.getForce(4));
 	tDisp.setText(buffer, 8, 0);
 
-
-	sprintf(buffer, "total Points=> %2i      Points=> %2i", gNumPoints, gNumPointsBlock);
-	tDisp.setText(buffer, 11, 0);
-
-	sprintf(buffer, "Errors => %2i      Hard presses=> %2i      Late presses=> %2i", gNumErrors, ghardPress, glatePress);
-	tDisp.setText(buffer, 12, 0);
-
-	sprintf(buffer, "avMT L: %2.2f  R: %2.2f ", avrgMT[0], avrgMT[1]);
-	tDisp.setText(buffer, 14, 0);
-
-	sprintf(buffer, "seq:    ||1     |2     |3     |4     |5     |6     |7     |8     |9     |10   |11   |12 ");
-	tDisp.setText(buffer, 15, 0);
-	sprintf(buffer, "MT L:   ||%2.1f  |%2.1f  |%2.1f  |%2.1f  |%2.1f  |%2.1f  |%2.1f  |%2.1f  |%2.1f  |%2.1f  |%2.1f  |%2.1f ",
-		seqMT[0][1] / 1000, seqMT[0][2] / 1000, seqMT[0][3] / 1000, seqMT[0][4] / 1000, seqMT[0][5] / 1000, seqMT[0][6] / 1000, seqMT[0][7] / 1000, seqMT[0][8] / 1000, seqMT[0][9] / 1000, seqMT[0][10] / 1000, seqMT[0][11] / 1000, seqMT[0][12] / 1000);
-	tDisp.setText(buffer, 16, 0);
-	sprintf(buffer, "MT R:   ||%2.1f  |%2.1f  |%2.1f  |%2.1f  |%2.1f  |%2.1f  |%2.1f  |%2.1f  |%2.1f  |%2.1f  |%2.1f  |%2.1f  ",
-		seqMT[1][1] / 1000, seqMT[1][2] / 1000, seqMT[1][3] / 1000, seqMT[1][4] / 1000, seqMT[1][5] / 1000, seqMT[1][6] / 1000, seqMT[1][7] / 1000, seqMT[1][8] / 1000, seqMT[1][9] / 1000, seqMT[1][10] / 1000, seqMT[1][11] / 1000, seqMT[1][12] / 1000);
-	tDisp.setText(buffer, 17, 0);
-	sprintf(buffer, "num L: ||%2.0f    |%2.0f    |%2.0f    |%2.0f    |%2.0f    |%2.0f    |%2.0f    |%2.0f    |%2.0f    |%2.0f    |%2.0f    |%2.0f    ",
-		seqGood[0][1], seqGood[0][2], seqGood[0][3], seqGood[0][4], seqGood[0][5], seqGood[0][6], seqGood[0][7], seqGood[0][8], seqGood[0][9], seqGood[0][10], seqGood[0][11], seqGood[0][12]);
-	tDisp.setText(buffer, 18, 0);
-	sprintf(buffer, "num R: ||%2.0f    |%2.0f    |%2.0f    |%2.0f    |%2.0f    |%2.0f    |%2.0f    |%2.0f    |%2.0f    |%2.0f    |%2.0f    |%2.0f    ",
-		seqGood[1][1], seqGood[1][2], seqGood[1][3], seqGood[1][4], seqGood[1][5], seqGood[1][6], seqGood[1][7], seqGood[1][8], seqGood[1][9], seqGood[1][10], seqGood[1][11], seqGood[1][12]);
-	tDisp.setText(buffer, 19, 0);
-	sprintf(buffer, "F L:      ||%2.1f  |%2.1f  |%2.1f  |%2.1f  |%2.1f  |%2.1f  |%2.1f  |%2.1f  |%2.1f  |%2.1f  |%2.1f  |%2.1f ",
-		seqForce[0][1], seqForce[0][2], seqForce[0][3], seqForce[0][4], seqForce[0][5], seqForce[0][6], seqForce[0][7], seqForce[0][8], seqForce[0][9], seqForce[0][10], seqForce[0][11], seqForce[0][12]);
-	tDisp.setText(buffer, 20, 0);
-	sprintf(buffer, "F R:      ||%2.1f  |%2.1f  |%2.1f  |%2.1f  |%2.1f  |%2.1f  |%2.1f  |%2.1f  |%2.1f  |%2.1f  |%2.1f  |%2.1f  ",
-		seqForce[1][1], seqForce[1][2], seqForce[1][3], seqForce[1][4], seqForce[1][5], seqForce[1][6], seqForce[1][7], seqForce[1][8], seqForce[1][9], seqForce[1][10], seqForce[1][11], seqForce[1][12]);
-	tDisp.setText(buffer, 21, 0);
-
-	//sprintf(buffer,"dt : %2.1f",gTimer.dt());
-	//tDisp.setText(buffer,14,0);
 }
 
 ///////////////////////////////////////////////////////////////
@@ -620,46 +585,43 @@ void MyTrial::updateTextDisplay() {
 void MyTrial::updateGraphics(int what) {
 	int i, j;
 
-	if (isPractice == 1) {
-		//ToDo please check!!  
+	if (gs.showSequence) {
 		gScreen.setColor(Screen::white);
-
-		for (i = 0; i < 5; i++) { //RIGHT
-			gScreen.drawLine(i * FINGWIDTH + 1, (gBox.getForce(i) * 2 - 3) / 4.9276, i * FINGWIDTH + 1.8, (gBox.getForce(i) * 2 - 3) / 4.9276);
-		}
-	}
-
-	gScreen.setColor(Screen::white);
-	for (i = 0; i < NUMDISPLAYLINES; i++) {
-		if (!gs.line[i].empty()) {
-			gScreen.setColor(gs.lineColor[i]);
-			gScreen.print(gs.line[i].c_str(), gs.lineXpos[i], gs.lineYpos[i], gs.size[i] * 1);
-		}
+		gScreen.print(sequence, 0, 0, 5);
 	}
 
 	Vector2D recSize, recPos;
 	recSize = Vector2D(1.3, 1.3);
 
-	if (gs.boxOn) {
-		recSize = Vector2D(1.4 * 5, 1.4);
-		recPos = Vector2D(0, 2.8);
-		gScreen.setColor(Screen::white);
-		gScreen.drawRect(recSize, recPos);
 
-		//rect on the sides
-		recSize = Vector2D(1.4, 1.4);
-		recPos = Vector2D(-4.2, 2.8);
-		gScreen.drawRect(recSize, recPos);
-		//RIGHT
-		recPos = Vector2D(4.2, 2.8);
-		gScreen.drawRect(recSize, recPos);
-	}
-	// signal which hand to use
-	//RIGHT
-	if (gs.boxColor[1] > 0) {
-		recPos = Vector2D(4.2, 2.8);
-		gScreen.setColor(gs.boxColor[1]);
-		gScreen.drawBox(recSize, recPos);
+	if (gs.showDiagnostics) {
+		string stateString;
+		switch (state)
+		{
+		case WAIT_TR:
+			stateString = "Wait TR";
+			break;
+		case START_TRIAL:
+			stateString = "Start Trial";
+			break;
+		case WAIT_PLAN:
+			stateString = "Wait Plan";
+			break;
+		case WAIT_RESPONSE:
+			stateString = "Wait Resp";
+			break;
+		case WAIT_FEEDBACK:
+			stateString = "Wait Feedback";
+			break;
+		case WAIT_ITI:
+			stateString = "Wait ITI";
+			break;
+		case END_TRIAL:
+			stateString = "End Trial";
+			break;
+		}
+		gScreen.setColor(Screen::white);
+		gScreen.print(stateString, 0, 12, 5);
 	}
 
 }
@@ -707,13 +669,10 @@ void MyTrial::control() {
 	int goalResponse;
 
 	switch (state) {
-	case START_TRIAL: //1 
+	case START_TRIAL: //0
 		gTimer.reset(1);
 		gTimer.reset(2);
-		//for (i = 0; i < 5; i++) {
-		//	response[i] = 0;
-		//	RT[i] = 0;
-		//}
+		gs.showDiagnostics = 1;
 		dataman.clear();
 		dataman.startRecording();
 		for (i = 0; i < 11; i++) { gs.line[i] = ""; }			// clear screen
@@ -721,7 +680,7 @@ void MyTrial::control() {
 		state = WAIT_TR;
 		break;
 
-	case WAIT_TR: //2				
+	case WAIT_TR: //1		
 		/// Wait for TR counter to be at the right place & reset the clocks
 		if (gCounter.readTR() == 0) {
 			gTimer.reset(0);
@@ -739,10 +698,10 @@ void MyTrial::control() {
 
 		break;
 
-	case WAIT_PLAN:
+	case WAIT_PLAN: //2
 		digitCounter = -1;
 		// put here what happens during WAIT_PLAN
-
+		//gs.line[0] = sequence;
 		if (gTimer[1] > planTime) {
 			state = WAIT_RESPONSE;
 			gTimer.reset(1);					//time for whole trial
@@ -750,20 +709,21 @@ void MyTrial::control() {
 		}
 		break;
 
-	case WAIT_RESPONSE: //5
+	case WAIT_RESPONSE: //3
+		gs.showSequence = 1;
 		for (i = 0; i < 5; i++) { // check all finger 
 			if (gBox.getForceFilt(i) > thresh && releaseState[i]) { // check for initial press
 				digitCounter = digitCounter + 1;
-				releaseState[i] = 0;			// set the finger to unreleased
+				releaseState[i] = 0; // set the finger to unreleased
 				//response[seqCounter] = i + 1; // record finger that was pressed 
 				//RT[seqCounter] = gTimer[2]; // record the reaction time 
 
-				if (sequence[digitCounter] == i) {
-					break;// correct digit
-				}
-				else {
-					break;// wrong digit
-				}
+				//if (sequence[digitCounter] == i) {
+				//	break;// correct digit
+				//}
+				//else {
+				//	break;// wrong digit
+				//}
 				//< Check if the single pressed finger (the only one with releaseState==0) is released 
 			}
 			else if (gBox.getForceFilt(i) <= thresh && !releaseState[i]) { // check for release of the press
@@ -774,33 +734,28 @@ void MyTrial::control() {
 	if (gTimer[2] > execTime) { // Too late! only executed if complete is set => FOR SCANNING SESSION
 		
 		state = WAIT_FEEDBACK;
-		sprintf(buffer, "%d", gNumPointsBlock); //show the points 
-		gs.line[12] = buffer;
 
 		gTimer.reset(2);
 	} 
 	break;
 
-	case WAIT_FEEDBACK:  //6
+	case WAIT_FEEDBACK:  //4
 		//do iti 
 		if (gTimer[2] > FEEDBACKTIME) {
-			for (i = 0; i < 11; i++) { gs.line[i] = ""; }		// reset clear the screen
-			for (i = 0; i < 2; i++) { gs.boxColor[i] = 0; }
 			gTimer.reset(2);
 			state = WAIT_ITI;
 		}
 		break;
 
-	case WAIT_ITI:  //7
+	case WAIT_ITI:  //5
 		if (gTimer[2] > iti) {
 			dataman.stopRecording();
-			gBox.boardOn = 0;				// stop board 
 			state = END_TRIAL;
 		}
 
 		break;
 
-	case END_TRIAL: //8
+	case END_TRIAL: //6
 		break;
 	}
 }
@@ -873,7 +828,7 @@ GraphicState::GraphicState() {
 	lineYpos[13] = -0.5;				// total points 	
 	lineColor[13] = 1;				// white 
 	size[13] = 5;
-	boxOn = false;
+	//boxOn = false;
 }
 
 

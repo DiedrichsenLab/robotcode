@@ -20,9 +20,9 @@ using namespace std;
 
 #define Pi 3.141592654
 //#define FIX_SIZE 0.004
-#define NUMFINGERS 5
-#define UPDATERATE 5
-#define RECORDRATE 5
+#define NUMFINGERS 5 // maximal number of fingers in the sequence 
+#define UPDATERATE 5 // in ms 
+#define RECORDRATE 5 // in ms 
 #define UPDATE_TEXTDISP 10
 #define SCR_SCALE 1.84/72 //3/72 //2.54/72 // cm/pixel 
 ///////////////////////////////////////////////////////////////
@@ -68,6 +68,7 @@ public:
 	//bool boxOn;
 	bool showDiagnostics;
 	bool showSequence;
+	int digit_color[NUMFINGERS];	/// Color of each of the digits in the sequence
 };
 
 
@@ -148,8 +149,8 @@ private:
 	//int incomplete;							///< Was sequence incomplete due to timethreshold but correct so fare?
 	//int hardpressKnown[NUMFINGERS];			///< Do we already meassure a hard press on that fingure?
 	//int hardPress;							///< Was the force to high for the finger presses?
-	//int response[NUMFINGERS];				///< Which key is pressed 
-	int releaseState[NUMFINGERS];			///< Was the finger released already or is it still pressed?
+	int response[NUMFINGERS];					///< Which key is pressed 
+	int releaseState[NUMFINGERS];				///< Was the finger released already or is it still pressed?
 	//int inactiveFinger;						///< How many fingers are inactive?
 	//int superFast;							///< Was the RT super fast? if yes set to 1 otherwise 0
 	//int allPressed;							///< Counts how many fingers are already placed on the board

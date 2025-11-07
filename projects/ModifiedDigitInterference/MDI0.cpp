@@ -19,6 +19,7 @@ TextDisplay tDisp;				///< Text Display
 Screen gScreen;					///< Screen 
 TRCounter gCounter;				///< TR Counter 
 StimulatorBox gBox;			///< Stimulator Box
+double responseArray[11] = { 1,1,1,1,1,1,1,1,1,1,1 };
 
 //StimulatorBox gBox[2];		///< Stimulator Box 
 Timer gTimer(UPDATERATE);		///< Timer from S626 board experiments 
@@ -67,7 +68,7 @@ string TEXT[11] = { "*","1","2","3","4","5","6", "7", "8", "9", "+" };
 //#define resTH 3     // in NEWTONS 0.6 * 4.9276 //0.5 * 4.9276
 //#define relTH 2.5   // 0.45 * 4.9276 
 //#define maxTH 20    //  5.0 * 4.9276 //5* 4.9276 //1.8 * 4.9276  (1.8 is too low--SWM) 2.8
-double thresh = 3;//THRESHOLD[5] = { resTH, resTH, resTH, resTH, resTH }; //, {relTH, relTH, relTH, relTH, relTH}, {maxTH, maxTH, maxTH, maxTH, maxTH} };
+double thresh = 8;//THRESHOLD[5] = { resTH, resTH, resTH, resTH, resTH }; //, {relTH, relTH, relTH, relTH, relTH}, {maxTH, maxTH, maxTH, maxTH, maxTH} };
 
 ///////////////////////////////////////////////////////////////
 /// Main Program: Start the experiment, initialize the task and run it 
@@ -402,7 +403,7 @@ void MyBlock::giveFeedback() {
 MyTrial::MyTrial() {
 	//state = WAIT_TRIAL;
 	//INIT TRIAL VARIABLE
-
+	// 
 	//errorFlag = 0;						// init error flag
 	//lateFlag = 0;
 	//hardPress = 0;						// init hard press flag
@@ -580,14 +581,23 @@ void MyTrial::updateTextDisplay() {
 ///////////////////////////////////////////////////////////////
 /// updateGraphics: Call from ScreenHD 
 ///////////////////////////////////////////////////////////////
-#define FINGWIDTH 1
+#define DIGITWIDTH 1
 #define RECWIDTH 1.4
+#define DIGITOFFSET DIGITWIDTH*NUMFINGERS/2
+#define SEQUENCE_CUE_Y 0
+
 void MyTrial::updateGraphics(int what) {
 	int i, j;
 
+	gScreen.setColor(Screen::darkred);
+	gScreen.drawBox(100, 100, 100, 100);
+
+		
 	if (gs.showSequence) {
-		gScreen.setColor(Screen::white);
-		gScreen.print(sequence, 0, 0, 5);
+		for (i = 0; i < 5; i++) {
+			gScreen.setColor(gs.digit_color[i]);
+			gScreen.printChar(sequence[i], DIGITOFFSET+DIGITWIDTH*i, SEQUENCE_CUE_Y, 5);
+		}
 	}
 
 	Vector2D recSize, recPos;
@@ -667,12 +677,25 @@ void MyTrial::control() {
 	Vector2D recSize;
 	Vector2D recPos;
 	int goalResponse;
+	int isError = 0;
+
+
+	if (gTimer[2] > execTime) { // Too late! only executed if complete is set => FOR SCANNING SESSION
+
+		state = WAIT_FEEDBACK;
+
+		gTimer.reset(2);
+	}
 
 	switch (state) {
 	case START_TRIAL: //0
 		gTimer.reset(1);
 		gTimer.reset(2);
 		gs.showDiagnostics = 1;
+		for (i = 0; i < NUMFINGERS; i++) {
+			response[i] = 0; // not pressed 
+			gs.digit_color[i] = 1; // white
+		}
 		dataman.clear();
 		dataman.startRecording();
 		for (i = 0; i < 11; i++) { gs.line[i] = ""; }			// clear screen
@@ -710,34 +733,34 @@ void MyTrial::control() {
 		break;
 
 	case WAIT_RESPONSE: //3
-		gs.showSequence = 1;
+		gs.showSequence = 1; //Print sequence
 		for (i = 0; i < 5; i++) { // check all finger 
-			if (gBox.getForceFilt(i) > thresh && releaseState[i]) { // check for initial press
+			if (gBox.getForce(i) > thresh && releaseState[i]) { // check for initial press
+				
 				digitCounter = digitCounter + 1;
-				releaseState[i] = 0; // set the finger to unreleased
+
+				cout << sequence[digitCounter];
+
+				releaseState[i] = 0; // set the finger to pressed
 				//response[seqCounter] = i + 1; // record finger that was pressed 
 				//RT[seqCounter] = gTimer[2]; // record the reaction time 
 
-				//if (sequence[digitCounter] == i) {
-				//	break;// correct digit
-				//}
-				//else {
-				//	break;// wrong digit
-				//}
+				if (sequence[digitCounter] == i) {
+					gs.digit_color[digitCounter] = 3; // green
+				}
+				else {
+					gs.digit_color[digitCounter] = 2; // red
+					isError = 1;
+				}
 				//< Check if the single pressed finger (the only one with releaseState==0) is released 
 			}
-			else if (gBox.getForceFilt(i) <= thresh && !releaseState[i]) { // check for release of the press
+			else if (gBox.getForce(i) <= thresh && !releaseState[i]) { // check for release of the press
 				releaseState[i] = 1;
 			}
 		}
 
-	if (gTimer[2] > execTime) { // Too late! only executed if complete is set => FOR SCANNING SESSION
-		
-		state = WAIT_FEEDBACK;
+		break;
 
-		gTimer.reset(2);
-	} 
-	break;
 
 	case WAIT_FEEDBACK:  //4
 		//do iti 
@@ -752,6 +775,14 @@ void MyTrial::control() {
 			dataman.stopRecording();
 			state = END_TRIAL;
 		}
+
+		for (i = 0; i < NUMDISPLAYLINES; i++) { // clear screen
+			if (!gs.line[i].empty()) {
+				gs.lineColor[i] = 0;
+				gs.line[i] = "";
+			}
+		}
+		//gs.clearCues();
 
 		break;
 
@@ -797,38 +828,38 @@ void DataRecord::write(ostream& out) {
 /// 
 /////////////////////////////////////////////////////////////////////////////////////
 GraphicState::GraphicState() {
-	for (int i = 0; i < 5; i++) {		//SEQUENCE LETTER for training
-		lineXpos[i] = i * 1.4 - 2.8;
-		lineYpos[i] = 4;
-		lineColor[i] = 1;			// white 
-		size[i] = 9;
-	}
+	//for (int i = 0; i < 5; i++) {		//SEQUENCE LETTER for training
+	//	lineXpos[i] = i * 1.4 - 2.8;
+	//	lineYpos[i] = 4;
+	//	lineColor[i] = 1;			// white 
+	//	size[i] = 9;
+	//}
 
-	for (int i = 0; i < 5; i++) {		//SEQUENCE LETTER for announcement
-		lineXpos[i + 5] = i * 1.4 - 2.8;
-		lineYpos[i + 5] = 2.3;
-		lineColor[i + 5] = 1;			// white 
-		size[i + 5] = 9;
-	}
+	//for (int i = 0; i < 5; i++) {		//SEQUENCE LETTER for announcement
+	//	lineXpos[i + 5] = i * 1.4 - 2.8;
+	//	lineYpos[i + 5] = 2.3;
+	//	lineColor[i + 5] = 1;			// white 
+	//	size[i + 5] = 9;
+	//}
 
-	lineXpos[10] = 0;
-	lineYpos[10] = 4.5;			// feedback 	
-	lineColor[10] = 1;				// white 
-	size[10] = 5;
-	lineXpos[11] = 0;
-	lineYpos[11] = 3.5;				// feedback 	
-	lineColor[11] = 1;				// white 
-	size[11] = 5;
+	//lineXpos[10] = 0;
+	//lineYpos[10] = 4.5;			// feedback 	
+	//lineColor[10] = 1;				// white 
+	//size[10] = 5;
+	//lineXpos[11] = 0;
+	//lineYpos[11] = 3.5;				// feedback 	
+	//lineColor[11] = 1;				// white 
+	//size[11] = 5;
 
-	lineXpos[12] = 0;
-	lineYpos[12] = 0.5;			// block points	
-	lineColor[12] = 1;				// white 
-	size[12] = 5;
-	lineXpos[13] = 0;
-	lineYpos[13] = -0.5;				// total points 	
-	lineColor[13] = 1;				// white 
-	size[13] = 5;
-	//boxOn = false;
+	//lineXpos[12] = 0;
+	//lineYpos[12] = 0.5;			// block points	
+	//lineColor[12] = 1;				// white 
+	//size[12] = 5;
+	//lineXpos[13] = 0;
+	//lineYpos[13] = -0.5;				// total points 	
+	//lineColor[13] = 1;				// white 
+	//size[13] = 5;
+	////boxOn = false;
 }
 
 

@@ -249,18 +249,6 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 			isPractice = arg[0];
 		}
 	}
-	/// set the movement time threshold
-	else if (arguments[0] == "tth") {
-		if (numArgs != 2) {
-			tDisp.print("USAGE: need to super fast and late percent values (tth 0.8 1.2) ");
-		}
-		else {
-			sscanf(arguments[1].c_str(), "%f", &arg[0]);
-			sscanf(arguments[2].c_str(), "%f", &arg[1]);
-			timeThresholds[1] = arg[0];
-			timeThresholds[2] = arg[1];
-		}
-	}
 	else if (arguments[0] == "stmt") {
 		if (numArgs != 2) {
 			tDisp.print("USAGE: stmt 0/.../10000 in ms");
@@ -311,86 +299,15 @@ void MyBlock::start() {
 	//gs.boxOn = true;
 	gCounter.reset();
 	gCounter.start();
-	gNumErrors = 0;
-	gNumPointsBlock = 0;
-	ghardPress = 0;
-	glatePress = 0;
 }
 
 ///////////////////////////////////////////////////////////////
 /// giveFeedback and put it to the graphic state 
 ///////////////////////////////////////////////////////////////
 void MyBlock::giveFeedback() {
-	////gs.boxOn = false;
-	//int i, j;
-	//double n[2] = { 0, 0 };
-	//double nn[2] = { 0, 0 };
-
-
-	//MyTrial* tpnr;
-	//avrgMT[0] = 0;
-	//avrgMT[1] = 0;
-	//reset the sequence time 
-	//for (i = 1; i < 17; i++) {
-	//	for (j = 0; j < 2; j++) {
-	//		seqMT[j][i] = 0;
-	//		seqGood[j][i] = 0;
-	//		seqForce[j][i] = 0;
-	//	}
-	//}
-
-	//for (i = 0; i < trialNum; i++) {
-	//	tpnr = (MyTrial*)trialVec.at(i);
-	//	if (tpnr->announce == 0 & tpnr->lastTrial == 0) {
-	//		if (tpnr->errorFlag == 0 & tpnr->incomplete == 0) {
-	//			avrgMT[tpnr->hand] += tpnr->MT; //remember the RT from the trials and add them
-	//			n[tpnr->hand]++; // remember number of trials
-	//			//sequence movement time
-	//			//cout<<tpnr ->startTR<<tpnr->MT<<endl;
-
-	//			seqMT[tpnr->hand][tpnr->seqType] += tpnr->MT; //get the movement times for the sequence
-	//			seqGood[tpnr->hand][tpnr->seqType]++; //remeber how often the seq was produced correct
-	//			seqForce[tpnr->hand][tpnr->seqType] += tpnr->Force;
-	//		}
-	//		nn[tpnr->hand]++; //count task trials
-	//	}
-	//}
-	//if (n[0] > 0)
-	//	avrgMT[0] /= (n[0]);
-
-	//if (n[1] > 0)
-	//	avrgMT[1] /= (n[1]);
-
-	//for (i = 0; i < 17; i++) { //loop over all possible sequences and 
-	//	for (j = 0; j < 2; j++) {
-	//		if (seqGood[j][i] > 0) {
-	//			seqMT[j][i] /= (seqGood[j][i]);
-	//			seqForce[j][i] /= (seqGood[j][i]);
-	//		}
-	//		else {
-	//			seqMT[j][i] = stMT;
-	//			seqForce[j][i] = 0;
-	//		}
-	//	}
-	//}
-
-
-	// print FEEDBACK on the screen 
-	//for (i = 0; i < 11; i++) {
-	//	gs.line[i] = "";
-	//}		// reset clear the screen
-	////cout<< "gNumErrors: " <<gNumErrors<<" count task trials: "<<nn<<endl;
-	//sprintf(buffer, "error rate: %2.0fpercent", (100.0 / (nn[0] + nn[1]) * gNumErrors));
-	//gs.line[11] = buffer;
-	//sprintf(buffer, "Average movement time: L %2.2fs  R %2.2fs", avrgMT[0] / 1000, avrgMT[1] / 1000);
-	//gs.line[12] = buffer;
-	//gCounter.stop();
-
-	//gNumPoints += gNumPointsBlock;
-	//sprintf(buffer, "Number points: %d   Total: %d", gNumPointsBlock, gNumPoints);
-	//gs.line[13] = buffer;
-
-	//ToDo more feedback force MT exclude errors
+	//sprintf(buffer, "End of Block");
+	//gs.line[0] = buffer;
+	//gs.lineColor[0] = 1;
 }
 
 ///////////////////////////////////////////////////////////////
@@ -400,34 +317,14 @@ void MyBlock::giveFeedback() {
 // Constructor 
 ///////////////////////////////////////////////////////////////
 MyTrial::MyTrial() {
-	//state = WAIT_TRIAL;
-	//INIT TRIAL VARIABLE
-	// 
-	//errorFlag = 0;						// init error flag
-	//lateFlag = 0;
-	//hardPress = 0;						// init hard press flag
-	//incomplete = 0;						// init if seq was produced incomplete but correct so fare
-	//seqCounter = 0;						// init the sequence index variable
-	//inactiveFinger = 0;					// init the inactive Finger counter
-	//MT = 0;								// init total reaction time
-	//Force = 0;
-	//pointState = 0;
-	//superFast = 0;						// init super fast flag
-	//allPressed = 0;						// are all fingers on the board?
-	//for (int i = 0; i < 5; i++) {
-	//	releaseState[i] = 1;				// init the release state of the fingerpress 
-	//	RT[i] = 0;						//		& reaction time	
-	//	response[i] = 0;					//		& finger response
-	//	pressT[i] = 0;					//		& duration of finger press
-	//	hardpressKnown[i] = 0;			//		& hardpress knowlege	
-	//
+	state = WAIT_TRIAL;
 }
 
 ///////////////////////////////////////////////////////////////
 // Read
 ///////////////////////////////////////////////////////////////
 void MyTrial::read(istream& in) {
-	(in) >> startTR
+	in >> startTR
 		>> startTime
 		>> planTime
 		>> execTime
@@ -462,6 +359,7 @@ void MyTrial::writeDat(ostream& out) {
 		<< RT[2] << "\t"
 		<< RT[3] << "\t"
 		<< RT[4] << "\t"
+		<< accuracy << "\t"
 		<< endl;
 		
 }
@@ -492,6 +390,7 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "reactionTime3" << "\t"
 		<< "reactionTime4" << "\t"
 		<< "reactionTime5" << "\t"
+		<< "Accuracy" << "\t"
 		<< endl;
 
 
@@ -590,6 +489,9 @@ void MyTrial::updateGraphics(int what) {
 		string stateString;
 		switch (state)
 		{
+		case WAIT_TRIAL:
+			stateString = "Wait trial";
+			break;
 		case WAIT_TR:
 			stateString = "Wait TR";
 			break;
@@ -642,7 +544,7 @@ void MyTrial::updateHaptics() {
 	/// record the data at record frequency 
 	if (dataman.isRecording() && gTimer[4] >= RECORDRATE) {
 		gTimer.reset(4);
-		bool x = dataman.record(DataRecord(state));
+		bool x = dataman.record(DataRecord(state, gExp->theBlock->trialNum));
 		if (!x) {
 			dataman.stopRecording();
 		}
@@ -662,27 +564,23 @@ void MyTrial::control() {
 	int goalResponse;
 	int isError = 0;
 
-
-	if (gTimer[2] > execTime) { // Too late! only executed if complete is set => FOR SCANNING SESSION
-
-		state = WAIT_FEEDBACK;
-
-		gTimer.reset(2);
-	}
+	cout << gExp->theBlock->state;
 
 	switch (state) {
+	case WAIT_TRIAL:
+		gs.showDiagnostics = 1;
+		for (i = 0; i < 11; i++) { gs.line[i] = ""; }			// clear screen
+		gs.lineColor[7] = 1;					// WHITE
+
 	case START_TRIAL: //0
 		gTimer.reset(1);
 		gTimer.reset(2);
-		gs.showDiagnostics = 1;
 		for (i = 0; i < NUMFINGERS; i++) {
 			response[i] = 0; // not pressed 
 			gs.digit_color[i] = 1; // white
 		}
 		dataman.clear();
 		dataman.startRecording();
-		for (i = 0; i < 11; i++) { gs.line[i] = ""; }			// clear screen
-		gs.lineColor[7] = 1;					// WHITE
 		state = WAIT_TR;
 		break;
 
@@ -711,6 +609,7 @@ void MyTrial::control() {
 		if (gTimer[1] > planTime) {
 			state = WAIT_RESPONSE;
 			releaseState = TRUE;
+			accuracy = 0;
 			gTimer.reset(1);					//time for whole trial
 			gTimer.reset(2);					//time for events in the trial
 		}
@@ -739,6 +638,7 @@ void MyTrial::control() {
 				if (seqChar == iStr) {
 					cout << "Correct\n";
 					gs.digit_color[digitCounter] = 3; // green
+					accuracy++;
 				}
 				else {
 					cout << "Wrong\n";
@@ -777,17 +677,17 @@ void MyTrial::control() {
 			state = END_TRIAL;
 		}
 
-		//for (i = 0; i < NUMDISPLAYLINES; i++) { // clear screen
-		//	if (!gs.line[i].empty()) {
-		//		gs.lineColor[i] = 0;
-		//		gs.line[i] = "";
-		//	}
-		//}
-		//gs.clearCues();
+		for (i = 0; i < NUMDISPLAYLINES; i++) { // clear screen
+			if (!gs.line[i].empty()) {
+				gs.lineColor[i] = 0;
+				gs.line[i] = "";
+			}
+		}
 
 		break;
 
 	case END_TRIAL: //6
+		gTimer.reset(1);
 		break;
 	}
 }
@@ -796,9 +696,10 @@ void MyTrial::control() {
 /////////////////////////////////////////////////////////////////////////////////////
 /// Data Record: creator records the current data from the device 
 /////////////////////////////////////////////////////////////////////////////////////
-DataRecord::DataRecord(int s) {
+DataRecord::DataRecord(int s, int t) {
 	int i;
 	state = s;
+	trialNum = t;
 	TR = gCounter.readTR();
 	currentSlice = gCounter.readSlice();
 	timeReal = gCounter.readTime();
@@ -816,7 +717,7 @@ DataRecord::DataRecord(int s) {
 // Writes out the data to the *.mov file 
 /////////////////////////////////////////////////////////////////////////////////////
 void DataRecord::write(ostream& out) {
-	out << state << "\t" << TR << "\t" << currentSlice << "\t" << timeReal << "\t" << time << "\t"
+	out << trialNum <<"\t" << state << "\t" << TR << "\t" << currentSlice << "\t" << timeReal << "\t" << time << "\t"
 		<< force_left[0] << " \t" << force_left[1] << "\t" << force_left[2] << " \t" << force_left[3] << "\t" << force_left[4] << " \t"
 		<< force_right[0] << " \t" << force_right[1] << "\t" << force_right[2] << " \t" << force_right[3] << "\t" << force_right[4] << " \t"
 		<< endl;
@@ -829,38 +730,30 @@ void DataRecord::write(ostream& out) {
 /// 
 /////////////////////////////////////////////////////////////////////////////////////
 GraphicState::GraphicState() {
-	//for (int i = 0; i < 5; i++) {		//SEQUENCE LETTER for training
-	//	lineXpos[i] = i * 1.4 - 2.8;
-	//	lineYpos[i] = 4;
-	//	lineColor[i] = 1;			// white 
-	//	size[i] = 9;
-	//}
+	// points in block 
+	lineXpos[0] = 0;
+	lineYpos[0] = 2.4;			// feedback 	
+	lineColor[0] = 1;			// white 
+	size[0] = 5;
 
-	//for (int i = 0; i < 5; i++) {		//SEQUENCE LETTER for announcement
-	//	lineXpos[i + 5] = i * 1.4 - 2.8;
-	//	lineYpos[i + 5] = 2.3;
-	//	lineColor[i + 5] = 1;			// white 
-	//	size[i + 5] = 9;
-	//}
+	lineXpos[1] = 0;
+	lineYpos[1] = .8;			// feedback 	
+	lineColor[1] = 1;			// white 
+	size[1] = 5;
 
-	//lineXpos[10] = 0;
-	//lineYpos[10] = 4.5;			// feedback 	
-	//lineColor[10] = 1;				// white 
-	//size[10] = 5;
-	//lineXpos[11] = 0;
-	//lineYpos[11] = 3.5;				// feedback 	
-	//lineColor[11] = 1;				// white 
-	//size[11] = 5;
+	lineXpos[2] = 0;
+	lineYpos[2] = -.8;			// block points	
+	lineColor[2] = 1;			// white 
+	size[2] = 5;
 
-	//lineXpos[12] = 0;
-	//lineYpos[12] = 0.5;			// block points	
-	//lineColor[12] = 1;				// white 
-	//size[12] = 5;
-	//lineXpos[13] = 0;
-	//lineYpos[13] = -0.5;				// total points 	
-	//lineColor[13] = 1;				// white 
-	//size[13] = 5;
-	////boxOn = false;
+	lineXpos[3] = 0;
+	lineYpos[3] = -2.4;			// block points	
+	lineColor[3] = 1;			// white 
+	size[3] = 5;
+
+	showLines = true;
+	showBoxes = 0;
+	boxColor = 5;
 }
 
 

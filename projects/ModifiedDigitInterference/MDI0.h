@@ -29,6 +29,7 @@ using namespace std;
 // Enumeration of Trial State 
 ///////////////////////////////////////////////////////////////
 enum TrialState {
+	WAIT_TRIAL,
 	START_TRIAL,
 	WAIT_TR,
 	WAIT_PLAN,
@@ -63,9 +64,12 @@ public:
 	double lineXpos[NUMDISPLAYLINES];
 	double lineYpos[NUMDISPLAYLINES];
 	int lineColor[NUMDISPLAYLINES];
-	int boxColor[2];
+	//int boxColor[2];
 	GLfloat size[NUMDISPLAYLINES];
 	//bool boxOn;
+	bool showLines;
+	int showBoxes;
+	int boxColor;
 	bool showDiagnostics;
 	bool showSequence;
 	int digit_color[NUMFINGERS];	/// Color of each of the digits in the sequence
@@ -79,12 +83,13 @@ public:
 class DataRecord {
 public:
 	DataRecord() {}
-	DataRecord(int s);
+	DataRecord(int s, int t);
 	void write(ostream& out);
 public:
 	int state;
 	int TR;
 	int currentSlice;
+	int trialNum;
 	double timeReal;
 	double time;
 	double force_left[5];
@@ -152,6 +157,7 @@ private:
 	int response[NUMFINGERS];					///< Which key is pressed 
 	bool releaseState = TRUE; //[NUMFINGERS];				///< Was the finger released already or is it still pressed?
 	int unpressedFinger = 0;
+	int accuracy = 0;
 	//int inactiveFinger;						///< How many fingers are inactive?
 	//int superFast;							///< Was the RT super fast? if yes set to 1 otherwise 0
 	//int allPressed;							///< Counts how many fingers are already placed on the board

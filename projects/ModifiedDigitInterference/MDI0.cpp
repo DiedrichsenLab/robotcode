@@ -1,12 +1,9 @@
 ///////////////////////////////////////////////////////////////
 /// 
-///	
-///	learning of finger sequences
 /// 
 /// 
-/// Tobias Wiestler, 2010 
-/// 
-/// Hardly changed at all by George Prichard, 2012. Thanks Tobi!
+/// Amanda Lily , 2025
+///
 ///////////////////////////////////////////////////////////////
 
 #include "MDI0.h" 
@@ -20,6 +17,8 @@ Screen gScreen;					///< Screen
 TRCounter gCounter;				///< TR Counter 
 StimulatorBox gBox;			///< Stimulator Box
 double responseArray[11] = { 1,1,1,1,1,1,1,1,1,1,1 };
+
+int fGain= 3;
 
 //StimulatorBox gBox[2];		///< Stimulator Box 
 Timer gTimer(UPDATERATE);		///< Timer from S626 board experiments 
@@ -61,14 +60,14 @@ double stMT = 5000;
 char counterSignal = '5';		///< ToDo: AVOID THAT What char is used to count the TR
 int sliceNumber = 32;			///< How many slices do we have
 
-#define FEEDBACKTIME 800 
+#define FEEDBACKTIME 800
 string TEXT[11] = { "*","1","2","3","4","5","6", "7", "8", "9", "+" };
 //string FINGERSOUND[6] = { "A.wav", "C.wav", "D.wav", "E.wav", "G.wav" };
 //int STIM_INTENSITY[5] = { 5, 5, 5 ,5, 5 };
 //#define resTH 3     // in NEWTONS 0.6 * 4.9276 //0.5 * 4.9276
 //#define relTH 2.5   // 0.45 * 4.9276 
 //#define maxTH 20    //  5.0 * 4.9276 //5* 4.9276 //1.8 * 4.9276  (1.8 is too low--SWM) 2.8
-double thresh = 8;//THRESHOLD[5] = { resTH, resTH, resTH, resTH, resTH }; //, {relTH, relTH, relTH, relTH, relTH}, {maxTH, maxTH, maxTH, maxTH, maxTH} };
+double thresh = 2;//THRESHOLD[5] = { resTH, resTH, resTH, resTH, resTH }; //, {relTH, relTH, relTH, relTH, relTH}, {maxTH, maxTH, maxTH, maxTH, maxTH} };
 
 ///////////////////////////////////////////////////////////////
 /// Main Program: Start the experiment, initialize the task and run it 
@@ -101,7 +100,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	gTimer.init(1, 4, 0);					/// < On Cntr_1A , Cntr_1B 
 	// initialize stimulation box
 	//gBox[0].init(BOX_LEFT, "c:/robotcode/calib/Flatbox1_lowforce_LEFT_02-Dec-2021.txt");
-	gBox.init(BOX_RIGHT, "c:/robotcode/calib/Flatbox1_lowforce_LEFT_02-Dec-2021.txt");
+	gBox.init(BOX_RIGHT, "c:/robotcode/calib/flatbox2_lowforce_RIGHT_06-Jul-2017.txt");
 	gBox.filterconst = 0.8;
 	//gBox[1].filterconst = 0.8;
 
@@ -322,15 +321,15 @@ void MyBlock::start() {
 /// giveFeedback and put it to the graphic state 
 ///////////////////////////////////////////////////////////////
 void MyBlock::giveFeedback() {
-	//gs.boxOn = false;
-	int i, j;
-	double n[2] = { 0, 0 };
-	double nn[2] = { 0, 0 };
+	////gs.boxOn = false;
+	//int i, j;
+	//double n[2] = { 0, 0 };
+	//double nn[2] = { 0, 0 };
 
 
-	MyTrial* tpnr;
-	avrgMT[0] = 0;
-	avrgMT[1] = 0;
+	//MyTrial* tpnr;
+	//avrgMT[0] = 0;
+	//avrgMT[1] = 0;
 	//reset the sequence time 
 	//for (i = 1; i < 17; i++) {
 	//	for (j = 0; j < 2; j++) {
@@ -377,19 +376,19 @@ void MyBlock::giveFeedback() {
 
 
 	// print FEEDBACK on the screen 
-	for (i = 0; i < 11; i++) {
-		gs.line[i] = "";
-	}		// reset clear the screen
-	//cout<< "gNumErrors: " <<gNumErrors<<" count task trials: "<<nn<<endl;
-	sprintf(buffer, "error rate: %2.0fpercent", (100.0 / (nn[0] + nn[1]) * gNumErrors));
-	gs.line[11] = buffer;
-	sprintf(buffer, "Average movement time: L %2.2fs  R %2.2fs", avrgMT[0] / 1000, avrgMT[1] / 1000);
-	gs.line[12] = buffer;
-	gCounter.stop();
+	//for (i = 0; i < 11; i++) {
+	//	gs.line[i] = "";
+	//}		// reset clear the screen
+	////cout<< "gNumErrors: " <<gNumErrors<<" count task trials: "<<nn<<endl;
+	//sprintf(buffer, "error rate: %2.0fpercent", (100.0 / (nn[0] + nn[1]) * gNumErrors));
+	//gs.line[11] = buffer;
+	//sprintf(buffer, "Average movement time: L %2.2fs  R %2.2fs", avrgMT[0] / 1000, avrgMT[1] / 1000);
+	//gs.line[12] = buffer;
+	//gCounter.stop();
 
-	gNumPoints += gNumPointsBlock;
-	sprintf(buffer, "Number points: %d   Total: %d", gNumPointsBlock, gNumPoints);
-	gs.line[13] = buffer;
+	//gNumPoints += gNumPointsBlock;
+	//sprintf(buffer, "Number points: %d   Total: %d", gNumPointsBlock, gNumPoints);
+	//gs.line[13] = buffer;
 
 	//ToDo more feedback force MT exclude errors
 }
@@ -434,7 +433,7 @@ void MyTrial::read(istream& in) {
 		>> execTime
         >> feedbackTime
 		>> iti
-	>> sequence;
+	    >> sequence;
 }
 
 ///////////////////////////////////////////////////////////////
@@ -445,37 +444,26 @@ void MyTrial::writeDat(ostream& out) {
 		<< startTRReal << "\t"
 		<< startTimeReal << "\t"
 		<< planTime << "\t"
-		<< execTime 
-		<< endl;
-		/*<< lastTrial << "\t"
-		<< startTime << "\t"
-		<< seqType << "\t"
-		<< announce << "\t"
-		<< feedback << "\t"
-		<< complete << "\t"
+		<< execTime << "\t"
+		<< feedbackTime << "\t"
 		<< iti << "\t"
-		<< response[0] << "\t"
+		<< sequence[0] << "\t"
+		<< sequence[1] << "\t"
+		<< sequence[2] << "\t"
+		<< sequence[3] << "\t"
+		<< sequence[4] << "\t"
+		<< pressed[0] << "\t"
+		<< pressed[1] << "\t"
+		<< pressed[2] << "\t"
+		<< pressed[3] << "\t"
+		<< pressed[4] << "\t"
 		<< RT[0] << "\t"
-		<< pressT[0] << "\t"
-		<< response[1] << "\t"
 		<< RT[1] << "\t"
-		<< pressT[1] << "\t"
-		<< response[2] << "\t"
 		<< RT[2] << "\t"
-		<< pressT[2] << "\t"
-		<< response[3] << "\t"
 		<< RT[3] << "\t"
-		<< pressT[3] << "\t"
-		<< response[4] << "\t"
 		<< RT[4] << "\t"
-		<< pressT[4] << "\t"
-		<< MT << "\t"
-		<< errorFlag << "\t"
-		<< hardPress << "\t"
-		<< lateFlag << "\t"
-		<< incomplete << "\t"
-		<< pointState << "\t"
-		<< hand << endl;*/
+		<< endl;
+		
 }
 
 ///////////////////////////////////////////////////////////////
@@ -483,35 +471,29 @@ void MyTrial::writeDat(ostream& out) {
 ///////////////////////////////////////////////////////////////
 void MyTrial::writeHeader(ostream& out) {
 	out << "startTR" << "\t"
-		<< "lastTrial" << "\t"
-		<< "startTime" << "\t"
-		<< "seqType" << "\t"
-		<< "announce" << "\t"
-		<< "feedback" << "\t"
-		<< "complete" << "\t"
+		<< "startTRReal" << "\t"
+		<< "startTimeReal" << "\t"
+		<< "planTime" << "\t"
+		<< "execTime" << "\t"
+		<< "feedbackTime" << "\t"
 		<< "iti" << "\t"
-		<< "resp1" << "\t"
-		<< "RT1" << "\t"
-		<< "pressT1" << "\t"
-		<< "resp2" << "\t"
-		<< "RT2" << "\t"
-		<< "pressT2" << "\t"
-		<< "resp3" << "\t"
-		<< "RT3" << "\t"
-		<< "pressT3" << "\t"
-		<< "resp4" << "\t"
-		<< "RT4" << "\t"
-		<< "pressT4" << "\t"
-		<< "resp5" << "\t"
-		<< "RT5" << "\t"
-		<< "pressT5" << "\t"
-		<< "MT" << "\t"
-		<< "seqError" << "\t"
-		<< "hardPress" << "\t"
-		<< "latePress" << "\t"
-		<< "incompletePress" << "\t"
-		<< "trialPoints" << "\t"
-		<< "hand" << endl;
+		<< "expectedDigit1" << "\t"
+		<< "expectedDigit2" << "\t"
+		<< "expectedDigit3" << "\t"
+		<< "expectedDigit4" << "\t"
+		<< "expectedDigit5" << "\t"
+		<< "pressedDigit1" << "\t"
+		<< "pressedDigit2" << "\t"
+		<< "pressedDigit3" << "\t"
+		<< "pressedDigit4" << "\t"
+		<< "pressedDigit5" << "\t"
+		<< "reactionTime1" << "\t"
+		<< "reactionTime2" << "\t"
+		<< "reactionTime3" << "\t"
+		<< "reactionTime4" << "\t"
+		<< "reactionTime5" << "\t"
+		<< endl;
+
 
 }
 
@@ -564,7 +546,7 @@ void MyTrial::updateTextDisplay() {
 
 	//sprintf(buffer,"TIME : %1.4f:", gScreen.lastCycle);
 	//tDisp.setText(buffer,4,0);
-	sprintf(buffer, "State : %d  State time: %2.1f", state, gTimer[1]);
+	sprintf(buffer, "State : %d  State time: %2.1f  releaseState: %d  unpressedFinger: %d  digitCounter: %d", state, gTimer[1], releaseState, unpressedFinger, digitCounter);
 	tDisp.setText(buffer, 4, 0);
 
 	sprintf(buffer, "read : %2.1f   readReal : %2.1f", gTimer[0], gTimer.readReal(1));
@@ -676,6 +658,7 @@ void MyTrial::control() {
 	int i;
 	Vector2D recSize;
 	Vector2D recPos;
+	double force;
 	int goalResponse;
 	int isError = 0;
 
@@ -727,6 +710,7 @@ void MyTrial::control() {
 		//gs.line[0] = sequence;
 		if (gTimer[1] > planTime) {
 			state = WAIT_RESPONSE;
+			releaseState = TRUE;
 			gTimer.reset(1);					//time for whole trial
 			gTimer.reset(2);					//time for events in the trial
 		}
@@ -734,31 +718,48 @@ void MyTrial::control() {
 
 	case WAIT_RESPONSE: //3
 		gs.showSequence = 1; //Print sequence
+		unpressedFinger = 0;
 		for (i = 0; i < 5; i++) { // check all finger 
-			if (gBox.getForce(i) > thresh && releaseState[i]) { // check for initial press
+			force = gBox.getForce(i);
+			if (force > thresh && releaseState) { // check for initial press
 				
 				digitCounter = digitCounter + 1;
+				RT[digitCounter] = gTimer[2];
+				pressed[digitCounter] = i;
 
-				cout << sequence[digitCounter];
+				releaseState = FALSE; // set the finger to pressed
+				std::string seqChar = std::string(1, sequence[digitCounter]);
+				std::string iStr = std::to_string(i + 1);
 
-				releaseState[i] = 0; // set the finger to pressed
-				//response[seqCounter] = i + 1; // record finger that was pressed 
-				//RT[seqCounter] = gTimer[2]; // record the reaction time 
+				cout << "digitCounter: " << digitCounter
+					<< " | sequence[digitCounter]: '" << seqChar << "'"
+					<< " | i: " << i << " | std::to_string(i): '" << iStr << "'"
+					<< endl;
 
-				if (sequence[digitCounter] == i) {
+				if (seqChar == iStr) {
+					cout << "Correct\n";
 					gs.digit_color[digitCounter] = 3; // green
 				}
 				else {
+					cout << "Wrong\n";
 					gs.digit_color[digitCounter] = 2; // red
 					isError = 1;
 				}
-				//< Check if the single pressed finger (the only one with releaseState==0) is released 
 			}
-			else if (gBox.getForce(i) <= thresh && !releaseState[i]) { // check for release of the press
-				releaseState[i] = 1;
+			else if (force <= thresh) { // count fingers that are not pressed
+				unpressedFinger++;
 			}
 		}
+		if (unpressedFinger == 5) {
+			releaseState = TRUE;
+		}
 
+		if (gTimer[1] > execTime) {
+			cout << "Wait response finished\n";
+			state = WAIT_FEEDBACK;
+			gTimer.reset(1);					//time for whole trial
+			gTimer.reset(2);					//time for events in the trial
+		}
 		break;
 
 
@@ -776,12 +777,12 @@ void MyTrial::control() {
 			state = END_TRIAL;
 		}
 
-		for (i = 0; i < NUMDISPLAYLINES; i++) { // clear screen
-			if (!gs.line[i].empty()) {
-				gs.lineColor[i] = 0;
-				gs.line[i] = "";
-			}
-		}
+		//for (i = 0; i < NUMDISPLAYLINES; i++) { // clear screen
+		//	if (!gs.line[i].empty()) {
+		//		gs.lineColor[i] = 0;
+		//		gs.line[i] = "";
+		//	}
+		//}
 		//gs.clearCues();
 
 		break;

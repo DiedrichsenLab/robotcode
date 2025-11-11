@@ -150,12 +150,13 @@ private:
 	//int hardpressKnown[NUMFINGERS];			///< Do we already meassure a hard press on that fingure?
 	//int hardPress;							///< Was the force to high for the finger presses?
 	int response[NUMFINGERS];					///< Which key is pressed 
-	int releaseState[NUMFINGERS];				///< Was the finger released already or is it still pressed?
+	bool releaseState = TRUE; //[NUMFINGERS];				///< Was the finger released already or is it still pressed?
+	int unpressedFinger = 0;
 	//int inactiveFinger;						///< How many fingers are inactive?
 	//int superFast;							///< Was the RT super fast? if yes set to 1 otherwise 0
 	//int allPressed;							///< Counts how many fingers are already placed on the board
-	//double RT[NUMFINGERS];					///< When was the finger moved (time-count starts with trial)
-	//double pressT[NUMFINGERS];				///< For how long was the finger pressed	
+	double RT[NUMFINGERS];					///< When was the finger moved (time-count starts with trial)
+	double pressed[NUMFINGERS];				/// pressed digit
 	//double MT;								///< Movement time, time till finishing a finger-sequence
 	//double Force;							///< sum of max Froces in a sequence
 	//int pointState;							///< How many points did you get in a trial 0/1/-1?

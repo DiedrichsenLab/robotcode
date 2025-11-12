@@ -17,7 +17,8 @@ Screen gScreen;					///< Screen
 TRCounter gCounter;				///< TR Counter 
 StimulatorBox gBox;			///< Stimulator Box
 double responseArray[11] = { 1,1,1,1,1,1,1,1,1,1,1 };
-
+double mt_threshold = 3000;
+double mt_threshold2 = 1500; 
 int fGain= 3;
 
 //StimulatorBox gBox[2];		///< Stimulator Box 
@@ -359,7 +360,7 @@ void MyTrial::writeDat(ostream& out) {
 		<< RT[2] << "\t"
 		<< RT[3] << "\t"
 		<< RT[4] << "\t"
-		<< accuracy << "\t"
+		<< numCorrect << "\t"
 		<< endl;
 		
 }
@@ -464,7 +465,7 @@ void MyTrial::updateTextDisplay() {
 ///////////////////////////////////////////////////////////////
 #define DIGITWIDTH 1
 #define RECWIDTH 1.4
-#define DIGITOFFSET DIGITWIDTH*NUMFINGERS/2
+#define DIGITOFFSET -DIGITWIDTH*NUMFINGERS/2
 #define SEQUENCE_CUE_Y 0
 
 void MyTrial::updateGraphics(int what) {
@@ -481,10 +482,14 @@ void MyTrial::updateGraphics(int what) {
 		}
 	}
 
-	Vector2D recSize, recPos;
-	recSize = Vector2D(1.3, 1.3);
+	for (i = 0; i < 1; i++) {
+		gScreen.setColor(gs.lineColor[i]);
+		gScreen.print(gs.line[i], gs.lineXpos[i], gs.lineYpos[i], gs.lineSize[i]);
+
+	}
 
 
+	// Remove 
 	if (gs.showDiagnostics) {
 		string stateString;
 		switch (state)
@@ -606,11 +611,10 @@ void MyTrial::control() {
 		digitCounter = -1;
 		// put here what happens during WAIT_PLAN
 		//gs.line[0] = sequence;
-		if (gTimer[1] > planTime) {
+		if (gTimer[2] > planTime) {
 			state = WAIT_RESPONSE;
 			releaseState = TRUE;
-			accuracy = 0;
-			gTimer.reset(1);					//time for whole trial
+			numCorrect = 0;
 			gTimer.reset(2);					//time for events in the trial
 		}
 		break;
@@ -638,7 +642,7 @@ void MyTrial::control() {
 				if (seqChar == iStr) {
 					cout << "Correct\n";
 					gs.digit_color[digitCounter] = 3; // green
-					accuracy++;
+					numCorrect++;
 				}
 				else {
 					cout << "Wrong\n";
@@ -654,8 +658,22 @@ void MyTrial::control() {
 			releaseState = TRUE;
 		}
 
-		if (gTimer[1] > execTime) {
-			cout << "Wait response finished\n";
+
+		if ((gTimer[1] > execTime) || (digitCounter>=4 && releaseState)){
+			MT = gTimer[2]
+			// Claculate Feedback points
+			if (isError >= 1) {
+				numPoints = -1;
+			}
+			else {
+				if (MT <= mt_threshold){
+					numPoints = 1;
+				}
+				if (MT <= mt_threshold2) {
+					numPoints = 3;
+				}
+			}
+			gs.line[0] = std::to_string(numPoints);
 			state = WAIT_FEEDBACK;
 			gTimer.reset(1);					//time for whole trial
 			gTimer.reset(2);					//time for events in the trial
@@ -672,6 +690,7 @@ void MyTrial::control() {
 		break;
 
 	case WAIT_ITI:  //5
+		gs.showSequence = FALSE;
 		if (gTimer[2] > iti) {
 			dataman.stopRecording();
 			state = END_TRIAL;
@@ -730,26 +749,27 @@ void DataRecord::write(ostream& out) {
 /// 
 /////////////////////////////////////////////////////////////////////////////////////
 GraphicState::GraphicState() {
-	// points in block 
+	// Points in trial  
 	lineXpos[0] = 0;
-	lineYpos[0] = 2.4;			// feedback 	
+	lineYpos[0] = 1.5;			// feedback 	
 	lineColor[0] = 1;			// white 
-	size[0] = 5;
+	lineSize[0] = 5;
 
+	// Points in trial
 	lineXpos[1] = 0;
 	lineYpos[1] = .8;			// feedback 	
 	lineColor[1] = 1;			// white 
-	size[1] = 5;
+	lineSize[1] = 5;
 
 	lineXpos[2] = 0;
 	lineYpos[2] = -.8;			// block points	
 	lineColor[2] = 1;			// white 
-	size[2] = 5;
+	lineSize[2] = 5;
 
 	lineXpos[3] = 0;
 	lineYpos[3] = -2.4;			// block points	
 	lineColor[3] = 1;			// white 
-	size[3] = 5;
+	lineSize[3] = 5;
 
 	showLines = true;
 	showBoxes = 0;

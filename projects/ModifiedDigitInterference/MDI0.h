@@ -64,8 +64,7 @@ public:
 	double lineXpos[NUMDISPLAYLINES];
 	double lineYpos[NUMDISPLAYLINES];
 	int lineColor[NUMDISPLAYLINES];
-	//int boxColor[2];
-	GLfloat size[NUMDISPLAYLINES];
+	GLfloat lineSize[NUMDISPLAYLINES];
 	//bool boxOn;
 	bool showLines;
 	int showBoxes;
@@ -157,15 +156,15 @@ private:
 	int response[NUMFINGERS];					///< Which key is pressed 
 	bool releaseState = TRUE; //[NUMFINGERS];				///< Was the finger released already or is it still pressed?
 	int unpressedFinger = 0;
-	int accuracy = 0;
+	int numCorrect;								///< Number of corrrect presses 
+	int isError;								///< Is a error made 
+	int numPoints;								///< Number of points awarded 
 	//int inactiveFinger;						///< How many fingers are inactive?
-	//int superFast;							///< Was the RT super fast? if yes set to 1 otherwise 0
 	//int allPressed;							///< Counts how many fingers are already placed on the board
 	double RT[NUMFINGERS];					///< When was the finger moved (time-count starts with trial)
 	double pressed[NUMFINGERS];				/// pressed digit
-	//double MT;								///< Movement time, time till finishing a finger-sequence
+	double MT;								///< Movement time, time till finishing a finger-sequence
 	//double Force;							///< sum of max Froces in a sequence
-	//int pointState;							///< How many points did you get in a trial 0/1/-1?
 
 	DataManager<DataRecord, 30000 / 5> dataman;	///< For data recording for MOV file 
 };

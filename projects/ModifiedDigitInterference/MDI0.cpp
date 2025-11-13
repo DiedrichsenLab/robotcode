@@ -490,7 +490,7 @@ void MyTrial::updateTextDisplay() {
 	//sprintf(buffer,"volts: %d %d %d %d %d",releaseState[0],releaseState[1],releaseState[2],releaseState[3],releaseState[4]); 
 	//tDisp.setText(buffer,5,0);
 
-	sprintf(buffer, "Force RIGHT:  %2.2f %2.2f %2.2f %2.2f %2.2f", gBox.getForce(0), gBox.getForce(1), gBox.getForce(2), gBox.getForce(3), gBox.getForce(4));
+	//sprintf(buffer, "Force RIGHT:  %2.2f %2.2f %2.2f %2.2f %2.2f", gBox.getForce(0), gBox.getForce(1), gBox.getForce(2), gBox.getForce(3), gBox.getForce(4));
 	tDisp.setText(buffer, 8, 0);
 
 }
@@ -715,18 +715,24 @@ void MyTrial::control() {
 		}
 
 
-		if ((gTimer[1] > execTime) || (digitCounter>=4 && releaseState)){
+		if ((gTimer[1] > execTime) || (digitCounter>=4  && releaseState)){
 			MT = gTimer[2];
 			if (isError == 0) {
-				if (MT <= mt_threshold) {
+				if (MT <= mt_threshold && digitCounter >= 4) {
 					numPoints = 1;
 					sprintf(buffer, "+1");
+					accurateResp++;
 				}
-				if (MT <= mt_threshold2) {
+				else if (MT <= mt_threshold2 && digitCounter >= 4) {
 					numPoints = 3;
 					sprintf(buffer, "+3");
+					accurateResp++;
 				}
-				accurateResp++;
+				else {
+					numPoints = -1;
+					sprintf(buffer, "-1");
+				}
+
 			}
 			else {
 				numPoints = -1;

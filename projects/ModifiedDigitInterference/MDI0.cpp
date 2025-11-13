@@ -37,6 +37,7 @@ bool gKeyPressed;					///< Key pressed?
 char gKey;						///< Which key?
 int isPractice = 0;					///< Should we show the lines to help practice
 int gNumErrors = 0;					///< How many erros did you make during a block
+int accurateResp = 0;
 
 double timeThresholds[2] = { 0.8, 1.2 };	///< percentage when super fast and when late trial
 
@@ -83,11 +84,11 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	tDisp.init(gThisInst, 0, 0, 550, 26, 8, 2, &(::parseCommand));
 	tDisp.setText("Subj:", 0, 0);
 
-	gScreen.init(gThisInst, 1920, 0, 1680, 1024, &(::updateGraphics));
+	gScreen.init(gThisInst, 1920, 0, 1680, 1050, &(::updateGraphics));
 	//gScreen.setScale(Vector2D(0.02,0.02));
 	//gScreen.setScale(Vector2D(1.1*0.02,1.1*0.02));	 // In cm 
 	//gScreen.setCenter(Vector2D(0,2));	 // In cm 
-	gScreen.setCenter(Vector2D(2, 3));	 // In cm //0,2
+	gScreen.setCenter(Vector2D(0, 0));	 // In cm //0,2
 	gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE)); // cm/pixel 
 
 	// initalize s626cards 
@@ -298,6 +299,7 @@ Trial* MyBlock::getTrial() {
 void MyBlock::start() {
 	for (int i = 0; i < NUMDISPLAYLINES; i++) { gs.line[i] = ""; }
 	//gs.boxOn = true;
+	accurateResp = 0;
 	gCounter.reset();
 	gCounter.start();
 }
@@ -306,9 +308,40 @@ void MyBlock::start() {
 /// giveFeedback and put it to the graphic state 
 ///////////////////////////////////////////////////////////////
 void MyBlock::giveFeedback() {
-	//sprintf(buffer, "End of Block");
-	//gs.line[0] = buffer;
-	//gs.lineColor[0] = 1;
+	
+	double MT;
+	double* MTarray = new double[trialNum];
+	int i;
+	MyTrial* tpnr;
+	int numPointsTot = 0;
+
+	for (i = 0; i < trialNum; i++) { //check each trial
+		tpnr = (MyTrial*)trialVec.at(i);
+		MTarray[i] = tpnr->MT;
+		numPointsTot = numPointsTot + tpnr->numPoints;
+	}
+
+	double MTmedian = median(MTarray, trialNum);
+
+	sprintf(buffer, "End of Block");
+	gs.line[0] = buffer;
+	gs.lineColor[0] = 1;
+
+	sprintf(buffer, "Correct: %d/%d", accurateResp, trialNum);
+	gs.line[1] = buffer;
+	gs.lineColor[1] = 1;
+
+	sprintf(buffer, "Points: %d",  numPointsTot);
+	gs.line[2] = buffer;
+	gs.lineColor[2] = 1;
+
+	sprintf(buffer, "Median MT: %f", MTmedian);
+	gs.line[3] = buffer;
+	gs.lineColor[3] = 1;
+
+	/*sprintf(buffer, "End of Block");
+	gs.line[0] = buffer;
+	gs.lineColor[0] = 1;*/
 }
 
 ///////////////////////////////////////////////////////////////
@@ -360,6 +393,7 @@ void MyTrial::writeDat(ostream& out) {
 		<< RT[2] << "\t"
 		<< RT[3] << "\t"
 		<< RT[4] << "\t"
+		<< MT << "\t"
 		<< numCorrect << "\t"
 		<< endl;
 		
@@ -391,6 +425,7 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "reactionTime3" << "\t"
 		<< "reactionTime4" << "\t"
 		<< "reactionTime5" << "\t"
+		<< "Movement Time" << "\t"
 		<< "Accuracy" << "\t"
 		<< endl;
 
@@ -449,7 +484,7 @@ void MyTrial::updateTextDisplay() {
 	sprintf(buffer, "State : %d  State time: %2.1f  releaseState: %d  unpressedFinger: %d  digitCounter: %d", state, gTimer[1], releaseState, unpressedFinger, digitCounter);
 	tDisp.setText(buffer, 4, 0);
 
-	sprintf(buffer, "read : %2.1f   readReal : %2.1f", gTimer[0], gTimer.readReal(1));
+	sprintf(buffer, "read : %2.1f   readReal : %2.1f  accurateResp: %d", gTimer[0], gTimer.readReal(1), accurateResp);
 	tDisp.setText(buffer, 5, 0);
 
 	//sprintf(buffer,"volts: %d %d %d %d %d",releaseState[0],releaseState[1],releaseState[2],releaseState[3],releaseState[4]); 
@@ -482,11 +517,35 @@ void MyTrial::updateGraphics(int what) {
 		}
 	}
 
-	for (i = 0; i < 1; i++) {
-		gScreen.setColor(gs.lineColor[i]);
-		gScreen.print(gs.line[i], gs.lineXpos[i], gs.lineYpos[i], gs.lineSize[i]);
+	//for (i = 0; i < 1; i++) {
+	//	gScreen.setColor(gs.lineColor[i]);
+	//	gScreen.print(gs.line[i], gs.lineXpos[i], gs.lineYpos[i], gs.lineSize[i]);
 
+	//}
+
+	// Other letters
+	gScreen.setColor(Screen::white);
+	for (i = 0; i < NUMDISPLAYLINES; i++) {
+		if (!gs.line[i].empty()) {
+			gScreen.setColor(gs.lineColor[i]);
+			gScreen.print(gs.line[i].c_str(), gs.lineXpos[i], gs.lineYpos[i], gs.lineSize[i] * 1.5);
+		}
 	}
+
+	//if (gs.showFeedback) {
+	//	gScreen.setColor(Screen::white);
+	//	if (MT <= mt_threshold) {
+	//		numPoints = 1;
+	//		sprintf(buffer, "+1");
+	//	}
+	//	if (MT <= mt_threshold2) {
+	//		numPoints = 3;
+	//		sprintf(buffer, "+3");
+	//	}
+	//	
+	//	gs.line[2] = buffer;
+
+	//}
 
 
 	// Remove 
@@ -567,13 +626,13 @@ void MyTrial::control() {
 	Vector2D recPos;
 	double force;
 	int goalResponse;
-	int isError = 0;
 
-	cout << gExp->theBlock->state;
+	//cout << gExp->theBlock->state;
 
 	switch (state) {
 	case WAIT_TRIAL:
 		gs.showDiagnostics = 1;
+		gs.showFeedback = 0;
 		for (i = 0; i < 11; i++) { gs.line[i] = ""; }			// clear screen
 		gs.lineColor[7] = 1;					// WHITE
 
@@ -590,6 +649,7 @@ void MyTrial::control() {
 		break;
 
 	case WAIT_TR: //1		
+		gs.showFeedback = 0;
 		/// Wait for TR counter to be at the right place & reset the clocks
 		if (gCounter.readTR() == 0) {
 			gTimer.reset(0);
@@ -599,8 +659,8 @@ void MyTrial::control() {
 			startTRReal = gCounter.readTR(); // number of TR arrived so far
 
 			
-			gTimer.reset(1);					//time for whole trial
-			gTimer.reset(2);					//time for events in the trial
+			//gTimer.reset(1);					//time for whole trial
+			//gTimer.reset(2);					//time for events in the trial
 			gBox.boardOn = 1;
 			state = WAIT_PLAN;
 		}
@@ -614,7 +674,9 @@ void MyTrial::control() {
 		if (gTimer[2] > planTime) {
 			state = WAIT_RESPONSE;
 			releaseState = TRUE;
+			isError = 0;
 			numCorrect = 0;
+			numPoints = -1;
 			gTimer.reset(2);					//time for events in the trial
 		}
 		break;
@@ -633,19 +695,13 @@ void MyTrial::control() {
 				releaseState = FALSE; // set the finger to pressed
 				std::string seqChar = std::string(1, sequence[digitCounter]);
 				std::string iStr = std::to_string(i + 1);
-
-				cout << "digitCounter: " << digitCounter
-					<< " | sequence[digitCounter]: '" << seqChar << "'"
-					<< " | i: " << i << " | std::to_string(i): '" << iStr << "'"
-					<< endl;
-
 				if (seqChar == iStr) {
-					cout << "Correct\n";
+					
 					gs.digit_color[digitCounter] = 3; // green
 					numCorrect++;
 				}
 				else {
-					cout << "Wrong\n";
+					
 					gs.digit_color[digitCounter] = 2; // red
 					isError = 1;
 				}
@@ -660,20 +716,23 @@ void MyTrial::control() {
 
 
 		if ((gTimer[1] > execTime) || (digitCounter>=4 && releaseState)){
-			MT = gTimer[2]
-			// Claculate Feedback points
-			if (isError >= 1) {
-				numPoints = -1;
-			}
-			else {
-				if (MT <= mt_threshold){
+			MT = gTimer[2];
+			if (isError == 0) {
+				if (MT <= mt_threshold) {
 					numPoints = 1;
+					sprintf(buffer, "+1");
 				}
 				if (MT <= mt_threshold2) {
 					numPoints = 3;
+					sprintf(buffer, "+3");
 				}
+				accurateResp++;
 			}
-			gs.line[0] = std::to_string(numPoints);
+			else {
+				numPoints = -1;
+				sprintf(buffer, "-1");
+			}
+			gs.line[0] = buffer;
 			state = WAIT_FEEDBACK;
 			gTimer.reset(1);					//time for whole trial
 			gTimer.reset(2);					//time for events in the trial
@@ -683,13 +742,18 @@ void MyTrial::control() {
 
 	case WAIT_FEEDBACK:  //4
 		//do iti 
+		gs.showFeedback = 1;
 		if (gTimer[2] > FEEDBACKTIME) {
 			gTimer.reset(2);
+			sprintf(buffer, "");
+			gs.line[0] = buffer;
+			gs.lineColor[0] = 1;
 			state = WAIT_ITI;
 		}
 		break;
 
 	case WAIT_ITI:  //5
+		gs.showFeedback = 0;
 		gs.showSequence = FALSE;
 		if (gTimer[2] > iti) {
 			dataman.stopRecording();
@@ -751,11 +815,10 @@ void DataRecord::write(ostream& out) {
 GraphicState::GraphicState() {
 	// Points in trial  
 	lineXpos[0] = 0;
-	lineYpos[0] = 1.5;			// feedback 	
+	lineYpos[0] = 2.4;			// feedback 	
 	lineColor[0] = 1;			// white 
 	lineSize[0] = 5;
 
-	// Points in trial
 	lineXpos[1] = 0;
 	lineYpos[1] = .8;			// feedback 	
 	lineColor[1] = 1;			// white 

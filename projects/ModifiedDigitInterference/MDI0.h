@@ -69,6 +69,7 @@ public:
 	bool showLines;
 	int showBoxes;
 	int boxColor;
+	bool showFeedback;
 	bool showDiagnostics;
 	bool showSequence;
 	int digit_color[NUMFINGERS];	/// Color of each of the digits in the sequence

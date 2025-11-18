@@ -400,6 +400,8 @@ void MyTrial::read(istream& in) {
 		>> execTime
         >> feedbackTime
 		>> iti
+		>> QuartetType
+		>> BN
 	    >> sequence;
 }
 
@@ -433,6 +435,7 @@ void MyTrial::writeDat(ostream& out) {
 		<< numCorrect << "\t"
 		<< mt_threshold << "\t"
 		<< mt_threshold2 << "\t"
+		<< QuartetType << "\t"
 		<< endl;
 		
 }
@@ -467,6 +470,7 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "Accuracy" << "\t"
 		<< "rewThresh1" << "\t"
 		<< "rewThresh2" << "\t"
+		<< "QuartetType" << "\t"
 		<< endl;
 
 
@@ -742,7 +746,7 @@ void MyTrial::control() {
 		}
 
 
-		if ((gTimer[1] > execTime) || (digitCounter>=4  && releaseState)){
+		if ((gTimer[2] > execTime) || (digitCounter>=4  && releaseState)){
 			MT = gTimer[2];
 			if (isError == 0) {
 				if (MT <= mt_threshold && digitCounter >= 4) {

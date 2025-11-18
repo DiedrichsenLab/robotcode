@@ -136,6 +136,8 @@ private:
 	int startTRReal;
 	int startTimeReal;
 	int feedbackTime;
+	int BN;
+	int QuartetType;
 	//int lastTrial;							///< Is that the last Trial? (important for scanning to the the last TRs)
 	int startTime;							///< When should the next trail start? is independent of TR time!
 	int planTime;

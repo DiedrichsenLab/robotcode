@@ -304,6 +304,34 @@ void MyBlock::start() {
 	gCounter.start();
 }
 
+void quartiles(double array[], int num_val, double& q1, double& q3) {
+	int i, j;
+	double dummy;
+
+	// Sort the array (using selection sort as per original implementation)
+	for (i = 0; i < num_val - 1; i++) {
+		for (j = i + 1; j < num_val; j++) {
+			if (array[i] > array[j]) {
+				dummy = array[i];
+				array[i] = array[j];
+				array[j] = dummy;
+			}
+		}
+	}
+
+	// Calculate Q1
+	if (num_val % 2 == 0) {
+		i = num_val / 2;
+		q1 = median(array, i); // median of lower half
+		q3 = median(array + i, i); // median of upper half
+	}
+	else {
+		i = (num_val - 1) / 2;
+		q1 = median(array, i + 1); // median of lower half (including median)
+		q3 = median(array + i + 1, i); // median of upper half
+	}
+}
+
 ///////////////////////////////////////////////////////////////
 /// giveFeedback and put it to the graphic state 
 ///////////////////////////////////////////////////////////////
@@ -350,33 +378,7 @@ void MyBlock::giveFeedback() {
 	gs.lineColor[0] = 1;*/
 }
 
-void quartiles(double array[], int num_val, double& q1, double& q3) {
-	int i, j;
-	double dummy;
 
-	// Sort the array (using selection sort as per original implementation)
-	for (i = 0; i < num_val - 1; i++) {
-		for (j = i + 1; j < num_val; j++) {
-			if (array[i] > array[j]) {
-				dummy = array[i];
-				array[i] = array[j];
-				array[j] = dummy;
-			}
-		}
-	}
-
-	// Calculate Q1
-	if (num_val % 2 == 0) {
-		i = num_val / 2;
-		q1 = median(array, i); // median of lower half
-		q3 = median(array + i, i); // median of upper half
-	}
-	else {
-		i = (num_val - 1) / 2;
-		q1 = median(array, i + 1); // median of lower half (including median)
-		q3 = median(array + i + 1, i); // median of upper half
-	}
-}
 
 ///////////////////////////////////////////////////////////////
 ///	My Trial class contains the main info of how a trial in this experiment is run 
@@ -555,12 +557,6 @@ void MyTrial::updateGraphics(int what) {
 		}
 	}
 
-	//for (i = 0; i < 1; i++) {
-	//	gScreen.setColor(gs.lineColor[i]);
-	//	gScreen.print(gs.line[i], gs.lineXpos[i], gs.lineYpos[i], gs.lineSize[i]);
-
-	//}
-
 	// Other letters
 	gScreen.setColor(Screen::white);
 	for (i = 0; i < NUMDISPLAYLINES; i++) {
@@ -569,21 +565,6 @@ void MyTrial::updateGraphics(int what) {
 			gScreen.print(gs.line[i].c_str(), gs.lineXpos[i], gs.lineYpos[i], gs.lineSize[i] * 1.5);
 		}
 	}
-
-	//if (gs.showFeedback) {
-	//	gScreen.setColor(Screen::white);
-	//	if (MT <= mt_threshold) {
-	//		numPoints = 1;
-	//		sprintf(buffer, "+1");
-	//	}
-	//	if (MT <= mt_threshold2) {
-	//		numPoints = 3;
-	//		sprintf(buffer, "+3");
-	//	}
-	//	
-	//	gs.line[2] = buffer;
-
-	//}
 
 
 	// Remove 
@@ -644,7 +625,7 @@ void MyTrial::updateHaptics() {
 	currentTrial->control();
 
 	/// record the data at record frequency 
-	if (dataman.isRecording() && gTimer[4] >= RECORDRATE) {
+	if (dataman.isRecording()){ //&& gTimer[4] >= RECORDRATE) {
 		gTimer.reset(4);
 		bool x = dataman.record(DataRecord(state, gExp->theBlock->trialNum));
 		if (!x) {
@@ -673,6 +654,14 @@ void MyTrial::control() {
 		gs.showFeedback = 0;
 		for (i = 0; i < 11; i++) { gs.line[i] = ""; }			// clear screen
 		gs.lineColor[7] = 1;					// WHITE
+
+		for (i = 0; i < NUMDISPLAYLINES; i++) { // clear screen
+			if (!gs.line[i].empty()) {
+				gs.lineColor[i] = 0;
+				gs.line[i] = "";
+			}
+		}
+		break;
 
 	case START_TRIAL: //0
 		gTimer.reset(1);
@@ -802,13 +791,6 @@ void MyTrial::control() {
 		if (gTimer[2] > iti) {
 			dataman.stopRecording();
 			state = END_TRIAL;
-		}
-
-		for (i = 0; i < NUMDISPLAYLINES; i++) { // clear screen
-			if (!gs.line[i].empty()) {
-				gs.lineColor[i] = 0;
-				gs.line[i] = "";
-			}
 		}
 
 		break;

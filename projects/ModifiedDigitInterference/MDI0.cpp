@@ -311,6 +311,7 @@ void MyBlock::giveFeedback() {
 	
 	double MT;
 	double* MTarray = new double[trialNum];
+	double q1 = 0, q3 = 0;
 	int i;
 	MyTrial* tpnr;
 	int numPointsTot = 0;
@@ -322,6 +323,11 @@ void MyBlock::giveFeedback() {
 	}
 
 	double MTmedian = median(MTarray, trialNum);
+
+	quartiles(MTarray, trialNum, q1, q3);
+
+	mt_threshold = q1;
+	mt_threshold2 = q3;
 
 	sprintf(buffer, "End of Block");
 	gs.line[0] = buffer;
@@ -342,6 +348,34 @@ void MyBlock::giveFeedback() {
 	/*sprintf(buffer, "End of Block");
 	gs.line[0] = buffer;
 	gs.lineColor[0] = 1;*/
+}
+
+void quartiles(double array[], int num_val, double& q1, double& q3) {
+	int i, j;
+	double dummy;
+
+	// Sort the array (using selection sort as per original implementation)
+	for (i = 0; i < num_val - 1; i++) {
+		for (j = i + 1; j < num_val; j++) {
+			if (array[i] > array[j]) {
+				dummy = array[i];
+				array[i] = array[j];
+				array[j] = dummy;
+			}
+		}
+	}
+
+	// Calculate Q1
+	if (num_val % 2 == 0) {
+		i = num_val / 2;
+		q1 = median(array, i); // median of lower half
+		q3 = median(array + i, i); // median of upper half
+	}
+	else {
+		i = (num_val - 1) / 2;
+		q1 = median(array, i + 1); // median of lower half (including median)
+		q3 = median(array + i + 1, i); // median of upper half
+	}
 }
 
 ///////////////////////////////////////////////////////////////
@@ -395,6 +429,8 @@ void MyTrial::writeDat(ostream& out) {
 		<< RT[4] << "\t"
 		<< MT << "\t"
 		<< numCorrect << "\t"
+		<< mt_threshold << "\t"
+		<< mt_threshold2 << "\t"
 		<< endl;
 		
 }
@@ -427,6 +463,8 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "reactionTime5" << "\t"
 		<< "Movement Time" << "\t"
 		<< "Accuracy" << "\t"
+		<< "rewThresh1" << "\t"
+		<< "rewThresh2" << "\t"
 		<< endl;
 
 

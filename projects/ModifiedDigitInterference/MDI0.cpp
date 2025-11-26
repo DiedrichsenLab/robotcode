@@ -17,8 +17,8 @@ Screen gScreen;					///< Screen
 TRCounter gCounter;				///< TR Counter 
 StimulatorBox gBox;			///< Stimulator Box
 double responseArray[11] = { 1,1,1,1,1,1,1,1,1,1,1 };
-double mt_threshold = 3000;
-double mt_threshold2 = 1500; 
+double mt_threshold = 4500;
+double mt_threshold2 = 3000; 
 int fGain= 3;
 
 //StimulatorBox gBox[2];		///< Stimulator Box 
@@ -39,7 +39,6 @@ int isPractice = 0;					///< Should we show the lines to help practice
 int gNumErrors = 0;					///< How many erros did you make during a block
 int accurateResp = 0;
 
-double timeThresholds[2] = { 0.8, 1.2 };	///< percentage when super fast and when late trial
 
 int digitCounter = 0;
 
@@ -338,7 +337,7 @@ void quartiles(double array[], int num_val, double& q1, double& q3) {
 void MyBlock::giveFeedback() {
 	
 	double MT;
-	double* MTarray = new double[trialNum];
+	double* MTarray = new double[numTrials];
 	double q1 = 0, q3 = 0;
 	int i;
 	MyTrial* tpnr;
@@ -350,13 +349,7 @@ void MyBlock::giveFeedback() {
 		numPointsTot = numPointsTot + tpnr->numPoints;
 	}
 
-	double MTmedian = median(MTarray, trialNum);
-
-	quartiles(MTarray, trialNum, q1, q3);
-
-	mt_threshold = q1;
-	mt_threshold2 = q3;
-
+	cout << "Points calculated" << endl;
 	sprintf(buffer, "End of Block");
 	gs.line[0] = buffer;
 	gs.lineColor[0] = 1;
@@ -365,17 +358,22 @@ void MyBlock::giveFeedback() {
 	gs.line[1] = buffer;
 	gs.lineColor[1] = 1;
 
-	sprintf(buffer, "Points: %d",  numPointsTot);
+	sprintf(buffer, "Points: %d", numPointsTot);
 	gs.line[2] = buffer;
 	gs.lineColor[2] = 1;
+
+	//if (accurateResp > (trialNum + 1) / 2) {
+	double MTmedian = median(MTarray, trialNum);
+
+	quartiles(MTarray, trialNum, q1, q3);
+
+	mt_threshold = q1;
+	mt_threshold2 = q3;
 
 	sprintf(buffer, "Median MT: %f", MTmedian);
 	gs.line[3] = buffer;
 	gs.lineColor[3] = 1;
-
-	/*sprintf(buffer, "End of Block");
-	gs.line[0] = buffer;
-	gs.lineColor[0] = 1;*/
+	cout << "Threshold up" << endl;
 }
 
 
@@ -549,10 +547,6 @@ void MyTrial::updateTextDisplay() {
 
 void MyTrial::updateGraphics(int what) {
 	int i, j;
-
-	gScreen.setColor(Screen::darkred);
-	gScreen.drawBox(100, 100, 100, 100);
-
 		
 	if (gs.showSequence) {
 		for (i = 0; i < 5; i++) {
@@ -654,7 +648,7 @@ void MyTrial::control() {
 
 	switch (state) {
 	case WAIT_TRIAL:
-		gs.showDiagnostics = 1;
+		gs.showDiagnostics = 0;
 		gs.showFeedback = 0;
 		for (i = 0; i < 11; i++) { gs.line[i] = ""; }			// clear screen
 		gs.lineColor[7] = 1;					// WHITE
@@ -767,6 +761,7 @@ void MyTrial::control() {
 			}
 			else {
 				numPoints = -1;
+				MT = execTime;
 				sprintf(buffer, "-1");
 			}
 			gs.line[0] = buffer;

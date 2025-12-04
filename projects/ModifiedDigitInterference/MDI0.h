@@ -130,6 +130,7 @@ public:
 	virtual void writeDat(ostream& out);		// has to be implemented 
 	virtual void writeMov(ostream& out);		// Trial output to data file 
 	friend  void MyBlock::giveFeedback();
+	
 private:
 	TrialState state;						///< State of the Trial 
 	int startTR;							///< Which TR should the trial Start? 
@@ -138,6 +139,8 @@ private:
 	int feedbackTime;
 	int BN;
 	int QuartetType;
+	double rewThresh1 = 3000;
+	double rewThresh2 = 4500;
 	//int lastTrial;							///< Is that the last Trial? (important for scanning to the the last TRs)
 	int startTime;							///< When should the next trail start? is independent of TR time!
 	int planTime;
@@ -159,14 +162,14 @@ private:
 	int response[NUMFINGERS];					///< Which key is pressed 
 	bool releaseState = TRUE; //[NUMFINGERS];				///< Was the finger released already or is it still pressed?
 	int unpressedFinger = 0;
-	int numCorrect;								///< Number of corrrect presses 
+	int numCorrect = 0;								///< Number of corrrect presses 
 	int isError;								///< Is a error made 
 	int numPoints;								///< Number of points awarded 
 	//int inactiveFinger;						///< How many fingers are inactive?
 	//int allPressed;							///< Counts how many fingers are already placed on the board
-	double RT[NUMFINGERS];					///< When was the finger moved (time-count starts with trial)
-	double pressed[NUMFINGERS];				/// pressed digit
-	double MT;								///< Movement time, time till finishing a finger-sequence
+	double RT[NUMFINGERS] = { 0, 0, 0, 0, 0 };					///< When was the finger moved (time-count starts with trial)
+	double pressed[NUMFINGERS] = { 0, 0, 0, 0, 0 };				/// pressed digit
+	double MT = 0;								///< Movement time, time till finishing a finger-sequence
 	//double Force;							///< sum of max Froces in a sequence
 
 	DataManager<DataRecord, 30000 / 5> dataman;	///< For data recording for MOV file 

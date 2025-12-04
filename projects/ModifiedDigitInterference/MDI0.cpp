@@ -16,10 +16,10 @@ TextDisplay tDisp;				///< Text Display
 Screen gScreen;					///< Screen 
 TRCounter gCounter;				///< TR Counter 
 StimulatorBox gBox;			///< Stimulator Box
-double responseArray[11] = { 1,1,1,1,1,1,1,1,1,1,1 };
-double mt_threshold = 4500;
-double mt_threshold2 = 3000; 
-int fGain= 3;
+double rewThresh1_global = 3000;
+double rewThresh2_global = 4500;
+char gKey;
+bool gKeyPressed;
 
 //StimulatorBox gBox[2];		///< Stimulator Box 
 Timer gTimer(UPDATERATE);		///< Timer from S626 board experiments 
@@ -33,42 +33,14 @@ char buffer[300];					///< String buffer
 HINSTANCE gThisInst;					///< Instance of Windows application 
 Experiment* gExp;					///< Pointer to myExperiment 
 Trial* currentTrial;					///< Pointer to current Trial 
-bool gKeyPressed;					///< Key pressed? 
-char gKey;						///< Which key?
-int isPractice = 0;					///< Should we show the lines to help practice
-int gNumErrors = 0;					///< How many erros did you make during a block
 int accurateResp = 0;
-
 
 int digitCounter = 0;
 
-int gNumPointsBlock = 0;
-int gNumPoints = 0;
-int ghardPress = 0;
-int glatePress = 0;
-double avrgMT[2] = { 0, 0 };
-double stMT = 5000;
-//double seqMT[2][17] = { {stMT,stMT,stMT,stMT,  stMT,stMT,stMT,stMT,  stMT,stMT,stMT,stMT,  stMT, stMT},
-//						{stMT,stMT,stMT,stMT,  stMT,stMT,stMT,stMT,  stMT,stMT,stMT,stMT,  stMT, stMT} };
-//double seqGood[2][17] = { {0,0,0,0,0  ,0,0,0,0,0 ,0,0,0,0,0 ,0,0},
-//						{0,0,0,0,0  ,0,0,0,0,0 ,0,0,0,0,0 ,0,0} };
-//double seqForce[2][17] = { {0,0,0,0,0  ,0,0,0,0,0 ,0,0,0,0,0 ,0,0},
-//						{0,0,0,0,0  ,0,0,0,0,0 ,0,0,0,0,0 ,0,0} };
-//double seqFingerForce[][5] = { {0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},
-//							{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0} };
-
-#define TRTIME 2660//2700
-char counterSignal = '5';		///< ToDo: AVOID THAT What char is used to count the TR
+#define TRTIME 1000
 int sliceNumber = 32;			///< How many slices do we have
 
-#define FEEDBACKTIME 800
-string TEXT[11] = { "*","1","2","3","4","5","6", "7", "8", "9", "+" };
-//string FINGERSOUND[6] = { "A.wav", "C.wav", "D.wav", "E.wav", "G.wav" };
-//int STIM_INTENSITY[5] = { 5, 5, 5 ,5, 5 };
-//#define resTH 3     // in NEWTONS 0.6 * 4.9276 //0.5 * 4.9276
-//#define relTH 2.5   // 0.45 * 4.9276 
-//#define maxTH 20    //  5.0 * 4.9276 //5* 4.9276 //1.8 * 4.9276  (1.8 is too low--SWM) 2.8
-double thresh = 2;//THRESHOLD[5] = { resTH, resTH, resTH, resTH, resTH }; //, {relTH, relTH, relTH, relTH, relTH}, {maxTH, maxTH, maxTH, maxTH, maxTH} };
+double threshForce = 1;//THRESHOLD[5] = { resTH, resTH, resTH, resTH, resTH }; //, {relTH, relTH, relTH, relTH, relTH}, {maxTH, maxTH, maxTH, maxTH, maxTH} };
 
 ///////////////////////////////////////////////////////////////
 /// Main Program: Start the experiment, initialize the task and run it 
@@ -84,9 +56,6 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	tDisp.setText("Subj:", 0, 0);
 
 	gScreen.init(gThisInst, 1920, 0, 1680, 1050, &(::updateGraphics));
-	//gScreen.setScale(Vector2D(0.02,0.02));
-	//gScreen.setScale(Vector2D(1.1*0.02,1.1*0.02));	 // In cm 
-	//gScreen.setCenter(Vector2D(0,2));	 // In cm 
 	gScreen.setCenter(Vector2D(0, 0));	 // In cm //0,2
 	gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE)); // cm/pixel 
 
@@ -98,15 +67,11 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 		s626.initInterrupt(updateHaptics, UPDATERATE); //1	5			// initialize at 200 Hz update rate 
 	}
 
-	gTimer.init(1, 4, 0);					/// < On Cntr_1A , Cntr_1B 
-	// initialize stimulation box
-	//gBox[0].init(BOX_LEFT, "c:/robotcode/calib/Flatbox1_lowforce_LEFT_02-Dec-2021.txt");
+	gTimer.init();					/// < On Cntr_1A , Cntr_1B 
 	gBox.init(BOX_RIGHT, "c:/robotcode/calib/flatbox2_lowforce_RIGHT_06-Jul-2017.txt");
-	gBox.filterconst = 0.8;
-	//gBox[1].filterconst = 0.8;
 
 	// initalize serial counter 
-	gCounter.initSerial("COM1", 9600, counterSignal, sliceNumber); //serial 9600 19200
+	gCounter.init3(3, 0, sliceNumber); //serial 9600 19200
 	gCounter.simulate(TRTIME);
 
 	gExp->control();
@@ -159,34 +124,8 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 	float arg[4];
 	MSG msg;
 
-	/// Recenter 
-
-
 	/// Print continusly state of the encodeers 
-	if (arguments[0] == "state") {
-		tDisp.keyPressed = 0;
-		tDisp.lock();
-
-		while (!tDisp.keyPressed) {
-			if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
-				TranslateMessage(&msg);
-				DispatchMessage(&msg);
-
-			}
-			s626.updateAD(0);
-
-			sprintf(buffer, "Force : %2.2f %2.2f %2.2f %2.2f %2.2f", gBox.getForce(0),
-				gBox.getForce(1), gBox.getForce(2), gBox.getForce(3), gBox.getForce(4));
-			tDisp.setText(buffer, 5, 0);
-			InvalidateRect(tDisp.windowHnd, NULL, TRUE);
-			UpdateWindow(tDisp.windowHnd);
-			Sleep(10);
-		}
-		tDisp.unlock();
-	}
-
-	/// Print continusly state of the encodeers 
-	else if (arguments[0] == "zeroF") {
+	if (arguments[0] == "zeroF") {
 		tDisp.keyPressed = 0;
 		tDisp.lock();
 		double volts[5] = {0,0,0,0,0};
@@ -207,6 +146,17 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 			}
 			gBox.zeroForce(volts);
 		tDisp.unlock();
+	}
+
+	else if (arguments[0] == "rewThresh") {
+		if (numArgs != 3) {
+			tDisp.print("USAGE: rewThesh <value1> <value1>");
+		}
+
+		else {
+			rewThresh1_global = std::stod(arguments[1]);
+			rewThresh2_global = std::stod(arguments[2]);
+		}
 	}
 
 	/// Set TR Counter to simulated or non-simulated 
@@ -240,29 +190,6 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 		}
 	}
 
-	/// Show the force lines 
-	else if (arguments[0] == "showlines") {
-		if (numArgs != 2) {
-			tDisp.print("USAGE: showlines 0/1");
-		}
-		else {
-			sscanf(arguments[1].c_str(), "%f", &arg[0]);
-			isPractice = arg[0];
-		}
-	}
-	else if (arguments[0] == "stmt") {
-		if (numArgs != 2) {
-			tDisp.print("USAGE: stmt 0/.../10000 in ms");
-		}
-		else {
-			sscanf(arguments[1].c_str(), "%f", &arg[0]);
-			stMT = arg[0];
-			//for (i = 0; i < 17; i++) { //loop over all possible sequences and 
-			//	seqMT[0][i] = stMT;
-			//	seqMT[1][i] = stMT;
-			//}
-		}
-	}
 	else {
 		return false; /// Command not recognized
 	}
@@ -362,21 +289,20 @@ void MyBlock::giveFeedback() {
 	gs.line[2] = buffer;
 	gs.lineColor[2] = 1;
 
-	//if (accurateResp > (trialNum + 1) / 2) {
 	double MTmedian = median(MTarray, trialNum);
 
 	quartiles(MTarray, trialNum, q1, q3);
 
-	mt_threshold = q1;
-	mt_threshold2 = q3;
+	if (accurateResp > 5) {
+		rewThresh1_global = q1;
+		rewThresh2_global = q3;
+	}
 
 	sprintf(buffer, "Median MT: %f", MTmedian);
 	gs.line[3] = buffer;
 	gs.lineColor[3] = 1;
 	cout << "Threshold up" << endl;
 }
-
-
 
 ///////////////////////////////////////////////////////////////
 ///	My Trial class contains the main info of how a trial in this experiment is run 
@@ -386,6 +312,8 @@ void MyBlock::giveFeedback() {
 ///////////////////////////////////////////////////////////////
 MyTrial::MyTrial() {
 	state = WAIT_TRIAL;
+	//double rewThresh1 = 3000;
+	//double rewThresh2 = 4500;
 }
 
 ///////////////////////////////////////////////////////////////
@@ -431,8 +359,8 @@ void MyTrial::writeDat(ostream& out) {
 		<< RT[4] << "\t"
 		<< MT << "\t"
 		<< numCorrect << "\t"
-		<< mt_threshold << "\t"
-		<< mt_threshold2 << "\t"
+		<< rewThresh1 << "\t"
+		<< rewThresh2 << "\t"
 		<< QuartetType << "\t"
 		<< endl;
 		
@@ -465,13 +393,11 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "reactionTime4" << "\t"
 		<< "reactionTime5" << "\t"
 		<< "Movement Time" << "\t"
-		<< "Accuracy" << "\t"
+		<< "numCorrectDigits" << "\t"
 		<< "rewThresh1" << "\t"
 		<< "rewThresh2" << "\t"
 		<< "QuartetType" << "\t"
 		<< endl;
-
-
 }
 
 ///////////////////////////////////////////////////////////////
@@ -529,10 +455,10 @@ void MyTrial::updateTextDisplay() {
 	sprintf(buffer, "read : %2.1f   readReal : %2.1f  accurateResp: %d", gTimer[0], gTimer.readReal(1), accurateResp);
 	tDisp.setText(buffer, 5, 0);
 
-	//sprintf(buffer,"volts: %d %d %d %d %d",releaseState[0],releaseState[1],releaseState[2],releaseState[3],releaseState[4]); 
-	//tDisp.setText(buffer,5,0);
+	sprintf(buffer, "State : %d   Trial: %d   Block state: %d   RewThresh1: %.2f   RewThresh2: %.2f", state, gExp->theBlock->trialNum, gExp->theBlock->state, rewThresh1, rewThresh2);
+	tDisp.setText(buffer,6,0);
 
-	//sprintf(buffer, "Force RIGHT:  %2.2f %2.2f %2.2f %2.2f %2.2f", gBox.getForce(0), gBox.getForce(1), gBox.getForce(2), gBox.getForce(3), gBox.getForce(4));
+	sprintf(buffer, "Force:  %2.2f %2.2f %2.2f %2.2f %2.2f", gBox.getForce(0), gBox.getForce(1), gBox.getForce(2), gBox.getForce(3), gBox.getForce(4));
 	tDisp.setText(buffer, 8, 0);
 
 }
@@ -659,6 +585,8 @@ void MyTrial::control() {
 				gs.line[i] = "";
 			}
 		}
+		rewThresh1 = rewThresh1_global;
+		rewThresh2 = rewThresh2_global;
 		break;
 
 	case START_TRIAL: //0
@@ -670,6 +598,8 @@ void MyTrial::control() {
 		}
 		dataman.clear();
 		dataman.startRecording();
+		rewThresh1 = rewThresh1_global;
+		rewThresh2 = rewThresh2_global;
 		state = WAIT_TR;
 		break;
 
@@ -684,8 +614,8 @@ void MyTrial::control() {
 			startTRReal = gCounter.readTR(); // number of TR arrived so far
 
 			
-			//gTimer.reset(1);					//time for whole trial
-			//gTimer.reset(2);					//time for events in the trial
+			gTimer.reset(1);					//time for whole trial
+			gTimer.reset(2);					//time for events in the trial
 			gBox.boardOn = 1;
 			state = WAIT_PLAN;
 		}
@@ -694,8 +624,6 @@ void MyTrial::control() {
 
 	case WAIT_PLAN: //2
 		digitCounter = -1;
-		// put here what happens during WAIT_PLAN
-		//gs.line[0] = sequence;
 		if (gTimer[2] > planTime) {
 			state = WAIT_RESPONSE;
 			releaseState = TRUE;
@@ -711,7 +639,7 @@ void MyTrial::control() {
 		unpressedFinger = 0;
 		for (i = 0; i < 5; i++) { // check all finger 
 			force = gBox.getForce(i);
-			if (force > thresh && releaseState) { // check for initial press
+			if (force > threshForce && releaseState) { // check for initial press
 				
 				digitCounter = digitCounter + 1;
 				RT[digitCounter] = gTimer[2];
@@ -731,7 +659,7 @@ void MyTrial::control() {
 					isError = 1;
 				}
 			}
-			else if (force <= thresh) { // count fingers that are not pressed
+			else if (force <= threshForce) { // count fingers that are not pressed
 				unpressedFinger++;
 			}
 		}
@@ -743,12 +671,12 @@ void MyTrial::control() {
 		if ((gTimer[2] > execTime) || (digitCounter>=4  && releaseState)){
 			MT = gTimer[2];
 			if (isError == 0) {
-				if (MT <= mt_threshold && digitCounter >= 4) {
+				if (MT <= rewThresh2 && MT > rewThresh1 && digitCounter >= 4) {
 					numPoints = 1;
 					sprintf(buffer, "+1");
 					accurateResp++;
 				}
-				else if (MT <= mt_threshold2 && digitCounter >= 4) {
+				else if (MT <= rewThresh1 && digitCounter >= 4) {
 					numPoints = 3;
 					sprintf(buffer, "+3");
 					accurateResp++;
@@ -775,7 +703,7 @@ void MyTrial::control() {
 	case WAIT_FEEDBACK:  //4
 		//do iti 
 		gs.showFeedback = 1;
-		if (gTimer[2] > FEEDBACKTIME) {
+		if (gTimer[2] > feedbackTime) {
 			gTimer.reset(2);
 			sprintf(buffer, "");
 			gs.line[0] = buffer;
@@ -818,15 +746,11 @@ DataRecord::DataRecord(int s, int t) {
 	}
 }
 
-
-
-
 /////////////////////////////////////////////////////////////////////////////////////
 // Writes out the data to the *.mov file 
 /////////////////////////////////////////////////////////////////////////////////////
 void DataRecord::write(ostream& out) {
 	out << trialNum <<"\t" << state << "\t" << TR << "\t" << currentSlice << "\t" << timeReal << "\t" << time << "\t"
-		<< force_left[0] << " \t" << force_left[1] << "\t" << force_left[2] << " \t" << force_left[3] << "\t" << force_left[4] << " \t"
 		<< force_right[0] << " \t" << force_right[1] << "\t" << force_right[2] << " \t" << force_right[3] << "\t" << force_right[4] << " \t"
 		<< endl;
 }

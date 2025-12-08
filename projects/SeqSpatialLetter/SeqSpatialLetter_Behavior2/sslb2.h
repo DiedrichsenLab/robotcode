@@ -33,6 +33,7 @@ using namespace std;
 enum TrialState {
 	WAIT_TRIAL,			// 1
 	START_TRIAL,		// 2
+	WAIT_TR,
 	//____________________Neda
 	START_FIX,	    	// 3 wait for eye to fixate at the begining of the seq
 	//____________________end
@@ -99,6 +100,8 @@ public:
 	int state;
 	double timeReal;
 	double time;
+
+
 	double force_left[5];
 	double force_right[5];
 	///_______________________Neda add
@@ -155,16 +158,11 @@ public:
 	friend  void MyBlock::giveFeedback();
 private:
 	TrialState state;						///< State of the Trial 
-	int cTrial; 							///< Trial number
-	int Horizon;                            ///< How mnay digits ahead can you see
-	int StimTimeLim;							///< For how long is the seq/chunk displayed
-	//int subNum;
-	int PrepTime; 
-	int seqType;							///< Which sequence of finger movments has to be done? 
-	int MovTimeLim;							// Added by SKim for fMRI
-	int TrialTime;							// Added by SKim for fMRI, TrialTime = PrepTime + MovTime + iti
+	int PrepTime;
+	int cueType;							///< 0: Letter cue 1: Spatial cue 
 	int press[MAX_PRESS];					///< Which digit to press 
 	int fGiven[MAX_PRESS];
+	int response[MAX_PRESS];				///< Which key is pressed 
 	int feedback;							///< Give Feedback or not? 
 	int complete;							///< How much time do you have to complete the seq.?
 	int iti;								///< Timedelay before the next trail starts in[ms]
@@ -173,12 +171,10 @@ private:
 	int seqCounter;							///< Which position in the seq are we?
 	int numNewpress;
 	int released;
-	int tempCounter;							///< Which position in the seq are we?
-	int DigPressed;							///< For Horizon-wize digit revealing
+	int tempCounter;						///< Which position in the seq are we?
 	int isError;							///< Was there an error in the finger presses?
 	int nFingerErrors;						// Number of error tappings, SKim
 	int isComplete;							///< Are all presses made  
-	int response[MAX_PRESS];				///< Which key is pressed 
 	int points;								///< How many points did you get in a trial 0/1/-1?
 	int seqLength;							///< How long is the sequence (arbitrary)?
 	int chunkLength;						///< How many chunks in the sequence?
@@ -188,7 +184,13 @@ private:
 	double MT;								///< Overall MT 
 	double RT;								// Reaction Time, added by SKim
 	string cueP;							// edited by SKim, using only press cue	
-//	string cueS, cueC, cueP; 					///< Visual cues for sequence, chunk, and press
+	//	string cueS, cueC, cueP; 					///< Visual cues for sequence, chunk, and press
+
+		//variables for fMRI synchronisation, SKim
+	//int startSlice;						///< Starting value for slice no. 
+	//int startSlicereal;					///< Starting value for slice no. 
+	double startTime;					///< Time of the start of the trial relative to beginning of block
+	double startTimeReal;				///< Time of the start of the trial  relative to beginning of block
 	DataManager<DataRecord, 30000 / 2> dataman;	///< For data recording for MOV file 
 };
 
@@ -205,6 +207,20 @@ public:
 	virtual bool parseCommand(string args[], int numArgs);
 
 };
+
+
+//////////////////////////////////////////////////////////////
+class FixCross : public Target {
+public:
+	void draw();
+};
+void FixCross::draw() {
+	//setColor(1);
+	gScreen.setColor(color);
+	gScreen.drawBox(Vector2D(size[0], 0.3), Vector2D(position[0], position[1]));
+	gScreen.drawBox(Vector2D(0.3, size[1]), Vector2D(position[0], position[1]));
+}
+
 
 // computing standard deviation
 double mystd(double array[], int sizeOfArray);

@@ -1,10 +1,10 @@
 
 ///////////////////////////////////////////////////////////////
 ///
-/// Sequence Learning and Eye Tracking
+/// Sequence Spatial Letter Behavioural experiment
 ///////////////////////////////////////////////////////////////
 
-#include "ssh1.h"
+#include "sslb2.h"
 #include "StimulatorBox.h"
 #include "Target.h"
 #include <ctime>
@@ -48,6 +48,7 @@ GraphicState gs;
 #define RT_POS START_Y+1
 #define JUMP_POS  RT_POS+1
 
+#define TRTIME				2720 // must be adjusted, SKim, fMRI
 
 Color_t defaultCol = { 255,255,255 }; ///< set default color to grey
 Color_t detectCol = { 32,32,32 };
@@ -66,13 +67,8 @@ int refPointNumX = 0; // Basically, this is 0(central fixation)
 int jumpPointNumX = 1; // Basically, this is fixation jump to rightward
 int refPointNumY = 0; // Basically, this is 0(central fixation)
 int jumpPointNumY = 2; // Basically, this is fixation jump to upward
+FixCross 	fixationCross;
 
-# define TRINUMforMEDIAN 30// 30  ///
-double gSaccadeTimeR[TRINUMforMEDIAN];
-double gSaccadeTimeL[TRINUMforMEDIAN];
-double gSaccadeTimeAll[TRINUMforMEDIAN * 2];
-double prctileLevel[] = { 20.0,45.0,50.0,71.0 };
-///____________________________________________________ Neda-End
 
 
 char buffer[300]; ///< String buffer
@@ -86,19 +82,14 @@ int gNumFingerErrors = 0; // How many finger errors did you make during a block,
 int finger[5]; ///< State of each finger
 int gNumPointsBlock = 0;
 int gNumPoints = 0;
-int gTrial = 0;
 
 float timeThresPercent = 110; ///< 120% of current median MT (previous block)
 float superThresPercent = 95; ///< 95% of current median MT (previous block)
-//float ERthreshold = 15; ///< Trheshold of 20% of error rate in order to lower MT thresholds
-float ERthreshold = 5; ///< Trheshold of 5% of "finger tapping" error rate in order to lower MT thresholds, SKedited
-
-double medianMTarray[4][100]; ///< Initialise MT array across blocks (never more than 100 blocks)
+double timeThreshold = 2000; 
+double superThreshold = 1000; 
 double ERarray[100]; ///< Initialise ER array across blocks
 int b = 0;
 
-double timeThreshold[4] = { 800,1100,1500,6000 }; ///< Double and triple chunk time threshold
-double timeThresholdSuper[4] = { 320,560,740,5000 }; ///< Time threshold for super points
 #define FEEDBACKTIME 1500    // time for which the points of the trial is displayed at the end of a trial
 // Neda increased feedback time so that the subject has time to blink
 string FINGERSOUND[6] = { "A.wav", "C.wav", "D.wav", "E.wav", "G.wav" };
@@ -116,10 +107,11 @@ char TEXT[5] = { '1','2','3','4','5' };
 #define CUE_SEQ 6
 #define CUE_CHUNK 4.5
 #define CUE_PRESS 2.3 // the Y position of the presses on the screen
-#define SIZE_CUE 11    // the font size of presses
+#define SIZE_CUE 9    // the font size of presses
 #define WIDTH_CHAR_CUE 2 // the distance between letters
 #define WIDTH_REC_CUE 6 // SKim
 #define HEIGHT_REC_CUE 3 // SKim
+#define FIXCROSS_SIZE		1
 
 // Force Thresholds
 #define STARTTH 0.4 // Threshold for start
@@ -130,15 +122,6 @@ char TEXT[5] = { '1','2','3','4','5' };
 double THRESHOLD[3][5] = { {preTH, preTH, preTH, preTH, preTH}, {relTH, relTH, relTH, relTH, relTH}, {maxTH, maxTH, maxTH, maxTH, maxTH} };
 double fGain[5] = { 1.0,1.0,1.0,1.0,1.0 };  // Increased gains for index and little fingers, SKim
 
-/// <summary>
-///  fMRI counter setup, SKim
-/// </summary>
-//TRCounter gCounter;				///< TR counter, simulated and pulse-triggered 
-char counterSignal = '5';		///< What char is used to count the TR
-int sliceNumber = 32;			///< How many slices do we have
-
-/////// TR counter
-#define TRTIME				2720 // must be adjusted, SKim, fMRI
 
 ///////////////////////////////////////////////////////////////
 /// Main Program: Start the experiment, initialize the robot and run it
@@ -150,14 +133,14 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	///__________________________________________Neda - End
 	gThisInst = hThisInst;
 	// gExp = new MyExperiment("SeqSpatialVis", "ssh_vis", "C:/data/SeqSpatial/ssh_vis");
-	gExp = new MyExperiment("SeqSpat", "_", "C:/data/SeqSpatial_fMRI/ssh");
+	gExp = new MyExperiment("SeqSpatialLetter_Behavior2", "sslb2", "C:/data/SeqSpatialLetter_Behavior2");
 
 	//gExp->redirectIOToConsole();
 
 	tDisp.init(gThisInst, 100, 0, 400, 20, 5, 2, &(::parseCommand));  // the white interactive window
 	tDisp.setText("Subj:", 0, 0);
 
-	gScreen.init(gThisInst, 1920, 0, 1920, 1080, &(::updateGraphics)); // the black feedback window
+	gScreen.init(gThisInst, 1280, 0, 1024, 768, &(::updateGraphics)); // the black feedback window
 	gScreen.setCenter(Vector2D(0, 0)); // In cm //0,2
 	gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE)); // cm/pixel
 
@@ -180,8 +163,14 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	gBox[0].filterconst = 0.8;
 	gBox[1].filterconst = 0.8;
 
+
+
+
 	//******************************************************************//
 	gTimer.init();
+
+	// TR Counter for fMRI, SKim
+
 	gExp->control();
 	return 0;
 }
@@ -267,7 +256,8 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 	//		gs.showDiagnostics = arg[0];
 	//	}
 	//}
-
+	// fMRI experiment, SKim
+	
 	/// Print continusly state of the encodeers
 	else if (arguments[0] == "zeroF") {
 		tDisp.keyPressed = 0;
@@ -340,41 +330,27 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 	}
 
 	else if (arguments[0] == "thres") {
-		if (numArgs != 5) {
-			tDisp.print("USAGE: thresh medianMT for seqLength of 2 3 4 14");
+		if (numArgs != 3) {
+			tDisp.print("USAGE: thresh threshold superthres");
 		}
 		else {
 			sscanf(arguments[1].c_str(), "%f", &arg[0]);
-			timeThreshold[0] = (arg[0] * (timeThresPercent / 100));
-			timeThresholdSuper[0] = (arg[0] * (superThresPercent / 100));
+			timeThreshold = arg[0];
 
 			sscanf(arguments[2].c_str(), "%f", &arg[1]);
-			timeThreshold[1] = (arg[1] * (timeThresPercent / 100));
-			timeThresholdSuper[1] = (arg[1] * (superThresPercent / 100));
-
-			sscanf(arguments[3].c_str(), "%f", &arg[2]);
-			timeThreshold[2] = (arg[2] * (timeThresPercent / 100));
-			timeThresholdSuper[2] = (arg[2] * (superThresPercent / 100));
-
-			sscanf(arguments[4].c_str(), "%f", &arg[3]);
-			timeThreshold[3] = (arg[3] * (timeThresPercent / 100));
-			timeThresholdSuper[3] = (arg[3] * (superThresPercent / 100));
+			superThreshold = arg[1];
 
 		}
 	}
-	// Added by Skim
-	else if (arguments[0] == "krun" || arguments[0] == "KRUN") {
-		if (arguments[1][0] != arguments[2][8]) { //file name shold be "ssh_sx_by.tgt", x and y seqType, blocknumber
-			tDisp.print("Use the same block number shown in tgt file");
-		}
-		else if (numArgs != 3) {
-			tDisp.print("USAGE: run blocknumber targetfile");
+
+	else if (arguments[0] == "resize") {
+		if (numArgs != 2) {
+			tDisp.print("USAGE: resize 0|1");
 		}
 		else {
-			sscanf(arguments[1].c_str(), "%i", &bn);
-			if (gExp->theBlock->init(bn, arguments[2])) {
-				gExp->theBlock->state = START_BLOCK;
-			}
+			sscanf(arguments[1].c_str(), "%f", &arg[0]);
+			gScreen.setCenter(Vector2D(0, 0));    // In cm //0,2
+			gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));
 		}
 	}
 
@@ -418,7 +394,6 @@ void MyBlock::start() {
 	gNumPointsBlock = 0;
 	sprintf(buffer, "%d", gNumPointsBlock);
 	gs.line[2] = buffer;
-
 }
 
 ///////////////////////////////////////////////////////////////
@@ -426,90 +401,49 @@ void MyBlock::start() {
 ///////////////////////////////////////////////////////////////
 void MyBlock::giveFeedback() {
 	b = b++;
-	int i, j;
-
-	int n[4] = { 0,0,0,0 };
-	double nn[4] = { 0,0,0,0 };
-	double MTarray[4][200];
-	double medianMT[4] = { 0,0,0,0 };
+	//int i, j;
+	int i;
+	int n = 0;
+	double MTarray[200];
+	double medianMT = 0;
+	//int gType; // groupType
+	int sType; //cueType
 	MyTrial* tpnr;  //MyTrial object --> inherits class Trial in Experiment.h
-
-	for (i = 0; i < 4; i++) {
-		medianMTarray[i][0] = 10000; // Initialise the MT for the 0th block to be 10000 (same as default)
-
-	}
+	
 	ERarray[0] = 0; // Initialise the ER for the 0th block to be 0
 
 	for (i = 0; i < trialNum; i++) {
 		tpnr = (MyTrial*)trialVec.at(i);
-		if (tpnr->seqLength == 2) {
-			j = 0;
-		}
-		else if (tpnr->seqLength == 3) {
-			j = 1;
-		}
-		else if (tpnr->seqLength == 4) {
-			j = 2;
-		}
-		else {  // edited by SKim
-			j = 3;
-
-		}
+	
 
 		if (tpnr->isError == 0) {
-			MTarray[j][n[j]] = tpnr->MT; //remember the RT from the correct trials and add them
-			n[j]++; // remember number of trials
+			MTarray[n] = tpnr->MT; //remember the RT from the correct trials and add them
+			n++; // remember number of trials
 		}
-		nn[j]++;
+		sType = tpnr->cueType;
+
+		//nn++;
 	}
 	//ERarray[b] = 100 * ((double)gNumErrors) / (double)(trialNum); // error rate
-	ERarray[b] = 100 * ((double)gNumFingerErrors) / (double)(trialNum *5); // error rate, SKim, seqLength, fMRI
-	for (j = 0; j < 4; j++) {
-		if (n[j] > 0) { // if more than one correct trials for seqlength j
-			medianMTarray[j][b] = median(MTarray[j], n[j]);
+	ERarray[b] = 100 * ((double)gNumFingerErrors) / (double)(trialNum * 14); // error rate, SKim
 
-			if ((ERarray[b] < ERthreshold) && (ERarray[b - 1] > ERthreshold)) { // if ER on previous block > 5% SKim
-				if (medianMTarray[j][b] < (timeThreshold[j] / (timeThresPercent / 100))) { // if MT faster than MT expected by threshold
-					timeThreshold[j] = medianMTarray[j][b] * (timeThresPercent / 100);
-					timeThresholdSuper[j] = medianMTarray[j][b] * (superThresPercent / 100);
-				}
-			}
-			else if ((ERarray[b] < ERthreshold) && (ERarray[b - 1] < ERthreshold)) { // if ER on previous block <5% SKim
-				//if (medianMTarray[b]<medianMTarray[b-1]) { // adjust only if MT of current block faster
-				if (medianMTarray[j][b] < (timeThreshold[j] / (timeThresPercent / 100))) { // adjust only if MT of current block faster than MT expected by threshold
-					timeThreshold[j] = medianMTarray[j][b] * (timeThresPercent / 100);
-					timeThresholdSuper[j] = medianMTarray[j][b] * (superThresPercent / 100);
-				}
-			}
-		}
-		else {
-
-			medianMTarray[j][b] = 0;
-
-		}
-	}
+	//for (j = 0; j < 4; j++) {
+	// print FEEDBACK on the screen
+	sprintf(buffer, "Error rate: %.1f%%", ERarray[b]);
+	gs.line[0] = buffer;
+	gs.lineColor[0] = 1;
 
 
-//	// print FEEDBACK on the screen, disabled in fMRI experiment
-//	sprintf(buffer, "Error rate: %2.0f%%", ERarray[b]);
-//	gs.line[0] = buffer;
-//	gs.lineColor[0] = 1;
-//
-//
-//	//sprintf(buffer,"MTs: %2.0fs , %2.0fs , %2.0fs, %2.0fs , %2.0fs , %2.0fs",medianMTarray[0][b], medianMTarray[1][b], medianMTarray[2][b], medianMTarray[3][b], medianMTarray[4][b], medianMTarray[5][b]);
-//	sprintf(buffer, "timeThresholdSuper: %2.0fms", timeThresholdSuper[3]);
-//	//	sprintf(buffer, "timeThresholdSuper: %2.0fs , %2.0fs , %2.0fs, %2.0fs", timeThresholdSuper[0], timeThresholdSuper[1], timeThresholdSuper[2], timeThresholdSuper[3]);
-//
-//	gs.line[1] = buffer;
-//	gs.lineColor[1] = 1;
-//
-//	gNumPoints += gNumPointsBlock;
-//	sprintf(buffer, "Point you've got: %d   Total points: %d", gNumPointsBlock, gNumPoints);
-//	gs.line[2] = buffer;
-//	gs.lineColor[2] = 1;
 
+	
+	gs.line[1] = buffer;
+	gs.lineColor[1] = 1;
+
+	gNumPoints += gNumPointsBlock;
+	sprintf(buffer, "Point you've got: %d   Total points: %d", gNumPointsBlock, gNumPoints);
+	gs.line[2] = buffer;
+	gs.lineColor[2] = 1;
 }
-
 ///////////////////////////////////////////////////////////////
 /// My Trial class contains the main info of how a trial in this experiment is run
 ///////////////////////////////////////////////////////////////
@@ -527,9 +461,12 @@ MyTrial::MyTrial() {
 	isComplete = 0; // init if seq was produced incomplete but correct so fare
 	seqCounter = 0; // init the sequence index variable
 	numNewpress = 0;
-	DigPressed = 0;
 	MT = 0; // init total movement time, SKim edited
 	RT = 0; // Added by SKim, reaction time
+
+	startTime = 0; // SKim, fMRI
+	startTimeReal = 0; // SKim, fMRI
+
 	points = 0;
 	int released = 0;
 	for (int i = 0; i < MAX_PRESS; i++) {    // MAX_PRESS = 9 defined in header
@@ -547,37 +484,28 @@ MyTrial::MyTrial() {
 ///////////////////////////////////////////////////////////////
 void MyTrial::read(istream& in) {
 	// read from .tgt file
-	(in) >> seqType;
+	(in) >> startTime >> cueType; // 
 	for (int i = 0; i < MAX_PRESS; i++) {   // MAX_PRESS = 14--> read presses
 		(in) >> press[i];
 	}
 	// (in) >> hand >> cueS >> cueC >> cueP >> iti >> sounds >> Horizon >> StimTimeLim;
-	(in) >> cueP >> iti >> Horizon >> PrepTime >> MovTimeLim;
+	(in) >> cueP >> iti >> PrepTime ;
 
 	// do other job
-	TrialTime = PrepTime + MovTimeLim + iti; // added by SKim for fMRI
-	string zero("0");
-	gTrial++;
-	cTrial = gTrial;
-	complete = 0;
-	seqLength = cueP.find(zero); // get seqLength
-	// chunkLength = cueC.length(); // get chunkLength
-	if (seqLength < 0) { seqLength = cueP.length(); }
 }
 
 ///////////////////////////////////////////////////////////////
 // Write  // Neda - Eye data to be added
 ///////////////////////////////////////////////////////////////
 void MyTrial::writeDat(ostream& out) {
-	out << seqType << "\t"
-		<< Horizon << "\t"
+	out << cueType << "\t"
 		<< PrepTime << "\t"
-		;
+		<< startTime << "\t"; //repeat of target file. if 0, training mode
 	for (int i = 0; i < MAX_PRESS; i++) {
 		out << press[i] << "\t";
 	}
-	out << cueP << "\t"
-		<< complete << "\t"
+
+	out << complete << "\t"
 		<< iti << "\t"
 		// << sounds << "\t"
 		<< MT << "\t"
@@ -591,15 +519,14 @@ void MyTrial::writeDat(ostream& out) {
 	}
 
 
-	out << timeThreshold[3] << "\t"
-		<< timeThresholdSuper[3] << "\t"
+	out << timeThreshold << "\t"
+		<< superThreshold << "\t"
 		<< points << "\t"
 		<< fGain[0] << "\t"
 		<< fGain[1] << "\t"
 		<< fGain[2] << "\t"
 		<< fGain[3] << "\t"
-		<< fGain[4] << "\t"
-		<< StimTimeLim << "\t" << endl;
+		<< fGain[4] << endl;
 
 }
 
@@ -608,15 +535,18 @@ void MyTrial::writeDat(ostream& out) {
 ///////////////////////////////////////////////////////////////
 void MyTrial::writeHeader(ostream& out) {
 	char header[200];
-	out << "seqType" << "\t"
+	out << "cueType" << "\t"
 		<< "Horizon" << "\t"
-		<< "PrepTime" << "\t";
+		<< "PrepTime" << "\t"
+		<< "startTime" << "\t" //repeat of target file: TIME BEGINNING FOR EACH TRIAL SINCE T=0 (1st TTL)
+		<< "startTimeReal" << "\t" //actual time of the beginning of each trial since T=0
+		<< "startTRReal" << "\t" //actual time of the beginning of each trial since T=0
+		<< "startTRtime" << "\t"; //actual time of the beginning of each trial since T=0
 	for (int i = 0; i < MAX_PRESS; i++) {
 		sprintf(header, "press%d", i);
 		out << header << "\t";
 	}
-	out << "cueP" << "\t"
-		<< "complete" << "\t"
+	out << "complete" << "\t"
 		<< "iti" << "\t"
 		// << "sounds" << "\t"
 		<< "MT" << "\t"
@@ -639,8 +569,8 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "Gain3" << "\t"
 		<< "Gain4" << "\t"
 		<< "Gain5" << "\t" << endl;
-//		<< "StimTimeLim" << "\t" << endl;
-	//_____________________end
+	//		<< "StimTimeLim" << "\t" << endl;
+		//_____________________end
 
 }
 
@@ -691,32 +621,31 @@ void MyTrial::updateTextDisplay() {
 	//sprintf(buffer,"Force:    %2.2f %2.2f %2.2f %2.2f %2.2f",gBox[hand-1].getForce(0),gBox[hand-1].getForce(1),gBox[hand-1].getForce(2),gBox[hand-1].getForce(3),gBox[hand-1].getForce(4));
 	//tDisp.setText(buffer,2,0);
 
-	sprintf(buffer, "State : %d   Trial: %d", state, gExp->theBlock->trialNum);
+	sprintf(buffer, "State : %d   Trial: %d", state, gExp->theBlock->trialNum + 1);
 	tDisp.setText(buffer, 2, 0);
 
-	sprintf(buffer, "Press:  %d %d %d %d %d", finger[0], finger[1], finger[2], finger[3], finger[4]);
-	tDisp.setText(buffer, 3, 0);
-
-	sprintf(buffer, "sequence Counter: %d ", seqCounter);
-	tDisp.setText(buffer, 4, 0);
-
-	sprintf(buffer, "numNewpress: %d ", numNewpress);
+	sprintf(buffer, "threshold : %2.0f Super: %2.0f ", timeThreshold, superThreshold);
 	tDisp.setText(buffer, 5, 0);
 
-	sprintf(buffer, "released: %d", released);
+	sprintf(buffer, "Press:  %d %d %d %d %d", finger[0], finger[1], finger[2], finger[3], finger[4]);
+	tDisp.setText(buffer, 5, 0);
+
+	sprintf(buffer, "sequence Counter: %d ", seqCounter);
 	tDisp.setText(buffer, 6, 0);
 
-	sprintf(buffer, "gNumPointsBlock: %d", gNumPointsBlock);
+	sprintf(buffer, "numNewpress: %d ", numNewpress);
 	tDisp.setText(buffer, 7, 0);
 
-	sprintf(buffer, "Horizon: %d", Horizon);
+	sprintf(buffer, "released: %d", released);
 	tDisp.setText(buffer, 8, 0);
 
-	//sprintf(buffer,"thresholds : %2.0f %2.0f %2.0f Super: %2.0f %2.0f %2.0f",timeThreshold[0],timeThreshold[1],timeThreshold[2],timeThresholdSuper[0],timeThresholdSuper[1],timeThresholdSuper[2]);
-	//tDisp.setText(buffer,5,0);
-
-	sprintf(buffer, "trial : %d seqType : %d state : %d", cTrial, seqType, state);
+	sprintf(buffer, "gNumPointsBlock: %d", gNumPointsBlock);
 	tDisp.setText(buffer, 9, 0);
+
+
+
+//	sprintf(buffer, "trial : %d cueType : %d state : %d", cTrial, cueType, state);
+	//tDisp.setText(buffer, 9, 0);
 
 
 }
@@ -724,27 +653,35 @@ void MyTrial::updateTextDisplay() {
 ///////////////////////////////////////////////////////////////
 /// updateGraphics: Call from ScreenHD
 ///////////////////////////////////////////////////////////////
-#define FINGWIDTH 2
+#define FINGWIDTH 1.6 // 2 -> 1.6
 #define RECWIDTH 1.4
 #define FORCESCALE 2
-#define BASELINE -10  // SKim
+#define BASELINE -8  // SKim
 
 void MyTrial::updateGraphics(int what) {
 	int i;
 	double height;
 	// Finger forces
+//	gScreen.printChar('+', 0, -3, SIZE_CUE);
+//	fixationCross.position = gScreen.getCenter();
+	fixationCross.position = Vector2D(0, -3);
+	fixationCross.size = Vector2D(FIXCROSS_SIZE, FIXCROSS_SIZE);
+	fixationCross.setShape(SHAPE_PLUS);
+
+	fixationCross.setColor(SCR_WHITE);
+	fixationCross.draw();
+
 	if (gs.showLines == 1) {
 		gScreen.setColor(Screen::white); // defines the color of force lines
 		for (i = 0; i < 5; i++) {
 			//reads the forces and determins how high the small bars should jump up
 			height = gBox[hand - 1].getForce(i) * FORCESCALE * fGain[i] + BASELINE;
 			//draws the smaller line for individual finger forces
-			gScreen.drawLine(i * FINGWIDTH - 5.0, height, i * FINGWIDTH - 3.0, height);
+			gScreen.drawLine(i * FINGWIDTH - 4.0, height, i * FINGWIDTH - 2.4, height);
 		}
-		gScreen.drawLine(-5, BASELINE, 5, BASELINE); // the lower line
-		gScreen.drawLine(-5, preTH * FORCESCALE + BASELINE, 5, preTH * FORCESCALE + BASELINE);
-		gScreen.drawLine(-5, relTH * FORCESCALE + BASELINE, 5, relTH * FORCESCALE + BASELINE); // changed by SKim
-
+		gScreen.drawLine(-4, BASELINE, 4, BASELINE); // the lower line
+		gScreen.drawLine(-4, preTH * FORCESCALE + BASELINE, 4, preTH * FORCESCALE + BASELINE);
+		gScreen.drawLine(-4, relTH * FORCESCALE + BASELINE, 4, relTH * FORCESCALE + BASELINE); // changed by SKim
 		// The upper line set at force threshold
 	}
 	// Other letters
@@ -760,54 +697,62 @@ void MyTrial::updateGraphics(int what) {
 	//	gScreen.printChar('+', 0, -6, 2*SIZE_CUE);
 	//	
 	//}
+	//if (state == WAIT_TRIAL || state == START_TRIAL || state == WAIT_TR || state == START_FIX || state==WAIT_ITI || state==END_TRIAL) {
+	//	gScreen.setColor(1);  // White fixation cross
+	//	gScreen.printChar('+', 0, -3, SIZE_CUE);
+	//}
 	if (state == WAIT_END_RELEASE || state == WAIT_GOCUE || state == WAIT_PRESS) {
 		if (state == WAIT_END_RELEASE || state == WAIT_GOCUE) {
-			gScreen.setColor(2);  // Red signal, wait for "GO" signal and all fingers are released
-			gScreen.printChar('+', 0, -7, SIZE_CUE);
+			fixationCross.setColor(SCR_WHITE);
+			fixationCross.draw();
+			//	gScreen.setColor(1);  // White signal, wait for "GO" signal and all fingers are released
+		//	gScreen.printChar('+', 0, -3, SIZE_CUE);
 		}
 		else {
 			if (gTimer[2] < 1000) {
-				gScreen.setColor(3); // Green signal
+				//				gScreen.setColor(3); // Green signal
+				fixationCross.setColor(SCR_GREEN);
 			}
 			else {
-				gScreen.setColor(0); // "GO" signal invisible
+				fixationCross.setColor(SCR_WHITE);
 			}
-			gScreen.printChar('+', 0, -7, SIZE_CUE);
+			fixationCross.draw();
+			//			gScreen.printChar('+', 0, -3, SIZE_CUE);
 		}
 
 		if (state == WAIT_GOCUE || state == WAIT_PRESS) {
 			// Draw horizon SKim
 			gScreen.setColor(1);
 
-			if (seqType == 1) {  // Visual, vertical
+			if (cueType == 1) {  // Visual, vertical
 				//gHorizon.position = Vector2D(0, 3.5 + Horizon);
 				//gHorizon.size = Vector2D(10, 16 - 2 * Horizon);
 				//gHorizon.draw();
-				gScreen.drawLine(-5, -5, -5, 11);
-				gScreen.drawLine(-3, -5, -3, 11);
-				gScreen.drawLine(-1, -5, -1, 11);
-				gScreen.drawLine(1, -5, 1, 11);
-				gScreen.drawLine(3, -5, 3, 11);
-				gScreen.drawLine(5, -5, 5, 11);
+				gScreen.drawLine(-4, -1, -4, 8);
+				gScreen.drawLine(-2.4, -1, -2.4, 8);
+				gScreen.drawLine(-0.8, -1, -0.8, 8);
+				gScreen.drawLine(0.8, -1, 0.8, 8);
+				gScreen.drawLine(2.4, -1, 2.4, 8);
+				gScreen.drawLine(4, -1, 4, 8);
 
-				for (i = 0; i < min(Horizon, seqLength - seqCounter); i++) {
+				for (i = 0; i < seqLength - seqCounter; i++) {
 					if (gs.cuePress[i] > 0) {
 						double xPos = gs.cuePress[i + seqCounter] - '1';
-						gTarget.position = Vector2D(-4.0 + 2.0 * xPos, -4.0 + i * 1.8);
-						gTarget.size = Vector2D(1.4, 1.4);
+						gTarget.position = Vector2D(-3.2 + 1.6 * xPos, -0.0 + i * 1.6);
+						gTarget.size = Vector2D(1.2, 1.2);
 						gTarget.draw();
 					}
 				}
 			}
 
-			else if (seqType == 0) { // Vertical, Numbers
+			else if (cueType == 0) { // Vertical, Numbers
 				//gHorizon.position = Vector2D(0, 3.5 + Horizon);
 				//gHorizon.size = Vector2D(10, 16 - 2 * Horizon);
 				//gHorizon.draw();
-				for (i = 0; i < min(Horizon, seqLength - seqCounter); i++) {  // Edited by SKim
+				for (i = 0; i < seqLength - seqCounter; i++) {  // Edited by SKim
 					if (gs.cuePress[i] > 0) {
 						//						gScreen.printChar(gs.cuePress[i], (i - 4) * WIDTH_CHAR_CUE, CUE_PRESS, SIZE_CUE);
-						gScreen.printChar(gs.cuePress[i + seqCounter], 0, -4.7 + i * 1.8, SIZE_CUE); // -4.7 is matched to -4.0 for visual target type
+						gScreen.printChar(gs.cuePress[i + seqCounter], 0, -0.7 + i * 1.6, SIZE_CUE); // -4.7 is matched to -4.0 for visual target type
 						// the number 6.5 is usually the seqLength/2 so that the sequence in centered
 					}
 				}
@@ -816,19 +761,6 @@ void MyTrial::updateGraphics(int what) {
 		}
 	}
 }
-
-
-
-//else {
-//	for (i = 0; i < seqLength; i++) {  // Edited by SKim
-//		if (gs.cuePress[i] > 0) {
-//			gScreen.setColor(1);
-//			gScreen.printChar(gs.cuePress[i], (i - 4) * WIDTH_CHAR_CUE, CUE_PRESS, SIZE_CUE);
-//			// the number 6.5 is usually the seqLength/2 so that the sequence in centered
-//		}
-//	}
-//}
-
 
 
 
@@ -848,7 +780,6 @@ void MyTrial::updateHaptics() {
 	gTimer.countup();
 	gTimer.countupReal();
 	s626.updateAD(0);
-
 	gBox[0].update();
 	gBox[1].update();
 	//gBox[1].update();
@@ -890,7 +821,6 @@ void MyTrial::control() {
 			pressedFinger = f + 1;
 			finger[f] = 1;
 		}
-
 	}
 
 	for (f = 0; f < 5; f++) {
@@ -899,7 +829,6 @@ void MyTrial::control() {
 			finger[f] = 0;
 			released++;
 		}
-
 	}
 
 	// All the colors are pre-defined in the Screen class
@@ -921,25 +850,27 @@ void MyTrial::control() {
 		//the "run X *.tgt" command, and at the begginign
 		//of each trail i that block. basically sets up
 		//recording and clears screen for new trial
-		gTimer.reset(1); // time for whole trial
-		gTimer.reset(2); // time for events in the trial
+		//gTimer.reset(1); // time for whole trial
+		//gTimer.reset(2); // time for events in the trial
 
 
 		for (i = 0; i < NUMDISPLAYLINES; i++) {
 			gs.line[i] = "";
 		} // clear screen
-	
+
+		startTimeReal = gTimer[0];
+
+		//dataman.startRecording(); // see around line #660
+		gTimer.reset(1);					//time for whole trial
+		gTimer.reset(2);					//time for events in the trial			
+
 		state = START_FIX;
 		break;
 
-	case WAIT_TR:
-
 	case START_FIX: //3 as appears in mov
-
-		//if (released == 5 && gTimer[2] > 2000) { //gTimer[2] > 1500 makes sure that the cross is being shown for 3 secs
+		// check for time out
 		if (released == 5) { //gTimer[2] > 1500 makes sure that the cross is being shown for 3 secs
 			dataman.startRecording();
-			gTimer.reset(1); // time for whole trial
 			gTimer.reset(2); // time for events in the trial
 			gs.clearCues();
 			for (i = 0; i < seqLength; i++) {
@@ -949,11 +880,6 @@ void MyTrial::control() {
 		}
 		break;
 	case WAIT_GOCUE:
-		// check for time out
-		if (gTimer[1] > (PrepTime + MovTimeLim)) {
-			gs.clearCues();
-			state = WAIT_ITI;
-		}
 		if (released == 5 && gTimer[2] > PrepTime) { // Wait for PrepTime, preplanning
 			gTimer.reset(2);
 			//			gs.clearCues();
@@ -962,19 +888,6 @@ void MyTrial::control() {
 		break;
 
 	case WAIT_PRESS: //5 as appears in mov, Targets are shown here for preplanning
-		// check for time out
-		if (gTimer[1] > (PrepTime + MovTimeLim)) {
-			gs.clearCues();
-			state = WAIT_ITI;
-		}
-
-		if (MovTimeLim) {
-			if (gTimer[2] > MovTimeLim) {
-				for (i = 0; i < NUMDISPLAYLINES; i++) {
-					gs.clearCues();
-				}
-			}
-		}
 
 		// Wait for the next keypress
 		//*************************Feedback loop was here
@@ -989,46 +902,28 @@ void MyTrial::control() {
 			if (response[seqCounter] == press[seqCounter]) { // if press is correct
 				// PLAY SOUND
 //				channel = Mix_PlayChannel(-1, wavTask[0], 0); // SDL
-				PlaySound("wav/chimes.wav", NULL, SND_ASYNC | SND_FILENAME);
+				//PlaySound("wav/chimes.wav", NULL, SND_ASYNC | SND_FILENAME);
 			}
 			else if (response[seqCounter] != press[seqCounter]) {   // press is wrong
 				isError = 1;
 				// PLAY SOUND
-				PlaySound("wav/chord.wav", NULL, SND_ASYNC | SND_FILENAME);
+				// PlaySound("wav/chord.wav", NULL, SND_ASYNC | SND_FILENAME);
 				nFingerErrors++;
 				//				channel = Mix_PlayChannel(-1, wavTask[1], 0); // SDL
 			}
 
 			seqCounter++;
-			if (DigPressed < seqLength - Horizon + 1) {
-				DigPressed++;
-			}
 		}
 
 		if (seqCounter == seqLength && released == 5) {
-			state = WAIT_END_RELEASE;
-		}
-
-		break;
-	case WAIT_END_RELEASE: //6 as appears in mov
-
-		if (released == 5) {
-
-			MT = gTimer[1] - pressTime[0]; // Calculate total reaction time starting from the first press
-			gTimer.reset(2);
-			gs.clearCues();
-			//state = WAIT_FEEDBACK;
-			state = WAIT_ITI; // DO not give a feedback for fMRI
-		}
-		else {
-			state = WAIT_PRESS;
+			gTimer.reset(2); // time for events in the trial
+			state = WAIT_ITI;
 		}
 
 		break;
 
 	case WAIT_ITI:  //9 as appears in mov
-		gTimer.reset(2); // time for events in the trial
-		if (gTimer[1] > TrialTime) { // TrialTime = PrepTime + MovTimeLim + iti
+		if (gTimer[2] > iti) { // TrialTime = PrepTime + MovTimeLim 
 			state = END_TRIAL;
 
 		}
@@ -1050,6 +945,7 @@ DataRecord::DataRecord(int s) {
 	time = gTimer[1];  //culumn 2 of the .mov file
 	timeReal = gTimer.getRealtime();        //culumn 3 of the .mov file
 
+
 	for (i = 0; i < 5; i++) {
 		force_left[i] = gBox[0].getForce(i);//culumn 4-8 of the .mov file
 		force_right[i] = gBox[1].getForce(i);
@@ -1062,7 +958,7 @@ DataRecord::DataRecord(int s) {
 // Writes out the data to the *.mov file
 /////////////////////////////////////////////////////////////////////////////////////
 void DataRecord::write(ostream& out) {
-	out << state << "\t" << timeReal << "\t" << time << "\t"
+	out << state << "\t" << timeReal << "\t" << time << "\t" 
 		<< force_right[0] << " \t" << force_right[1] << "\t" << force_right[2] << " \t" << force_right[3] << "\t" << force_right[4] << " \t"
 		<< endl;
 }

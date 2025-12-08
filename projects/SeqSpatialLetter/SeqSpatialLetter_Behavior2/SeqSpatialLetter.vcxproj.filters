@@ -15,9 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ssh1.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\include\APP626.H">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -57,6 +54,9 @@
     <ClInclude Include="..\..\..\include\Win626.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="sslb2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\source\Experiment.cpp">
@@ -80,13 +80,13 @@
     <ClCompile Include="..\..\..\source\WIN626.C">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ssh1.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\source\StimulatorBox.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\source\TRCounter626.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sslb2.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-
+## ========================================== ##
 def gen_targets(cues, column_names, nRep, subNum, pt1, pt2, execMaxTime, feedbackTime, iti, fileNameBase='fmri', block=1):
     # function to generate target files for the experiment
 
@@ -66,9 +66,7 @@ def gen_targets(cues, column_names, nRep, subNum, pt1, pt2, execMaxTime, feedbac
     # Save the dataframe (fmri_ssl<subj_id>_r<block_num>.tgt)
     fname = fileNameBase + '_' + f"{subNum:02}" + '_' + f"{block + 1:02}" + '.tgt'
     df.to_csv(fname, sep='\t', index=False)
-
-#    return df
-
+## ========================================== ##
 
 # Example usage:
 
@@ -76,7 +74,7 @@ def gen_targets(cues, column_names, nRep, subNum, pt1, pt2, execMaxTime, feedbac
 cues = [39, 93, 12, 21, 44]  # probability cues
 
 # Params:
-nBlock = 10  # number of blocks in experiment
+nBlock = 8  # number of blocks in experiment
 nRep = 4  # number of repetitions of each cue
 
 directory = 'target/'

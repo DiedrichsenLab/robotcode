@@ -138,7 +138,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	tDisp.init(gThisInst, 100, 0, 400, 20, 5, 2, &(::parseCommand));  // the white interactive window
 	tDisp.setText("Subj:", 0, 0);
 
-	gScreen.init(gThisInst, 1280, 0, 1680, 1050, &(::updateGraphics)); // the black feedback window
+	gScreen.init(gThisInst, 1920, 0, 1680, 1050, &(::updateGraphics)); // the black feedback window cf) win1: 1920x1080, win2: 1680x1050
 	gScreen.setCenter(Vector2D(0, 0)); // In cm //0,2
 	gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE)); // cm/pixel
 

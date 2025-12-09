@@ -101,7 +101,6 @@ public:
 	double timeReal;
 	double time;
 
-
 	double force_left[5];
 	double force_right[5];
 	///_______________________Neda add

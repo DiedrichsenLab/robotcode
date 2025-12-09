@@ -99,9 +99,7 @@ string FINGERSOUND[6] = { "A.wav", "C.wav", "D.wav", "E.wav", "G.wav" };
 //"../../util/wav/smb_coin.wav",
 //"../../util/wav/perc2.wav" };
 
-string TASKSOUNDS[2] = { "wav/chord.wav",
-"wav/smb_coin.wav"
-};
+string TASKSOUNDS[2] = { "wav/chord.wav", "wav/smb_coin.wav"};
 
 char TEXT[5] = { '1','2','3','4','5' };
 #define CUE_SEQ 6
@@ -140,7 +138,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	tDisp.init(gThisInst, 100, 0, 400, 20, 5, 2, &(::parseCommand));  // the white interactive window
 	tDisp.setText("Subj:", 0, 0);
 
-	gScreen.init(gThisInst, 1280, 0, 1024, 768, &(::updateGraphics)); // the black feedback window
+	gScreen.init(gThisInst, 1280, 0, 1680, 1050, &(::updateGraphics)); // the black feedback window
 	gScreen.setCenter(Vector2D(0, 0)); // In cm //0,2
 	gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE)); // cm/pixel
 

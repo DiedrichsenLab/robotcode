@@ -83,7 +83,7 @@ public:
 	int showLines;
 
 	char Points[2];
-	char cuePress[14];
+	char cuePress[5];
 };
 
 

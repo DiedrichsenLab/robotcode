@@ -138,7 +138,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	tDisp.init(gThisInst, 100, 0, 400, 20, 5, 2, &(::parseCommand));  // the white interactive window
 	tDisp.setText("Subj:", 0, 0);
 
-	gScreen.init(gThisInst, 1920, 0, 1680, 1050, &(::updateGraphics)); // the black feedback window cf) win1: 1920x1080, win2: 1680x1050
+	gScreen.init(gThisInst, 1920, 0, 1680, 1050, &(::updateGraphics)); // the black feedback window cf) win1: 1920x1200, win2: 1680x1050
 	gScreen.setCenter(Vector2D(0, 0)); // In cm //0,2
 	gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE)); // cm/pixel
 
@@ -430,9 +430,6 @@ void MyBlock::giveFeedback() {
 	sprintf(buffer, "Error rate: %.1f%%", ERarray[b]);
 	gs.line[0] = buffer;
 	gs.lineColor[0] = 1;
-
-
-
 	
 	gs.line[1] = buffer;
 	gs.lineColor[1] = 1;
@@ -490,6 +487,10 @@ void MyTrial::read(istream& in) {
 	(in) >> cueP >> iti >> PrepTime ;
 
 	// do other job
+	string zero("0");
+	seqLength = cueP.find(zero); // get seqLength
+	// chunkLength = cueC.length(); // get chunkLength
+	if (seqLength < 0) { seqLength = cueP.length(); }
 }
 
 ///////////////////////////////////////////////////////////////
@@ -623,22 +624,22 @@ void MyTrial::updateTextDisplay() {
 	tDisp.setText(buffer, 2, 0);
 
 	sprintf(buffer, "threshold : %2.0f Super: %2.0f ", timeThreshold, superThreshold);
-	tDisp.setText(buffer, 5, 0);
+	tDisp.setText(buffer, 3, 0);
 
 	sprintf(buffer, "Press:  %d %d %d %d %d", finger[0], finger[1], finger[2], finger[3], finger[4]);
-	tDisp.setText(buffer, 5, 0);
+	tDisp.setText(buffer, 4, 0);
 
 	sprintf(buffer, "sequence Counter: %d ", seqCounter);
-	tDisp.setText(buffer, 6, 0);
+	tDisp.setText(buffer, 5, 0);
 
 	sprintf(buffer, "numNewpress: %d ", numNewpress);
-	tDisp.setText(buffer, 7, 0);
+	tDisp.setText(buffer, 6, 0);
 
 	sprintf(buffer, "released: %d", released);
-	tDisp.setText(buffer, 8, 0);
+	tDisp.setText(buffer, 7, 0);
 
 	sprintf(buffer, "gNumPointsBlock: %d", gNumPointsBlock);
-	tDisp.setText(buffer, 9, 0);
+	tDisp.setText(buffer, 8, 0);
 
 
 
@@ -670,13 +671,15 @@ void MyTrial::updateGraphics(int what) {
 	fixationCross.draw();
 
 	if (gs.showLines == 1) {
-		gScreen.setColor(Screen::white); // defines the color of force lines
+		gScreen.setColor(Screen::yellow); // defines the color of force lines
 		for (i = 0; i < 5; i++) {
 			//reads the forces and determins how high the small bars should jump up
 			height = gBox[hand - 1].getForce(i) * FORCESCALE * fGain[i] + BASELINE;
+			height = min(height, preTH * FORCESCALE + BASELINE);
 			//draws the smaller line for individual finger forces
 			gScreen.drawLine(i * FINGWIDTH - 4.0, height, i * FINGWIDTH - 2.4, height);
 		}
+		gScreen.setColor(Screen::white); // defines the color of base lines
 		gScreen.drawLine(-4, BASELINE, 4, BASELINE); // the lower line
 		gScreen.drawLine(-4, preTH * FORCESCALE + BASELINE, 4, preTH * FORCESCALE + BASELINE);
 		gScreen.drawLine(-4, relTH * FORCESCALE + BASELINE, 4, relTH * FORCESCALE + BASELINE); // changed by SKim

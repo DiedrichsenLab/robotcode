@@ -594,10 +594,8 @@ void MyTrial::control() {
 		gTimer.reset(2);
 		for (i = 0; i < NUMFINGERS; i++) {
 			response[i] = 0; // not pressed 
-			gs.digit_color[i] = 1; // white
+			gs.digit_color[i] = 4; // Blue?
 		}
-		dataman.clear();
-		dataman.startRecording();
 		rewThresh1 = rewThresh1_global;
 		rewThresh2 = rewThresh2_global;
 		state = WAIT_TR;
@@ -613,10 +611,12 @@ void MyTrial::control() {
 			startTimeReal = gCounter.readTotTime();
 			startTRReal = gCounter.readTR(); // number of TR arrived so far
 
-			
+			dataman.clear();
+			dataman.startRecording();
 			gTimer.reset(1);					//time for whole trial
 			gTimer.reset(2);					//time for events in the trial
 			gBox.boardOn = 1;
+			gs.showSequence = 1; //Print sequence
 			state = WAIT_PLAN;
 		}
 
@@ -626,16 +626,18 @@ void MyTrial::control() {
 		digitCounter = -1;
 		if (gTimer[2] > planTime) {
 			state = WAIT_RESPONSE;
+			gTimer.reset(2);
 			releaseState = TRUE;
 			isError = 0;
+			for (i = 0; i < NUMFINGERS; i++) {
+				gs.digit_color[i] = 1; // white
+			}
 			numCorrect = 0;
 			numPoints = -1;
-			gTimer.reset(2);					//time for events in the trial
 		}
 		break;
 
 	case WAIT_RESPONSE: //3
-		gs.showSequence = 1; //Print sequence
 		unpressedFinger = 0;
 		for (i = 0; i < 5; i++) { // check all finger 
 			force = gBox.getForce(i);
@@ -694,7 +696,6 @@ void MyTrial::control() {
 			}
 			gs.line[0] = buffer;
 			state = WAIT_FEEDBACK;
-			gTimer.reset(1);					//time for whole trial
 			gTimer.reset(2);					//time for events in the trial
 		}
 		break;
@@ -723,7 +724,6 @@ void MyTrial::control() {
 		break;
 
 	case END_TRIAL: //6
-		gTimer.reset(1);
 		break;
 	}
 }
@@ -736,9 +736,7 @@ DataRecord::DataRecord(int s, int t) {
 	int i;
 	state = s;
 	trialNum = t;
-	TR = gCounter.readTR();
-	currentSlice = gCounter.readSlice();
-	timeReal = gCounter.readTime();
+	timeReal = gTimer.readReal(1);
 	time = gTimer[1];
 
 	for (i = 0; i < 5; i++) {
@@ -750,7 +748,7 @@ DataRecord::DataRecord(int s, int t) {
 // Writes out the data to the *.mov file 
 /////////////////////////////////////////////////////////////////////////////////////
 void DataRecord::write(ostream& out) {
-	out << trialNum <<"\t" << state << "\t" << TR << "\t" << currentSlice << "\t" << timeReal << "\t" << time << "\t"
+	out << trialNum <<"\t" << state << "\t" << timeReal << "\t" << time << "\t"
 		<< force_right[0] << " \t" << force_right[1] << "\t" << force_right[2] << " \t" << force_right[3] << "\t" << force_right[4] << " \t"
 		<< endl;
 }

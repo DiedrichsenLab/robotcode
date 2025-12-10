@@ -32,11 +32,9 @@ enum TrialState {
 	WAIT_TRIAL,
 	START_TRIAL,
 	WAIT_TR,
-	WAIT_PLAN,
-/*	WAIT_ANNOUNCE,
-	WAIT_ALLFINGERPRESS*/
-	WAIT_RESPONSE,
-	WAIT_FEEDBACK,
+	WAIT_PLAN, //3 
+	WAIT_RESPONSE, //4 
+	WAIT_FEEDBACK,//5 
 	WAIT_ITI,
 	END_TRIAL
 };
@@ -86,10 +84,8 @@ public:
 	DataRecord(int s, int t);
 	void write(ostream& out);
 public:
-	int state;
-	int TR;
-	int currentSlice;
 	int trialNum;
+	int state;
 	double timeReal;
 	double time;
 	double force_left[5];

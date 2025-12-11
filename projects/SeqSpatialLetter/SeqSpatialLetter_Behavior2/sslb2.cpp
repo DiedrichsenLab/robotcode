@@ -478,12 +478,14 @@ MyTrial::MyTrial() {
 // Read   // This is where the Target files are read
 ///////////////////////////////////////////////////////////////
 void MyTrial::read(istream& in) {
-	// read from .tgt file, [startTime, cueType, press 1-5, cueP, iti]
-	(in) >> startTime >> cueType; // 
+	// read from .tgt file, [startTime, cueType, press 1-5, iti, PrepTime]
+	(in) >> startTime >> cueType;
+	string CueP;
 	for (int i = 0; i < MAX_PRESS; i++) {   // MAX_PRESS = 14--> read presses
 		(in) >> press[i];
+		CueP += press[i];
 	}
-	(in) >> cueP >> iti >> PrepTime ;
+	(in) >> iti >> PrepTime ;
 
 	// do other job
 	string zero("0");

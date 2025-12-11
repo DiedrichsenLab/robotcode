@@ -478,12 +478,11 @@ MyTrial::MyTrial() {
 // Read   // This is where the Target files are read
 ///////////////////////////////////////////////////////////////
 void MyTrial::read(istream& in) {
-	// read from .tgt file
+	// read from .tgt file, [startTime, cueType, press 1-5, cueP, iti]
 	(in) >> startTime >> cueType; // 
 	for (int i = 0; i < MAX_PRESS; i++) {   // MAX_PRESS = 14--> read presses
 		(in) >> press[i];
 	}
-	// (in) >> hand >> cueS >> cueC >> cueP >> iti >> sounds >> Horizon >> StimTimeLim;
 	(in) >> cueP >> iti >> PrepTime ;
 
 	// do other job
@@ -752,7 +751,7 @@ void MyTrial::updateGraphics(int what) {
 				//gHorizon.draw();
 				for (i = 0; i < seqLength - seqCounter; i++) {  // Edited by SKim
 					if (gs.cuePress[i] > 0) {
-						//						gScreen.printChar(gs.cuePress[i], (i - 4) * WIDTH_CHAR_CUE, CUE_PRESS, SIZE_CUE);
+						// gScreen.printChar(gs.cuePress[i], (i - 4) * WIDTH_CHAR_CUE, CUE_PRESS, SIZE_CUE);
 						gScreen.printChar(gs.cuePress[i + seqCounter], 0, -0.7 + i * 1.6, SIZE_CUE); // -4.7 is matched to -4.0 for visual target type
 						// the number 6.5 is usually the seqLength/2 so that the sequence in centered
 					}

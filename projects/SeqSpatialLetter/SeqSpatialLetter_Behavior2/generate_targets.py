@@ -1,9 +1,12 @@
+#!/usr/bin/env python3
+
 import pandas as pd
 import random
 import os
+from os.path import join, exists, abspath, dirname
+from os import getcwd, makedirs, remove
 import shutil
 import numpy as np
-
 
 import random
 
@@ -22,8 +25,6 @@ def generate_random_numbers(num, numLen):
             set3 = random.sample(range(1, num+1), num)
             set4 = random.sample(range(1, num+1), num)
             concatenated_numbers = set1 + set2 + set3 + set4
-
-
 
         # Drop the last number to make it a 14-digit number
         # Make sure that the length of sequence is numLen
@@ -59,7 +60,7 @@ def generate_tgt_file(group_type, seq_type, block):
         random_numbers = generate_random_numbers(5, 14)
 
         # Create a row of data
-       # row = [group_type, seq_type, feedback_value] + random_numbers + [''.join(map(str, random_numbers)), iti_value, random_horizons[k], stim_time_value, prep_time_value]
+        # row = [group_type, seq_type, feedback_value] + random_numbers + [''.join(map(str, random_numbers)), iti_value, random_horizons[k], stim_time_value, prep_time_value]
         row = [seq_type, feedback_value] + random_numbers + [''.join(map(str, random_numbers)), iti_value, random_horizons[k], stim_time_value, prep_time_value]
 
         # Append the row to the data list
@@ -72,8 +73,10 @@ def generate_tgt_file(group_type, seq_type, block):
     df = pd.DataFrame(data, columns=columns)
 
     # Save the DataFrame to a CSV file with .tgt extension
+    dir_output = './target'
+    makedirs(dir_output, exist_ok=True)
     filename = f"ssh_a{group_type}_b{block}.tgt"
-    df.to_csv(filename, sep='\t',  index=False)
+    df.to_csv(join(dir_output,filename), sep='\t',  index=False)
 
 if __name__ == "__main__":
     # Specify the file path

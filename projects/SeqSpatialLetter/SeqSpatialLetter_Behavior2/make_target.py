@@ -1,99 +1,88 @@
+#!/usr/bin/env python3
+
 import numpy as np
-import pandas as pd
+from collections import defaultdict
+from random import choice
 
-## ========================================== ##
-def gen_targets(cues, column_names, nRep, subNum, pt1, pt2, execMaxTime, feedbackTime, iti, fileNameBase='fmri', block=1):
-    # function to generate target files for the experiment
+def has_eulerian_circuit(adj_matrix):
+	"""
+	Determine if an undirected graph has an Eulerian circuit.
+	Returns (True/False, cycle_or_path_list)
+	If no Eulerian circuit, cycle_list is None.
+	If Eulerian circuit exists, cycle_list is a list of vertex indices in the cycle.
+	"""
+	has_circuit = True
 
-    # Initialize the list for stimFinger and trialLabel
-    stimFinger = []
-    trialLabel = []
-    cueID = []
+	# Compute degrees (the number of edges from each node)
+	n = len(adj_matrix)
+	degrees = [sum(row) for row in adj_matrix]
 
-    # Generate stimFinger and trialLabel based on cueID
-    for cue in cues:
-        if cue == 39:
-            cueID.extend(['39'] * nRep)
-            stimFinger.extend(['91999'] * nRep)
-            trialLabel.extend(['I100R000'] * nRep)
-        elif cue == 93:
-            cueID.extend(['93'] * nRep)
-            stimFinger.extend(['99919'] * nRep)
-            trialLabel.extend(['I000R100'] * nRep)
-        elif cue == 12:
-            cueID.extend(['12'] * nRep)
-            stimFinger.extend(['91999'] * (nRep // 4) + ['99919'] * (3 * nRep // 4))
-            trialLabel.extend(['I025R075'] * nRep)
-        elif cue == 21:
-            cueID.extend(['21'] * nRep)
-            stimFinger.extend(['99919'] * (nRep // 4) + ['91999'] * (3 * nRep // 4))
-            trialLabel.extend(['I075R025'] * nRep)
-        elif cue == 44:
-            cueID.extend(['44'] * nRep)
-            stimFinger.extend(['91999'] * (nRep // 2) + ['99919'] * (nRep // 2))
-            trialLabel.extend(['I050R050'] * nRep)
+	# Quick check: all degrees even
+	if any(d % 2 != 0 for d in degrees):
+		has_circuit = False
 
-    # Shuffle the stimFinger list while keeping the trialLabel in sync
-    combined = list(zip(cueID, stimFinger, trialLabel))
-    np.random.shuffle(combined)
-    cueID[:], stimFinger[:], trialLabel[:] = zip(*combined)
+	# Find a starting vertex with non-zero degree
+	start = None
+	tmp = [i for i, d in enumerate(degrees) if d > 0]
+	if not tmp is None:
+		start = choice(tmp)
+	if start is None:
+		# No edges exist: trivially Eulerian circuit (empty cycle)
+		has_circuit = True
 
-    # # Repeat and shuffle chords
-    # cues = np.repeat(cues, nRep)
-    # np.random.shuffle(cues)
+	visited = [False]*n
+	def DFS(u):
+		visited[u] = True
+		for v in range(n):
+			if adj_matrix[u][v]>0 and not visited[v]:
+				DFS(v)
 
-    # Generate random planTime values within the range [pt1, pt2]
-    planTime = np.random.uniform(pt1, pt2, len(cueID)).round().astype(int)
+	DFS(start)
+	for i in range(n):
+		if sum(adj_matrix[i])>0 and not visited[i]:
+			has_circuit = False
+	
+	return has_circuit
 
-    # Generate the columns
-    col_subNum = subNum * np.ones(len(cueID), dtype=int)
-    col_execMaxTime = execMaxTime * np.ones(len(cueID), dtype=int)
-    col_feedbackTime = feedbackTime * np.ones(len(cueID), dtype=int)
-    col_iti = iti * np.ones(len(cueID), dtype=int)
+def Eulerian_circuit(adj_matrix):
+	n = len(adj_matrix)
+	degrees = [sum(row) for row in adj_matrix]
 
-    # Build the dataframe
-    df = pd.DataFrame({
-        'subNum': col_subNum,
-        'cueID': cueID,
-        'stimFinger': stimFinger,
-        'planTime': planTime,
-        'execMaxTime': col_execMaxTime,
-        'feedbackTime': col_feedbackTime,
-        'iti': col_iti,
-        'trialLabel': trialLabel
-    }, columns=column_names)
+	if not has_eulerian_circuit(adj_matrix):
+		return None
 
-    # Save the dataframe (fmri_ssl<subj_id>_r<block_num>.tgt)
-    fname = fileNameBase + '_' + f"{subNum:02}" + '_' + f"{block + 1:02}" + '.tgt'
-    df.to_csv(fname, sep='\t', index=False)
-## ========================================== ##
+	# Hierholzer's algorithm for undirected graphs
+	# We'll work with a mutable copy of the adjacency matrix counts (edge multiplicity 1 or 0)
+	g = [row[:] for row in adj_matrix]
+	circuit = []
+
+	tmp = [i for i, d in enumerate(degrees) if d > 0]
+	start = choice(tmp)
+
+	stack = [start]
+
+	while stack:
+		v = stack[-1]
+		# v에서 나가는 사용 가능한 간선 탐색
+		found = False
+		for u in range(n):
+			if g[v][u] > 0:
+				# 간선 (v, u) 사용
+				g[v][u] -= 1
+				g[u][v] -= 1 # 무향이므로 대칭
+				stack.append(u)
+				found = True
+				break
+		if not found:
+			# 더 이상 나갈 간선이 없으면 회로에 추가
+			circuit.append(stack.pop())
+
+	circuit.reverse() # 시작 순서대로
+
+	return circuit
 
 # Example usage:
+adjA = np.ones((8,8)).astype(int)
 
-# Chords definition:
-cues = [39, 93, 12, 21, 44]  # probability cues
-
-# Params:
-nBlock = 8  # number of blocks in experiment
-nRep = 4  # number of repetitions of each cue
-
-directory = 'target/'
-
-experiment = 'ssl0'  # experiment id
-subNum = 101  # subject number
-
-pt1 = 1500  # minimum time for planning (ms)
-pt2 = 2500  # maximum time for planning (ms)
-execMaxTime = 3000  # maximum time for execution
-feedbackTime = 2000  # time to present feedback
-iti = 1000  # inter-trial interval
-
-# column names:
-column_names = ['subNum', 'cueID', 'stimFinger', 'planTime', 'execMaxTime', 'feedbackTime', 'iti', 'trialLabel']
-
-# setting the file name base:
-fileNameBase = directory + experiment
-
-# generating and saving the target file:
-for block in range(nBlock):
-    gen_targets(cues, column_names, nRep, subNum, pt1, pt2, execMaxTime, feedbackTime, iti, fileNameBase, block)
+circuit = Eulerian_circuit(adjA)
+print("One Eulerian cycle (%d):"%(len(circuit)), circuit)

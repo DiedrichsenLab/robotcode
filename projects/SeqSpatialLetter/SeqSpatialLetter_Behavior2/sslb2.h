@@ -31,23 +31,14 @@ using namespace std;
 // Enumeration of Trial State 
 ///////////////////////////////////////////////////////////////
 enum TrialState {
-	WAIT_TRIAL,			// 1
-	START_TRIAL,		// 2
-	WAIT_TR,
-	//____________________Neda
-	START_FIX,	    	// 3 wait for eye to fixate at the begining of the seq
-	//____________________end
-	//WAIT_ALLRELEASE,	// 4
-	WAIT_GOCUE,		// 5
-	WAIT_PRESS,			// 6
-	WAIT_END_RELEASE,		// 7
-	//WAIT_FEEDBACK,		// 8
-	//END_FIX,            // 9      
-	WAIT_ITI,			// 10
-	//____________________Neda	
-	END_TRIAL,			// 11 wait for eye to fixate at the begining of the seq
-	//CALIB        		// 12 only used for calibration
-	//____________________end
+	WAIT_TRIAL,			// 0
+	START_TRIAL,		// 1
+	START_FIX,	    	// 2 
+	WAIT_GOCUE,			// 3
+	WAIT_PRESS,			// 4
+	WAIT_FEEDBACK,		// 5 
+	WAIT_ITI,			// 6
+	END_TRIAL,			// 7 
 };
 
 
@@ -76,6 +67,7 @@ public:
 	//Vector2D FixPlusPos[1];
 	double FixPlusX;
 	double FixPlusY;
+	int fixationColor; 
 	int lineColor[NUMDISPLAYLINES + 1];
 	int boxColor[2];
 	GLfloat size[NUMDISPLAYLINES + 1];
@@ -163,20 +155,14 @@ private:
 	int fGiven[MAX_PRESS];
 	int response[MAX_PRESS];				///< Which key is pressed 
 	int feedback;							///< Give Feedback or not? 
-	int complete;							///< How much time do you have to complete the seq.?
 	int iti;								///< Timedelay before the next trail starts in[ms]
 	int sounds;								///< Do we play the sounds for finger presses
 	int hand;								///< Which board are we using left= 0 right= 1
 	int seqCounter;							///< Which position in the seq are we?
-	int numNewpress;
-	int released;
-	int tempCounter;						///< Which position in the seq are we?
 	int isError;							///< Was there an error in the finger presses?
 	int nFingerErrors;						// Number of error tappings, SKim
-	int isComplete;							///< Are all presses made  
 	int points;								///< How many points did you get in a trial 0/1/-1?
 	int seqLength;							///< How long is the sequence (arbitrary)?
-	int chunkLength;						///< How many chunks in the sequence?
 	double pressTime[MAX_PRESS];			///< Time when each finger was pressed 
 	double releaseTime[MAX_PRESS];			///< Time when each finger was release
 

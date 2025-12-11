@@ -48,8 +48,6 @@ GraphicState gs;
 #define RT_POS START_Y+1
 #define JUMP_POS  RT_POS+1
 
-#define TRTIME				2720 // must be adjusted, SKim, fMRI
-
 Color_t defaultCol = { 255,255,255 }; ///< set default color to grey
 Color_t detectCol = { 32,32,32 };
 int flashCtr = 0;
@@ -133,7 +131,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	// gExp = new MyExperiment("SeqSpatialVis", "ssh_vis", "C:/data/SeqSpatial/ssh_vis");
 	gExp = new MyExperiment("SeqSpatialLetter_Behavior2", "sslb2", "C:/data/SeqSpatialLetter_Behavior2");
 
-	//gExp->redirectIOToConsole();
+	gExp->redirectIOToConsole();
 
 	tDisp.init(gThisInst, 100, 0, 400, 20, 5, 2, &(::parseCommand));  // the white interactive window
 	tDisp.setText("Subj:", 0, 0);
@@ -453,9 +451,7 @@ MyTrial::MyTrial() {
 	hand = 2; // Read right box
 	isError = 0; // init error flag
 	nFingerErrors = 0; // Number of tapping errors, SKim  
-	isComplete = 0; // init if seq was produced incomplete but correct so fare
 	seqCounter = 0; // init the sequence index variable
-	numNewpress = 0;
 	MT = 0; // init total movement time, SKim edited
 	RT = 0; // Added by SKim, reaction time
 
@@ -463,7 +459,7 @@ MyTrial::MyTrial() {
 	startTimeReal = 0; // SKim, fMRI
 
 	points = 0;
-	int released = 0;
+
 	for (int i = 0; i < MAX_PRESS; i++) {    // MAX_PRESS = 9 defined in header
 		response[i] = 0; // respose, pressTime and releaseTime
 		pressTime[i] = 0; // are arrays of length 9
@@ -480,10 +476,10 @@ MyTrial::MyTrial() {
 void MyTrial::read(istream& in) {
 	// read from .tgt file, [startTime, cueType, press 1-5, iti, PrepTime]
 	(in) >> startTime >> cueType;
-	string CueP;
+
 	for (int i = 0; i < MAX_PRESS; i++) {   // MAX_PRESS = 14--> read presses
 		(in) >> press[i];
-		CueP += press[i];
+		cueP += to_string(press[i]);
 	}
 	(in) >> iti >> PrepTime ;
 
@@ -505,8 +501,7 @@ void MyTrial::writeDat(ostream& out) {
 		out << press[i] << "\t";
 	}
 
-	out << complete << "\t"
-		<< iti << "\t"
+	out << iti << "\t"
 		// << sounds << "\t"
 		<< MT << "\t"
 		<< RT << "\t"  // added by SKim
@@ -633,12 +628,6 @@ void MyTrial::updateTextDisplay() {
 	sprintf(buffer, "sequence Counter: %d ", seqCounter);
 	tDisp.setText(buffer, 5, 0);
 
-	sprintf(buffer, "numNewpress: %d ", numNewpress);
-	tDisp.setText(buffer, 6, 0);
-
-	sprintf(buffer, "released: %d", released);
-	tDisp.setText(buffer, 7, 0);
-
 	sprintf(buffer, "gNumPointsBlock: %d", gNumPointsBlock);
 	tDisp.setText(buffer, 8, 0);
 
@@ -668,7 +657,7 @@ void MyTrial::updateGraphics(int what) {
 	fixationCross.size = Vector2D(FIXCROSS_SIZE, FIXCROSS_SIZE);
 	fixationCross.setShape(SHAPE_PLUS);
 
-	fixationCross.setColor(SCR_WHITE);
+	fixationCross.setColor(gs.fixationColor);
 	fixationCross.draw();
 
 	if (gs.showLines == 1) {
@@ -694,35 +683,9 @@ void MyTrial::updateGraphics(int what) {
 			gScreen.print(gs.line[i].c_str(), gs.lineXpos[i], gs.lineYpos[i], gs.size[i] * 1);
 		}
 	}
-	//if (state == WAIT_ALLRELEASE) {
-	//	gScreen.setColor(2);
-	//	gScreen.printChar('+', 0, -6, 2*SIZE_CUE);
-	//	
-	//}
-	//if (state == WAIT_TRIAL || state == START_TRIAL || state == WAIT_TR || state == START_FIX || state==WAIT_ITI || state==END_TRIAL) {
-	//	gScreen.setColor(1);  // White fixation cross
-	//	gScreen.printChar('+', 0, -3, SIZE_CUE);
-	//}
-	if (state == WAIT_END_RELEASE || state == WAIT_GOCUE || state == WAIT_PRESS) {
-		if (state == WAIT_END_RELEASE || state == WAIT_GOCUE) {
-			fixationCross.setColor(SCR_WHITE);
-			fixationCross.draw();
-			//	gScreen.setColor(1);  // White signal, wait for "GO" signal and all fingers are released
-		//	gScreen.printChar('+', 0, -3, SIZE_CUE);
-		}
-		else {
-			if (gTimer[2] < 1000) {
-				//				gScreen.setColor(3); // Green signal
-				fixationCross.setColor(SCR_GREEN);
-			}
-			else {
-				fixationCross.setColor(SCR_WHITE);
-			}
-			fixationCross.draw();
-			//			gScreen.printChar('+', 0, -3, SIZE_CUE);
-		}
 
-		if (state == WAIT_GOCUE || state == WAIT_PRESS) {
+	
+	if (state == WAIT_GOCUE || state == WAIT_PRESS) {
 			// Draw horizon SKim
 			gScreen.setColor(1);
 
@@ -760,7 +723,6 @@ void MyTrial::updateGraphics(int what) {
 				}
 			}
 
-		}
 	}
 }
 
@@ -811,10 +773,9 @@ void MyTrial::control() {
 
 	// check fingers
 	double force;
-	double critTime;
 	int numNewpress = 0; // is there a new press?
 	int pressedFinger = 0;
-	released = 0;
+	int released = 0;
 
 	for (f = 0; f < 5; f++) {
 		force = gBox[hand - 1].getForce(f) * fGain[f];
@@ -878,13 +839,14 @@ void MyTrial::control() {
 			for (i = 0; i < seqLength; i++) {
 				gs.cuePress[i] = cueP.at(i);
 			}
+
 			state = WAIT_GOCUE;
 		}
 		break;
 	case WAIT_GOCUE:
 		if (released == 5 && gTimer[2] > PrepTime) { // Wait for PrepTime, preplanning
 			gTimer.reset(2);
-			//			gs.clearCues();
+			gs.fixationColor = 3;
 			state = WAIT_PRESS;
 		}
 		break;
@@ -919,12 +881,18 @@ void MyTrial::control() {
 
 		if (seqCounter == seqLength && released == 5) {
 			gTimer.reset(2); // time for events in the trial
-			state = WAIT_ITI;
+			state = WAIT_FEEDBACK;
+			gs.fixationColor = 1; 
 		}
 
 		break;
 
-	case WAIT_ITI:  //9 as appears in mov
+	case WAIT_FEEDBACK: 
+		if (gTimer[2] > FEEDBACKTIME) { // TrialTime = PrepTime + MovTimeLim 
+			state = WAIT_ITI;
+		}
+
+	case WAIT_ITI:  //
 		if (gTimer[2] > iti) { // TrialTime = PrepTime + MovTimeLim 
 			state = END_TRIAL;
 
@@ -1014,6 +982,8 @@ GraphicState::GraphicState() {
 		lineColor[i + 8] = 1; // white
 		size[i + 8] = 7;  // font size
 	}
+
+	fixationColor = 1; 
 
 	clearCues();
 

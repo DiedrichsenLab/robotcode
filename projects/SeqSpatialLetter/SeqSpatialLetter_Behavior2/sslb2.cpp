@@ -664,8 +664,8 @@ void MyTrial::updateGraphics(int what) {
 		gScreen.setColor(Screen::yellow); // defines the color of force lines
 		for (i = 0; i < 5; i++) {
 			//reads the forces and determins how high the small bars should jump up
-			height = gBox[hand - 1].getForce(i) * FORCESCALE * fGain[i] + BASELINE;
-			height = min(height, preTH * FORCESCALE + BASELINE);
+			height = gBox[hand - 1].getForce(i) * FORCESCALE * fGain[i] + BASELINE;	// force gauge
+			height = max(BASELINE, min(height, preTH * FORCESCALE + BASELINE));		// lower limit < force < Upper limit
 			//draws the smaller line for individual finger forces
 			gScreen.drawLine(i * FINGWIDTH - 4.0, height, i * FINGWIDTH - 2.4, height);
 		}
@@ -804,6 +804,9 @@ void MyTrial::control() {
 	//}
 	////__________________________________end
 
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// state: WAIT_TRIAL (0) -> START_TRIAL (1) -> START_FIX (2) -> WAIT_GOCUE (3) -> WAIT_PRESS (4) -> WAIT_FEEDBACK (5) -> WAIT_ITI (6) -> END_TRIAL (7) //
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	switch (state) {  // this state is before you enter the "run X *.tgt" command
 	case WAIT_TRIAL: //0 as apears in mov
 		gs.clearCues();
@@ -811,11 +814,10 @@ void MyTrial::control() {
 		break;
 	case START_TRIAL:   // 1  This state is right after you've entered
 		//the "run X *.tgt" command, and at the begginign
-		//of each trail i that block. basically sets up
+		//of each trial i that block. basically sets up
 		//recording and clears screen for new trial
 		//gTimer.reset(1); // time for whole trial
 		//gTimer.reset(2); // time for events in the trial
-
 
 		for (i = 0; i < NUMDISPLAYLINES; i++) {
 			gs.line[i] = "";
@@ -824,17 +826,17 @@ void MyTrial::control() {
 		startTimeReal = gTimer[0];
 
 		//dataman.startRecording(); // see around line #660
-		gTimer.reset(1);					//time for whole trial
-		gTimer.reset(2);					//time for events in the trial			
+		gTimer.reset(1);	//time for whole trial
+		gTimer.reset(2);	//time for events in the trial			
 
 		state = START_FIX;
 		break;
 
-	case START_FIX: //3 as appears in mov
+	case START_FIX:
 		// check for time out
-		if (released == 5) { //gTimer[2] > 1500 makes sure that the cross is being shown for 3 secs
+		if (released == 5) {
 			dataman.startRecording();
-			gTimer.reset(2); // time for events in the trial
+			gTimer.reset(2);	// time for events in the trial
 			gs.clearCues();
 			for (i = 0; i < seqLength; i++) {
 				gs.cuePress[i] = cueP.at(i);
@@ -911,13 +913,13 @@ void MyTrial::control() {
 /////////////////////////////////////////////////////////////////////////////////////
 DataRecord::DataRecord(int s) {
 	int i;
-	state = s;                              //culumn 1 of the .mov file
-	time = gTimer[1];  //culumn 2 of the .mov file
-	timeReal = gTimer.getRealtime();        //culumn 3 of the .mov file
+	state = s;							//culumn 1 of the .mov file
+	time = gTimer[1];					//culumn 2 of the .mov file
+	timeReal = gTimer.getRealtime();	//culumn 3 of the .mov file
 
 
 	for (i = 0; i < 5; i++) {
-		force_left[i] = gBox[0].getForce(i);//culumn 4-8 of the .mov file
+		force_left[i] = gBox[0].getForce(i);	//culumn 4-8 of the .mov file
 		force_right[i] = gBox[1].getForce(i);
 	}
 

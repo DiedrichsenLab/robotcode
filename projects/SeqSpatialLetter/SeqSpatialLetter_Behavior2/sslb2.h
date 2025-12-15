@@ -15,18 +15,18 @@
 #include "TRCounter626.h" 
 #include "Win626.h"
 #include <gl/glut.h>
-#include "Target.h"    // Neda added--> Simple class that implements rectangles that can change color
+#include "Target.h"		// Neda added--> Simple class that implements rectangles that can change color
 
 using namespace std;
 
 #define Pi 3.141592654
 //#define FIX_SIZE 0.004
 #define NUMFINGERS 5
-#define UPDATERATE 2    // sampling rate at every UPDATERATE ms 1=1K, 2=500Hz ...
-#define RECORDRATE 2    // recording update rate
+#define UPDATERATE 2		// sampling rate at every UPDATERATE ms 1=1K, 2=500Hz ...
+#define RECORDRATE 2		// recording update rate
 #define UPDATE_TEXTDISP 60
-#define SCR_SCALE 1.84/72 //3/72 //2.54/72 // cm/pixel 
-#define MAX_PRESS 5 // edited by SKim, fMRI
+#define SCR_SCALE 1.84/72	//3/72 //2.54/72 // cm/pixel 
+#define MAX_PRESS 5			// edited by SKim, fMRI
 ///////////////////////////////////////////////////////////////
 // Enumeration of Trial State 
 ///////////////////////////////////////////////////////////////
@@ -78,7 +78,6 @@ public:
 	char cuePress[5];
 };
 
-
 ///////////////////////////////////////////////////////////////
 /// Data Record: holds a data frame for DataManager. determines what 
 /// Data is recorded at 500 Hz and written to mov file  
@@ -97,11 +96,11 @@ public:
 	double force_right[5];
 	///_______________________Neda add
 
-	int eyeTime;						///< eye tracker data - timestamp
-	float eyeX;							///< eye tracker data - x position(easy calibration)
-	float eyeY;							///< eye tracker data - y position(easy calibration)
-	float eyeX_org;						///< eye tracker data - x position(original coordinate of Eyelink)
-	float eyeY_org;						///< eye tracker data - y position(original coordinate of Eyelink)
+	int eyeTime;		///< eye tracker data - timestamp
+	float eyeX;			///< eye tracker data - x position(easy calibration)
+	float eyeY;			///< eye tracker data - y position(easy calibration)
+	float eyeX_org;		///< eye tracker data - x position(original coordinate of Eyelink)
+	float eyeY_org;		///< eye tracker data - y position(original coordinate of Eyelink)
 	float pupil_size;
 	float PPDx;
 	float PPDy;

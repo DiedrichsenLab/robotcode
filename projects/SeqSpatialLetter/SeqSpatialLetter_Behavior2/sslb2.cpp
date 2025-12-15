@@ -10,22 +10,20 @@
 #include <ctime>
 ///////////////////////////////////////////////////////////////
 /// Global variables
-///
 ///////////////////////////////////////////////////////////////
-S626sManager s626; ///< Hardware Manager
-TextDisplay tDisp; ///< Text Display
-Screen gScreen; ///< Screen
-StimulatorBox gBox[2]; ///< Stimulator Box
-Target gTarget(SHAPE_DISC, 1); // Draw a white box for visual target, SKim
-//Target gHorizon(SHAPE_BOX, 1); // Draw a white box for visual target, SKim
+S626sManager s626;		///< Hardware Manager
+TextDisplay tDisp;		///< Text Display (for commands)
+Screen gScreen;			///< Experiment Screen
+StimulatorBox gBox[2];	///< Stimulator Box
 
+Target gTarget(SHAPE_DISC, 1);	// Draw a white box for visual target, SKim
 
-Timer gTimer(UPDATERATE); ///< Timer from S626 board experiments
+Timer gTimer(UPDATERATE);		///< Timer from S626 board experiments
 /// Usually the timers are used in the following fashion
 /// \li 0: Timer that gives you the time from the start of the last block
 /// \li 1: Timer that gives you the time from the start of the current trial
 /// \li 2: Flexible event timer that you can use in MyTrial::control() to stop the time since the last event.
-/// \li 3: USed by screen to keep track of the screen refresh rate
+/// \li 3: Used by screen to keep track of the screen refresh rate
 /// \li 4: Time elapsed since the last control loop call
 /// \li 5: Time elapsed since the last data record was done.
 HapticState hs; ///< This is the haptic State as d by the interrupt set up in SeqEye_Horizon.h
@@ -33,8 +31,6 @@ HapticState hs; ///< This is the haptic State as d by the interrupt set up in Se
 ///< the interrupt is running. Use Thread-safe copy to
 ///< Get the current haptic state for graphical display
 GraphicState gs;
-
-
 
 ///______________________________________________________  Neda added
 ///////////////////////////////////////////////////////////////
@@ -56,39 +52,37 @@ Color_t COLORCUECOLOR = { 0,90,40 };
 
 double TargetDistance = TARGET_Y - START_Y;
 
-Vector2D fixationPos; ///< position of the fixation cross
-#define CALIB_NUM 9             /// present 5 stimuli for eye calibration
+Vector2D fixationPos;	///< position of the fixation cross
+#define CALIB_NUM 9		/// present 5 stimuli for eye calibration
 # define EYE_MISSING 30000
 bool calib_mode = false;
 int curr_calib;
-int refPointNumX = 0; // Basically, this is 0(central fixation)
-int jumpPointNumX = 1; // Basically, this is fixation jump to rightward
-int refPointNumY = 0; // Basically, this is 0(central fixation)
-int jumpPointNumY = 2; // Basically, this is fixation jump to upward
+int refPointNumX = 0;	// Basically, this is 0(central fixation)
+int jumpPointNumX = 1;	// Basically, this is fixation jump to rightward
+int refPointNumY = 0;	// Basically, this is 0(central fixation)
+int jumpPointNumY = 2;	// Basically, this is fixation jump to upward
 FixCross 	fixationCross;
 
-
-
-char buffer[300]; ///< String buffer
-HINSTANCE gThisInst; ///< defined in Experiment.cpp Instance of Windows application
-Experiment* gExp; ///< defined in Experiment.cpp Pointer to myExperiment
-Trial* currentTrial; ///< defined in Experiment.cpp Pointer to current Trial
-bool gKeyPressed; ///< Key pressed?
-char gKey; ///< Which key?
-int gNumErrors = 0; ///< How many erros did you make during a block
-int gNumFingerErrors = 0; // How many finger errors did you make during a block, SKim
-int finger[5]; ///< State of each finger
+char buffer[300];		///< String buffer
+HINSTANCE gThisInst;	///< defined in Experiment.cpp Instance of Windows application
+Experiment* gExp;		///< defined in Experiment.cpp Pointer to myExperiment
+Trial* currentTrial;	///< defined in Experiment.cpp Pointer to current Trial
+bool gKeyPressed;		///< Key pressed?
+char gKey;				///< Which key?
+//int gNumErrors = 0;		///< How many erros did you make during a block
+int gNumFingerErrors = 0;	// How many finger errors did you make during a block, SKim
+int finger[5];			///< State of each finger
 int gNumPointsBlock = 0;
 int gNumPoints = 0;
 
-float timeThresPercent = 110; ///< 120% of current median MT (previous block)
-float superThresPercent = 95; ///< 95% of current median MT (previous block)
-double timeThreshold = 2000; 
-double superThreshold = 1000; 
-double ERarray[100]; ///< Initialise ER array across blocks
+float timeThresPercent = 110;	///< 110% of current median MT (previous block)
+float superThresPercent = 95;	///< 95% of current median MT (previous block)
+double timeThreshold = 2000;	// unit: ms 
+double superThreshold = 1000;	// unit: ms 
+double ERarray[100];	///< Initialise ER array across blocks
 int b = 0;
 
-#define FEEDBACKTIME 1500    // time for which the points of the trial is displayed at the end of a trial
+#define FEEDBACKTIME 1500	// time for which the points of the trial is displayed at the end of a trial
 // Neda increased feedback time so that the subject has time to blink
 string FINGERSOUND[6] = { "A.wav", "C.wav", "D.wav", "E.wav", "G.wav" };
 //string TASKSOUNDS[5] = { "../../util/wav/smb_kick.wav",
@@ -101,23 +95,21 @@ string TASKSOUNDS[2] = { "wav/chord.wav", "wav/smb_coin.wav"};
 
 char TEXT[5] = { '1','2','3','4','5' };
 #define CUE_SEQ 6
-#define CUE_CHUNK 4.5
 #define CUE_PRESS 2.3 // the Y position of the presses on the screen
 #define SIZE_CUE 9    // the font size of presses
-#define WIDTH_CHAR_CUE 2 // the distance between letters
-#define WIDTH_REC_CUE 6 // SKim
-#define HEIGHT_REC_CUE 3 // SKim
-#define FIXCROSS_SIZE		1
+#define FIXCROSS_SIZE 1
 
 // Force Thresholds
-#define STARTTH 0.4 // Threshold for start
-#define preTH 1     // Press threshold
-#define relTH 0.5  // Release threshold
-#define maxTH 4     // max threshold  
-
-double THRESHOLD[3][5] = { {preTH, preTH, preTH, preTH, preTH}, {relTH, relTH, relTH, relTH, relTH}, {maxTH, maxTH, maxTH, maxTH, maxTH} };
+#define STARTTH 0.4	// Threshold for start
+#define preTH 1		// Press threshold
+#define relTH 0.5	// Release threshold
+#define maxTH 4		// max threshold  
+double THRESHOLD[3][5] = {
+	{preTH, preTH, preTH, preTH, preTH},
+	{relTH, relTH, relTH, relTH, relTH},
+	{maxTH, maxTH, maxTH, maxTH, maxTH}
+};
 double fGain[5] = { 1.0,1.0,1.0,1.0,1.0 };  // Increased gains for index and little fingers, SKim
-
 
 ///////////////////////////////////////////////////////////////
 /// Main Program: Start the experiment, initialize the robot and run it
@@ -125,18 +117,17 @@ double fGain[5] = { 1.0,1.0,1.0,1.0,1.0 };  // Increased gains for index and lit
 int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	LPSTR kposzArgs, int nWinMode)
 {
-
-	///__________________________________________Neda - End
 	gThisInst = hThisInst;
-	// gExp = new MyExperiment("SeqSpatialVis", "ssh_vis", "C:/data/SeqSpatial/ssh_vis");
 	gExp = new MyExperiment("SeqSpatialLetter_Behavior2", "sslb2", "C:/data/SeqSpatialLetter_Behavior2");
-
 	gExp->redirectIOToConsole();
 
-	tDisp.init(gThisInst, 100, 0, 400, 20, 5, 2, &(::parseCommand));  // the white interactive window
+	// the white interactive window
+	tDisp.init(gThisInst, 100, 0, 400, 20, 5, 2, &(::parseCommand));
 	tDisp.setText("Subj:", 0, 0);
 
-	gScreen.init(gThisInst, 1920, 0, 1680, 1050, &(::updateGraphics)); // the black feedback window cf) win1: 1920x1200, win2: 1680x1050
+	// win1: 1920x1200, win2: 1680x1050
+	gScreen.init(gThisInst, 1920, 0, 1680, 1050, &(::updateGraphics));
+
 	gScreen.setCenter(Vector2D(0, 0)); // In cm //0,2
 	gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE)); // cm/pixel
 
@@ -149,33 +140,23 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	}
 
 	// initialize stimulation box
-
 	//gBox[0].init(BOX_LEFT,"c:/robot/calib/flatbox2_lowforce_LEFT_03-Mar-2017.txt");
 	//gBox[1].init(BOX_RIGHT,"c:/robot/calib/flatbox2_lowforce_RIGHT_06-Jul-2017.txt");
-
 	gBox[1].init(BOX_RIGHT, "c:/robotcode/calib/Flatbox1_highforce_RIGHT_31-July-2017.txt");
-
-
 	gBox[0].filterconst = 0.8;
 	gBox[1].filterconst = 0.8;
 
-
-
-
-	//******************************************************************//
 	gTimer.init();
-
-	// TR Counter for fMRI, SKim
 
 	gExp->control();
 	return 0;
 }
 
+//////////////////////////////////////////////////////////////////
+/// MyExperiment Class: contains all the additional information on 
+/// how that specific Experiment is run. Most of it is standard
+//////////////////////////////////////////////////////////////////
 
-///////////////////////////////////////////////////////////////
-/// MyExperiment Class: contains all the additional information on how that specific
-/// Experiment is run. Most of it is standard
-///////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////
 // Constructor
 ///////////////////////////////////////////////////////////////
@@ -196,8 +177,8 @@ void MyExperiment::control(void) {
 			DispatchMessage(&msg);
 		}
 		theBlock->control();
-		currentTrial->copyHaptics(); // Thread save copy
-		if (gTimer[4] > UPDATE_TEXTDISP) {   //currently every 10ms
+		currentTrial->copyHaptics();		// Thread save copy
+		if (gTimer[4] > UPDATE_TEXTDISP) {	// currently every 60ms
 			currentTrial->updateTextDisplay();
 			InvalidateRect(tDisp.windowHnd, NULL, TRUE);
 			UpdateWindow(tDisp.windowHnd);
@@ -325,7 +306,7 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 		}
 	}
 
-	else if (arguments[0] == "thres") {
+	else if (arguments[0] == "thresh") {
 		if (numArgs != 3) {
 			tDisp.print("USAGE: thresh threshold superthres");
 		}
@@ -385,12 +366,42 @@ Trial* MyBlock::getTrial() {
 void MyBlock::start() {
 	for (int i = 0; i < NUMDISPLAYLINES; i++) { gs.line[i] = ""; }
 	gs.boxOn = true;
-	gNumErrors = 0;
+	//gNumErrors = 0;
 	gNumFingerErrors = 0;
 	gNumPointsBlock = 0;
 	sprintf(buffer, "%d", gNumPointsBlock);
 	gs.line[2] = buffer;
 }
+
+/*	MDI0.cpp
+void quartiles(double array[], int num_val, double& q1, double& q3) {
+	int i, j;
+	double dummy;
+
+	// Sort the array (using selection sort as per original implementation)
+	for (i = 0; i < num_val - 1; i++) {
+		for (j = i + 1; j < num_val; j++) {
+			if (array[i] > array[j]) {
+				dummy = array[i];
+				array[i] = array[j];
+				array[j] = dummy;
+			}
+		}
+	}
+
+	// Calculate Q1
+	if (num_val % 2 == 0) {
+		i = num_val / 2;
+		q1 = median(array, i); // median of lower half
+		q3 = median(array + i, i); // median of upper half
+	}
+	else {
+		i = (num_val - 1) / 2;
+		q1 = median(array, i + 1); // median of lower half (including median)
+		q3 = median(array + i + 1, i); // median of upper half
+	}
+}
+*/
 
 ///////////////////////////////////////////////////////////////
 /// giveFeedback and put it to the graphic state
@@ -466,8 +477,6 @@ MyTrial::MyTrial() {
 		releaseTime[i] = 0;
 		fGiven[i] = 0;
 	}
-
-
 }
 
 ///////////////////////////////////////////////////////////////
@@ -716,7 +725,6 @@ void MyTrial::updateGraphics(int what) {
 				//gHorizon.draw();
 				for (i = 0; i < seqLength - seqCounter; i++) {  // Edited by SKim
 					if (gs.cuePress[i] > 0) {
-						// gScreen.printChar(gs.cuePress[i], (i - 4) * WIDTH_CHAR_CUE, CUE_PRESS, SIZE_CUE);
 						gScreen.printChar(gs.cuePress[i + seqCounter], 0, -0.7 + i * 1.6, SIZE_CUE); // -4.7 is matched to -4.0 for visual target type
 						// the number 6.5 is usually the seqLength/2 so that the sequence in centered
 					}
@@ -793,31 +801,19 @@ void MyTrial::control() {
 			released++;
 		}
 	}
-
 	// All the colors are pre-defined in the Screen class
 	//0Black, 1white, 2red, 3green, 4blue, ....
-
-
-	////__________________________________Neda
-	//if (calib_mode) {
-	// state = CALIB;
-	//}
-	////__________________________________end
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// state: WAIT_TRIAL (0) -> START_TRIAL (1) -> START_FIX (2) -> WAIT_GOCUE (3) -> WAIT_PRESS (4) -> WAIT_FEEDBACK (5) -> WAIT_ITI (6) -> END_TRIAL (7) //
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	switch (state) {  // this state is before you enter the "run X *.tgt" command
-	case WAIT_TRIAL: //0 as apears in mov
+	switch (state) {
+	case WAIT_TRIAL: // this state is before you enter the "run X *.tgt" command
 		gs.clearCues();
 
 		break;
-	case START_TRIAL:   // 1  This state is right after you've entered
-		//the "run X *.tgt" command, and at the begginign
-		//of each trial i that block. basically sets up
+	case START_TRIAL: // This state is right after you've entered
 		//recording and clears screen for new trial
-		//gTimer.reset(1); // time for whole trial
-		//gTimer.reset(2); // time for events in the trial
 
 		for (i = 0; i < NUMDISPLAYLINES; i++) {
 			gs.line[i] = "";
@@ -853,24 +849,20 @@ void MyTrial::control() {
 		}
 		break;
 
-	case WAIT_PRESS: //5 as appears in mov, Targets are shown here for preplanning
-
-		// Wait for the next keypress
-		//*************************Feedback loop was here
+	case WAIT_PRESS: //Targets are shown here for preplanning
 		// Check if sequence is finished
-		//nFingerErrors = 0;  // Initialization of tapping errors, SKim
 		if (numNewpress > 0 && seqCounter < seqLength) {
 			response[seqCounter] = pressedFinger;
 			pressTime[seqCounter] = gTimer[1];
 			if (seqCounter == 0) {
-				RT = gTimer[2];  // Reaction time for the first press, SKedited
+				RT = gTimer[2];  // Reaction time for the first press
 			}
 			if (response[seqCounter] == press[seqCounter]) { // if press is correct
 				// PLAY SOUND
 //				channel = Mix_PlayChannel(-1, wavTask[0], 0); // SDL
 				//PlaySound("wav/chimes.wav", NULL, SND_ASYNC | SND_FILENAME);
 			}
-			else if (response[seqCounter] != press[seqCounter]) {   // press is wrong
+			else if (response[seqCounter] != press[seqCounter]) { // press is wrong
 				isError = 1;
 				// PLAY SOUND
 				// PlaySound("wav/chord.wav", NULL, SND_ASYNC | SND_FILENAME);
@@ -1007,9 +999,4 @@ void GraphicState::reset(void) {
 		line[i] = "";
 	}
 }
-
-
-
-
-
 

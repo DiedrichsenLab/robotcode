@@ -79,11 +79,9 @@ float timeThresPercent = 110;	///< 110% of current median MT (previous block)
 float superThresPercent = 95;	///< 95% of current median MT (previous block)
 double timeThreshold = 2000;	// unit: ms 
 double superThreshold = 1000;	// unit: ms
-double tempThresh;
-double tempThreshS;
 int b = 0;				///< Counter for relative block number with respect to start of session
-double medianMTarray[68];	///< preallocate array to keep track of MTs within session
-double ERarray[68];			///< preallocate array to keep track of ERs within session
+double medianMTarray[9];	///< preallocate array to keep track of MTs within session
+double ERarray[9];			///< preallocate array to keep track of ERs within session
 float ERthreshold = 20;		///< Trheshold of 20% of error rate in order to lower MT thresholds
 
 #define FEEDBACKTIME 400	// time for which the points of the trial is displayed at the end of a trial
@@ -437,32 +435,31 @@ void MyBlock::giveFeedback() {
 
 	b++;	// increase block counter
 	if (n > 0) { //if at least one correct trial
-		medianMTarray[b] = median(MTarray, n); // median of movement times
+		medianMT = median(MTarray, n);
+		medianMTarray[b] = medianMT; // median of movement times
 		ERarray[b] = 100 * ((double)(gNumFingerErrors)) / (double)(nn); // error rate
-		if ((ERarray[b] <= ERthreshold) && (ERarray[b - 1] >= ERthreshold)) { //if ER on previous block > 20%
-			if (medianMTarray[b] < (timeThreshold / (timeThresPercent * 0.01))) { //adjust only if MT of current block faster than MT that generated current threshold
-				tempThresh = medianMTarray[b] * (timeThresPercent * 0.01); //previous MT+10%
-				tempThreshS = medianMTarray[b] * (superThresPercent * 0.01); //previous MT-5% 	
-			}
+		if (ERarray[b] <= ERthreshold) {
+			//if (medianMT < (timeThreshold / (timeThresPercent * 0.01))) { //adjust only if MT of current block faster than MT that generated current threshold
+			timeThreshold = medianMT * (timeThresPercent * 0.01); // previous MT+10%
+			superThreshold = medianMT * (superThresPercent * 0.01); // previous MT-5% 	
 		}
-		else if ((ERarray[b] <= ERthreshold) && (ERarray[b - 1] <= ERthreshold)) { //if ER on previous block <20%	
-			if (medianMTarray[b] < (timeThreshold / (timeThresPercent * 0.01))) { //adjust only if MT of current block faster than MT that generated current threshold
-				tempThresh = medianMTarray[b] * (timeThresPercent * 0.01); //previous MT+10%
-				tempThreshS = medianMTarray[b] * (superThresPercent * 0.01); //previous MT-5%
-			}
+		else {
+			timeThreshold = medianMT * ((timeThresPercent+10) * 0.01); // previous MT+20%
+			superThreshold = medianMT * ((superThresPercent-5) * 0.01); // previous MT-10% 	
 		}
 	}
 	else {
-		medianMTarray[b] = 0;
+		medianMT = 0;
 		ERarray[b] = 100; // 100% error rate
 	}
 	//ERarray[b] = 100 * ((double)gNumErrors) / (double)(trialNum); // error rate
 	//ERarray[b] = 100 * ((double)gNumFingerErrors) / (double)(trialNum * 14); // error rate, SKim
 
-	cout << "Points calculated" << endl;
+	cout << "Points calculated!" << endl;
 
 	// print FEEDBACK on the screen
-	sprintf(buffer, "Error rate: %.1f%%		MT %2.0fms", ERarray[b], medianMTarray[b]);
+	sprintf(buffer, "Error rate: %.1f%%\tMT %2.0fms", ERarray[b], medianMTarray[b]);
+
 	//gs.line[0] = buffer;
 	//gs.lineColor[0] = 1;
 	gs.line[1] = buffer;
@@ -924,6 +921,9 @@ void MyTrial::control() {
 			}
 			else { // timeThresh < MT <= MTLimit
 				points = 0;
+			}
+			if (RT >= 500) { // Do not extend the PrepTime!
+				points = max(0, points-2);
 			}
 		}
 		else { // MT < 0

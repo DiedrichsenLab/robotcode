@@ -60,7 +60,7 @@ class GraphicState {
 public:
 	GraphicState();
 	void reset(void);							///< Reset all targets to invisble 
-	string line[NUMDISPLAYLINES + 1];				///< Number of lines in Feedback display 
+	string line[NUMDISPLAYLINES + 1];			///< Number of lines in Feedback display 
 	double lineXpos[NUMDISPLAYLINES + 1];
 	double lineYpos[NUMDISPLAYLINES + 1];
 	void clearCues(void);						///< Clear all the cues on the screen 
@@ -159,6 +159,7 @@ private:
 	int hand;								///< Which board are we using left= 0 right= 1
 	int seqCounter;							///< Which position in the seq are we?
 	int isError;							///< Was there an error in the finger presses?
+	int numPoints;							///< Number of points awarded 
 	int nFingerErrors;						// Number of error tappings, SKim
 	int points;								///< How many points did you get in a trial 0/1/-1?
 	int seqLength;							///< How long is the sequence (arbitrary)?
@@ -168,7 +169,7 @@ private:
 	double MT;								///< Overall MT 
 	double RT;								// Reaction Time, added by SKim
 	string cueP;							// edited by SKim, using only press cue	
-	//	string cueS, cueC, cueP; 					///< Visual cues for sequence, chunk, and press
+	//	string cueS, cueC, cueP; 			///< Visual cues for sequence, chunk, and press
 
 		//variables for fMRI synchronisation, SKim
 	//int startSlice;						///< Starting value for slice no. 

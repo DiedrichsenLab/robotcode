@@ -73,14 +73,18 @@ char gKey;				///< Which key?
 int gNumFingerErrors = 0;	// How many finger errors did you make during a block, SKim
 int finger[5];			///< State of each finger
 int gNumPointsBlock = 0;
-int gNumPoints = 0;
 
 float timeThresPercent = 110;	///< 110% of current median MT (previous block)
 float superThresPercent = 95;	///< 95% of current median MT (previous block)
 double timeThreshold = 2000;	// unit: ms 
-double superThreshold = 1000;	// unit: ms 
+double superThreshold = 1000;	// unit: ms
+double tempThres1 = timeThreshold;
+double tempThres2 = superThreshold;
 double ERarray[100];	///< Initialise ER array across blocks
-int b = 0;
+int b = 0;				///< Counter for relative block number with respect to start of session
+double medianMTarray[68];	///< preallocate array to keep track of MTs within session
+double ERarray[68];			///< preallocate array to keep track of ERs within session
+float ERthreshold = 20;		///< Trheshold of 20% of error rate in order to lower MT thresholds
 
 #define FEEDBACKTIME 1500	// time for which the points of the trial is displayed at the end of a trial
 // Neda increased feedback time so that the subject has time to blink
@@ -193,9 +197,8 @@ void MyExperiment::control(void) {
 // Parse additional commands
 ///////////////////////////////////////////////////////////////
 bool MyExperiment::parseCommand(string arguments[], int numArgs) {
-	int x; float dummy1;
+	int n, j, x;
 	float arg[4];
-	int bn;
 	MSG msg;
 
 	/// Print continusly state of the encodeers
@@ -240,7 +243,6 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 		tDisp.keyPressed = 0;
 		tDisp.lock();
 		double volts[2][5] = { {0,0,0,0,0},{0,0,0,0,0} };
-		int n, j;
 		for (n = 0; n < 100; n++) {
 			for (x = 0; x < 2; x++) {
 				for (j = 0; j < 5; j++) {
@@ -350,7 +352,7 @@ void MyExperiment::onExit() {
 /// Constructor
 ///////////////////////////////////////////////////////////////
 MyBlock::MyBlock() {
-	state = WAIT_BLOCK;
+	state = WAIT_BLOCK; // WAIT_BLOCK == 0
 }
 
 ///////////////////////////////////////////////////////////////
@@ -373,7 +375,7 @@ void MyBlock::start() {
 	gs.line[2] = buffer;
 }
 
-/*	MDI0.cpp
+//	MDI0.cpp
 void quartiles(double array[], int num_val, double& q1, double& q3) {
 	int i, j;
 	double dummy;
@@ -401,50 +403,76 @@ void quartiles(double array[], int num_val, double& q1, double& q3) {
 		q3 = median(array + i + 1, i); // median of upper half
 	}
 }
-*/
 
 ///////////////////////////////////////////////////////////////
 /// giveFeedback and put it to the graphic state
 ///////////////////////////////////////////////////////////////
 void MyBlock::giveFeedback() {
-	b = b++;
-	//int i, j;
 	int i;
-	int n = 0;
-	double MTarray[200];
+	int n = 0; // number of correct trials
+	int nn = 0; // number of total trials
+	double MTarray[68];
 	double medianMT = 0;
-	//int gType; // groupType
-	int sType; //cueType
 	MyTrial* tpnr;  //MyTrial object --> inherits class Trial in Experiment.h
 	
 	ERarray[0] = 0; // Initialise the ER for the 0th block to be 0
-
-	for (i = 0; i < trialNum; i++) {
+	medianMTarray[0] = 20000;	//initialize MT array for the 0th block to be 20000 (impossible value, we have no median MT before that)
+	for (i = 0; i < trialNum; i++) { // check each trial
 		tpnr = (MyTrial*)trialVec.at(i);
-	
-
 		if (tpnr->isError == 0) {
-			MTarray[n] = tpnr->MT; //remember the RT from the correct trials and add them
-			n++; // remember number of trials
+			MTarray[n] = tpnr->MT;	//remember the MT from the correct trials and add them
+			// n += tpnr->numPoints;
+			n++;	// remember number of correct trials
 		}
-		sType = tpnr->cueType;
+		nn++		// remember number of total trials
+	}
+	// before eventual thres update, store the previous thres for writing in the .dat file
+	tempThres1 = timeThreshold;
+	tempThres2 = superThreshold;
 
-		//nn++;
+	//double q1 = 0, q3 = 0;
+	//quartiles(MTarray, trialNum, q1, q3);
+	//if (accurateResp > 5) {
+		//timeThreshold = q1;
+		//superThreshold = q3;
+	//}
+
+	b = b++;	// increase block counter
+	if (n > 0) { //if at least one correct trial
+		medianMTarray[b] = median(MTarray, n); // median of movement times
+		ERarray[b] = 100 * ((double)(gNumFingerErrors)) / (double)(nn); // error rate
+		if ((ERarray[b] <= ERthreshold) && (ERarray[b - 1] >= ERthreshold)) { //if ER on previous block > 20%
+			if (medianMTarray[b] < (timeThreshold / (timeThresPercent * 0.01))) { //adjust only if MT of current block faster than MT that generated current threshold
+				timeThreshold = medianMTarray[b] * (timeThresPercent * 0.01); //previous MT+10%
+				superThreshold = medianMTarray[b] * (superThresPercent * 0.01); //previous MT-5% 	
+			}
+		}
+		else if ((ERarray[b] <= ERthreshold) && (ERarray[b - 1] <= ERthreshold)) { //if ER on previous block <20%	
+			if (medianMTarray[b] < (timeThreshold / (timeThresPercent * 0.01))) { //adjust only if MT of current block faster than MT that generated current threshold
+				timeThreshold = medianMTarray[b] * (timeThresPercent * 0.01); //previous MT+10%
+				superThreshold = medianMTarray[b] * (superThresPercent * 0.01); //previous MT-5%
+			}
+		}
+	}
+	else {
+		medianMTarray[b] = 0;
+		ERarray[b] = 100; // 100% error rate
 	}
 	//ERarray[b] = 100 * ((double)gNumErrors) / (double)(trialNum); // error rate
-	ERarray[b] = 100 * ((double)gNumFingerErrors) / (double)(trialNum * 14); // error rate, SKim
+	//ERarray[b] = 100 * ((double)gNumFingerErrors) / (double)(trialNum * 14); // error rate, SKim
+
+	cout << "Points calculated" << endl;
 
 	//for (j = 0; j < 4; j++) {
 	// print FEEDBACK on the screen
-	sprintf(buffer, "Error rate: %.1f%%", ERarray[b]);
-	gs.line[0] = buffer;
-	gs.lineColor[0] = 1;
-	
+	sprintf(buffer, "Error rate: %.1f%%		MT %2.0fms", ERarray[b], medianMTarray[b]);
+	//gs.line[0] = buffer;
+	//gs.lineColor[0] = 1;
 	gs.line[1] = buffer;
 	gs.lineColor[1] = 1;
 
-	gNumPoints += gNumPointsBlock;
-	sprintf(buffer, "Point you've got: %d   Total points: %d", gNumPointsBlock, gNumPoints);
+	numPoints += gNumPointsBlock;
+	sprintf(buffer, "Point you've got: %d   Total points: %d", gNumPointsBlock, numPoints);
 	gs.line[2] = buffer;
 	gs.lineColor[2] = 1;
 }
@@ -459,22 +487,22 @@ MyTrial::MyTrial() {
 	state = WAIT_TRIAL;
 
 	//INIT TRIAL VARIABLE
-	hand = 2; // Read right box
-	isError = 0; // init error flag
-	nFingerErrors = 0; // Number of tapping errors, SKim  
-	seqCounter = 0; // init the sequence index variable
-	MT = 0; // init total movement time, SKim edited
-	RT = 0; // Added by SKim, reaction time
+	hand = 2;			// Read right box
+	isError = 0;		// init error flag
+	nFingerErrors = 0;	// Number of tapping errors, SKim  
+	seqCounter = 0;		// init the sequence index variable
+	MT = 0;				// init total movement time, SKim edited
+	RT = 0;				// Added by SKim, reaction time
 
-	startTime = 0; // SKim, fMRI
-	startTimeReal = 0; // SKim, fMRI
+	startTime = 0;		// SKim, fMRI
+	startTimeReal = 0;	// SKim, fMRI
 
 	points = 0;
 
-	for (int i = 0; i < MAX_PRESS; i++) {    // MAX_PRESS = 9 defined in header
-		response[i] = 0; // respose, pressTime and releaseTime
-		pressTime[i] = 0; // are arrays of length 9
-		releaseTime[i] = 0;
+	for (int i = 0; i < MAX_PRESS; i++) { // MAX_PRESS = 9 defined in header
+		response[i] = 0;	// finger response
+		pressTime[i] = 0;	// are arrays of length 9
+		releaseTime[i] = 0;	// release time
 		fGiven[i] = 0;
 	}
 }
@@ -486,7 +514,7 @@ void MyTrial::read(istream& in) {
 	// read from .tgt file, [startTime, cueType, press 1-5, iti, PrepTime]
 	(in) >> startTime >> cueType;
 
-	for (int i = 0; i < MAX_PRESS; i++) {   // MAX_PRESS = 14--> read presses
+	for (int i = 0; i < MAX_PRESS; i++) { // MAX_PRESS = 14--> read presses
 		(in) >> press[i];
 		cueP += to_string(press[i]);
 	}
@@ -494,18 +522,19 @@ void MyTrial::read(istream& in) {
 
 	// do other job
 	string zero("0");
-	seqLength = cueP.find(zero); // get seqLength
+	seqLength = cueP.find(zero);	// get seqLength
 	// chunkLength = cueC.length(); // get chunkLength
 	if (seqLength < 0) { seqLength = cueP.length(); }
 }
 
 ///////////////////////////////////////////////////////////////
-// Write  // Neda - Eye data to be added
+// Write
 ///////////////////////////////////////////////////////////////
 void MyTrial::writeDat(ostream& out) {
 	out << cueType << "\t"
 		<< PrepTime << "\t"
-		<< startTime << "\t"; //repeat of target file. if 0, training mode
+		<< startTime << "\t"
+		<< startTimeReal << "\t";
 	for (int i = 0; i < MAX_PRESS; i++) {
 		out << press[i] << "\t";
 	}
@@ -513,7 +542,7 @@ void MyTrial::writeDat(ostream& out) {
 	out << iti << "\t"
 		// << sounds << "\t"
 		<< MT << "\t"
-		<< RT << "\t"  // added by SKim
+		<< RT << "\t"	// added by SKim
 		<< isError << "\t";
 	for (int i = 0; i < MAX_PRESS; i++) {
 		out << response[i] << "\t";
@@ -522,7 +551,6 @@ void MyTrial::writeDat(ostream& out) {
 		out << pressTime[i] << "\t";
 	}
 
-
 	out << timeThreshold << "\t"
 		<< superThreshold << "\t"
 		<< points << "\t"
@@ -530,8 +558,10 @@ void MyTrial::writeDat(ostream& out) {
 		<< fGain[1] << "\t"
 		<< fGain[2] << "\t"
 		<< fGain[3] << "\t"
-		<< fGain[4] << endl;
+		<< fGain[4] << "\t";
 
+	out << tempThres1 << "\t"
+		<< tempThres2 << "\t" << endl;
 }
 
 ///////////////////////////////////////////////////////////////
@@ -540,18 +570,16 @@ void MyTrial::writeDat(ostream& out) {
 void MyTrial::writeHeader(ostream& out) {
 	char header[200];
 	out << "cueType" << "\t"
-		<< "Horizon" << "\t"
+		//<< "Horizon" << "\t"
 		<< "PrepTime" << "\t"
 		<< "startTime" << "\t" //repeat of target file: TIME BEGINNING FOR EACH TRIAL SINCE T=0 (1st TTL)
 		<< "startTimeReal" << "\t" //actual time of the beginning of each trial since T=0
-		<< "startTRReal" << "\t" //actual time of the beginning of each trial since T=0
-		<< "startTRtime" << "\t"; //actual time of the beginning of each trial since T=0
+
 	for (int i = 0; i < MAX_PRESS; i++) {
 		sprintf(header, "press%d", i);
 		out << header << "\t";
 	}
-	out << "complete" << "\t"
-		<< "iti" << "\t"
+	out << "iti" << "\t"
 		// << "sounds" << "\t"
 		<< "MT" << "\t"
 		<< "RT" << "\t"   // added by SKim
@@ -572,9 +600,10 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "Gain2" << "\t"
 		<< "Gain3" << "\t"
 		<< "Gain4" << "\t"
-		<< "Gain5" << "\t" << endl;
-	//		<< "StimTimeLim" << "\t" << endl;
-		//_____________________end
+		<< "Gain5" << "\t";
+
+	out << "timeThreshold" << "\t"
+		<< "timeThresholdSuper" << "\t" << endl;
 
 }
 
@@ -640,12 +669,8 @@ void MyTrial::updateTextDisplay() {
 	sprintf(buffer, "gNumPointsBlock: %d", gNumPointsBlock);
 	tDisp.setText(buffer, 8, 0);
 
-
-
 //	sprintf(buffer, "trial : %d cueType : %d state : %d", cTrial, cueType, state);
 	//tDisp.setText(buffer, 9, 0);
-
-
 }
 
 ///////////////////////////////////////////////////////////////
@@ -767,8 +792,6 @@ void MyTrial::updateHaptics() {
 		}
 	}
 }
-
-
 
 //////////////////////////////////////////////////////////////////////
 // Control Trial: A state-driven routine to guide through the process of a trial
@@ -909,9 +932,8 @@ DataRecord::DataRecord(int s) {
 	time = gTimer[1];					//culumn 2 of the .mov file
 	timeReal = gTimer.getRealtime();	//culumn 3 of the .mov file
 
-
 	for (i = 0; i < 5; i++) {
-		force_left[i] = gBox[0].getForce(i);	//culumn 4-8 of the .mov file
+		//force_left[i] = gBox[0].getForce(i);	//culumn 4-8 of the .mov file
 		force_right[i] = gBox[1].getForce(i);
 	}
 

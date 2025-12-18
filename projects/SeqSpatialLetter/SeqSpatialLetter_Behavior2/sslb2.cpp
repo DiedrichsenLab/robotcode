@@ -86,7 +86,7 @@ double medianMTarray[68];	///< preallocate array to keep track of MTs within ses
 double ERarray[68];			///< preallocate array to keep track of ERs within session
 float ERthreshold = 20;		///< Trheshold of 20% of error rate in order to lower MT thresholds
 
-#define FEEDBACKTIME 1500	// time for which the points of the trial is displayed at the end of a trial
+#define FEEDBACKTIME 600	// time for which the points of the trial is displayed at the end of a trial
 // Neda increased feedback time so that the subject has time to blink
 string FINGERSOUND[6] = { "A.wav", "C.wav", "D.wav", "E.wav", "G.wav" };
 //string TASKSOUNDS[5] = { "../../util/wav/smb_kick.wav",
@@ -892,20 +892,70 @@ void MyTrial::control() {
 				nFingerErrors++;
 				//				channel = Mix_PlayChannel(-1, wavTask[1], 0); // SDL
 			}
-
 			seqCounter++;
 		}
-
 		if (seqCounter == seqLength && released == 5) {
 			gTimer.reset(2); // time for events in the trial
 			state = WAIT_FEEDBACK;
 			gs.fixationColor = 1; 
 		}
-
 		break;
 
+	/*
+	case WAIT_END_RELEASE:
+
+		if (released == 5) {
+
+			MT = gTimer[1] - pressTime[0]; // Calculate total reaction time starting from the first press
+
+			if (isError > 0) {
+				gNumErrors++;
+				gNumFingerErrors += nFingerErrors;
+			}
+			else {
+				switch (seqType) {
+				case 1:
+					j = 0;
+					break;
+				case 2:
+					j = 1;
+					break;
+				}
+
+				critTime = MT;
+
+				if (critTime < timeThresholdSuper[j]) {
+					points = 3;
+					gNumPointsBlock += 3;
+					// PLAY SOUNDS
+	//				channel = Mix_PlayChannel(-1, wavTask[2], 0); // SDL
+				}
+				else {
+					points = 1;
+					gNumPointsBlock += 1;
+				}
+
+			}
+			gTimer.reset(2);
+			gs.clearCues();
+
+			gTimer.reset(2);
+			state = WAIT_FEEDBACK;
+		}
+		else {
+			state = WAIT_PRESS;
+		}
+
+		break;
+	*/
+
 	case WAIT_FEEDBACK: 
-		if (gTimer[2] > FEEDBACKTIME) { // TrialTime = PrepTime + MovTimeLim 
+		if (gTimer[2] > FEEDBACKTIME) { // TrialTime = PrepTime + MovTimeLim
+			dataman.stopRecording();
+			gs.clearCues();
+			sprintf(buffer, "+%d", points);
+			gs.lineColor[2] = 1;
+			gs.line[2] = buffer; // displays the text
 			state = WAIT_ITI;
 		}
 

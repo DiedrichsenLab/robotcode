@@ -69,24 +69,24 @@ Experiment* gExp;		///< defined in Experiment.cpp Pointer to myExperiment
 Trial* currentTrial;	///< defined in Experiment.cpp Pointer to current Trial
 bool gKeyPressed;		///< Key pressed?
 char gKey;				///< Which key?
-//int gNumErrors = 0;		///< How many erros did you make during a block
+int gNumErrors = 0;		///< How many erros did you make during a block
 int gNumFingerErrors = 0;	// How many finger errors did you make during a block, SKim
 int finger[5];			///< State of each finger
 int gNumPointsBlock = 0;
+int gnumPoints = 0;
 
 float timeThresPercent = 110;	///< 110% of current median MT (previous block)
 float superThresPercent = 95;	///< 95% of current median MT (previous block)
 double timeThreshold = 2000;	// unit: ms 
 double superThreshold = 1000;	// unit: ms
-double tempThres1 = timeThreshold;
-double tempThres2 = superThreshold;
-double ERarray[100];	///< Initialise ER array across blocks
+double tempThresh;
+double tempThreshS;
 int b = 0;				///< Counter for relative block number with respect to start of session
 double medianMTarray[68];	///< preallocate array to keep track of MTs within session
 double ERarray[68];			///< preallocate array to keep track of ERs within session
 float ERthreshold = 20;		///< Trheshold of 20% of error rate in order to lower MT thresholds
 
-#define FEEDBACKTIME 600	// time for which the points of the trial is displayed at the end of a trial
+#define FEEDBACKTIME 400	// time for which the points of the trial is displayed at the end of a trial
 // Neda increased feedback time so that the subject has time to blink
 string FINGERSOUND[6] = { "A.wav", "C.wav", "D.wav", "E.wav", "G.wav" };
 //string TASKSOUNDS[5] = { "../../util/wav/smb_kick.wav",
@@ -122,7 +122,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	LPSTR kposzArgs, int nWinMode)
 {
 	gThisInst = hThisInst;
-	gExp = new MyExperiment("SeqSpatialLetter_Behavior2", "sslb2", "C:/data/SeqSpatialLetter_Behavior2");
+	gExp = new MyExperiment("SeqSpatialLetter_Behavior2", "sslb2", "C:/data/SeqSpatialLetter_Behavior2/");
 	gExp->redirectIOToConsole();
 
 	// the white interactive window
@@ -424,11 +424,9 @@ void MyBlock::giveFeedback() {
 			// n += tpnr->numPoints;
 			n++;	// remember number of correct trials
 		}
-		nn++		// remember number of total trials
+		nn++;		// remember number of total trials
 	}
 	// before eventual thres update, store the previous thres for writing in the .dat file
-	tempThres1 = timeThreshold;
-	tempThres2 = superThreshold;
 
 	//double q1 = 0, q3 = 0;
 	//quartiles(MTarray, trialNum, q1, q3);
@@ -437,20 +435,20 @@ void MyBlock::giveFeedback() {
 		//superThreshold = q3;
 	//}
 
-	b = b++;	// increase block counter
+	b++;	// increase block counter
 	if (n > 0) { //if at least one correct trial
 		medianMTarray[b] = median(MTarray, n); // median of movement times
 		ERarray[b] = 100 * ((double)(gNumFingerErrors)) / (double)(nn); // error rate
 		if ((ERarray[b] <= ERthreshold) && (ERarray[b - 1] >= ERthreshold)) { //if ER on previous block > 20%
 			if (medianMTarray[b] < (timeThreshold / (timeThresPercent * 0.01))) { //adjust only if MT of current block faster than MT that generated current threshold
-				timeThreshold = medianMTarray[b] * (timeThresPercent * 0.01); //previous MT+10%
-				superThreshold = medianMTarray[b] * (superThresPercent * 0.01); //previous MT-5% 	
+				tempThresh = medianMTarray[b] * (timeThresPercent * 0.01); //previous MT+10%
+				tempThreshS = medianMTarray[b] * (superThresPercent * 0.01); //previous MT-5% 	
 			}
 		}
 		else if ((ERarray[b] <= ERthreshold) && (ERarray[b - 1] <= ERthreshold)) { //if ER on previous block <20%	
 			if (medianMTarray[b] < (timeThreshold / (timeThresPercent * 0.01))) { //adjust only if MT of current block faster than MT that generated current threshold
-				timeThreshold = medianMTarray[b] * (timeThresPercent * 0.01); //previous MT+10%
-				superThreshold = medianMTarray[b] * (superThresPercent * 0.01); //previous MT-5%
+				tempThresh = medianMTarray[b] * (timeThresPercent * 0.01); //previous MT+10%
+				tempThreshS = medianMTarray[b] * (superThresPercent * 0.01); //previous MT-5%
 			}
 		}
 	}
@@ -463,7 +461,6 @@ void MyBlock::giveFeedback() {
 
 	cout << "Points calculated" << endl;
 
-	//for (j = 0; j < 4; j++) {
 	// print FEEDBACK on the screen
 	sprintf(buffer, "Error rate: %.1f%%		MT %2.0fms", ERarray[b], medianMTarray[b]);
 	//gs.line[0] = buffer;
@@ -471,8 +468,8 @@ void MyBlock::giveFeedback() {
 	gs.line[1] = buffer;
 	gs.lineColor[1] = 1;
 
-	numPoints += gNumPointsBlock;
-	sprintf(buffer, "Point you've got: %d   Total points: %d", gNumPointsBlock, numPoints);
+	gnumPoints += gNumPointsBlock;
+	sprintf(buffer, "Point you've got: %d   Total points: %d", gNumPointsBlock, gnumPoints);
 	gs.line[2] = buffer;
 	gs.lineColor[2] = 1;
 }
@@ -487,6 +484,7 @@ MyTrial::MyTrial() {
 	state = WAIT_TRIAL;
 
 	//INIT TRIAL VARIABLE
+	MTLimit = 3000;
 	hand = 2;			// Read right box
 	isError = 0;		// init error flag
 	nFingerErrors = 0;	// Number of tapping errors, SKim  
@@ -494,15 +492,12 @@ MyTrial::MyTrial() {
 	MT = 0;				// init total movement time, SKim edited
 	RT = 0;				// Added by SKim, reaction time
 
-	startTime = 0;		// SKim, fMRI
-	startTimeReal = 0;	// SKim, fMRI
-
 	points = 0;
 
-	for (int i = 0; i < MAX_PRESS; i++) { // MAX_PRESS = 9 defined in header
-		response[i] = 0;	// finger response
-		pressTime[i] = 0;	// are arrays of length 9
-		releaseTime[i] = 0;	// release time
+	for (int i = 0; i < MAX_PRESS; i++) { // MAX_PRESS = 5 defined in header
+		response[i] = -1;	// finger response
+		pressTime[i] = -1;	// initialize button press time
+		releaseTime[i] = -1;	// initialize button release time
 		fGiven[i] = 0;
 	}
 }
@@ -542,7 +537,8 @@ void MyTrial::writeDat(ostream& out) {
 	out << iti << "\t"
 		// << sounds << "\t"
 		<< MT << "\t"
-		<< RT << "\t"	// added by SKim
+		<< RT << "\t"
+		<< points << "\t"
 		<< isError << "\t";
 	for (int i = 0; i < MAX_PRESS; i++) {
 		out << response[i] << "\t";
@@ -552,16 +548,12 @@ void MyTrial::writeDat(ostream& out) {
 	}
 
 	out << timeThreshold << "\t"
-		<< superThreshold << "\t"
-		<< points << "\t"
-		<< fGain[0] << "\t"
+		<< superThreshold << "\t" << endl;
+		/*<< fGain[0] << "\t"
 		<< fGain[1] << "\t"
 		<< fGain[2] << "\t"
 		<< fGain[3] << "\t"
-		<< fGain[4] << "\t";
-
-	out << tempThres1 << "\t"
-		<< tempThres2 << "\t" << endl;
+		<< fGain[4] << "\t" << endl;*/
 }
 
 ///////////////////////////////////////////////////////////////
@@ -573,7 +565,7 @@ void MyTrial::writeHeader(ostream& out) {
 		//<< "Horizon" << "\t"
 		<< "PrepTime" << "\t"
 		<< "startTime" << "\t" //repeat of target file: TIME BEGINNING FOR EACH TRIAL SINCE T=0 (1st TTL)
-		<< "startTimeReal" << "\t" //actual time of the beginning of each trial since T=0
+		<< "startTimeReal" << "\t"; //actual time of the beginning of each trial since T=0
 
 	for (int i = 0; i < MAX_PRESS; i++) {
 		sprintf(header, "press%d", i);
@@ -583,6 +575,7 @@ void MyTrial::writeHeader(ostream& out) {
 		// << "sounds" << "\t"
 		<< "MT" << "\t"
 		<< "RT" << "\t"   // added by SKim
+		<< "points" << "\t"
 		<< "isError" << "\t";
 	for (int i = 0; i < MAX_PRESS; i++) {
 		sprintf(header, "response%d", i);
@@ -594,17 +587,12 @@ void MyTrial::writeHeader(ostream& out) {
 	}
 
 	out << "timeThreshold" << "\t"
-		<< "timeThresholdSuper" << "\t"
-		<< "points" << "\t"
-		<< "Gain1" << "\t"
+		<< "timeThresholdSuper" << "\t" << endl;
+		/*<< "Gain1" << "\t"
 		<< "Gain2" << "\t"
 		<< "Gain3" << "\t"
 		<< "Gain4" << "\t"
-		<< "Gain5" << "\t";
-
-	out << "timeThreshold" << "\t"
-		<< "timeThresholdSuper" << "\t" << endl;
-
+		<< "Gain5" << "\t" << endl;*/
 }
 
 ///////////////////////////////////////////////////////////////
@@ -717,7 +705,6 @@ void MyTrial::updateGraphics(int what) {
 			gScreen.print(gs.line[i].c_str(), gs.lineXpos[i], gs.lineYpos[i], gs.size[i] * 1);
 		}
 	}
-
 	
 	if (state == WAIT_GOCUE || state == WAIT_PRESS) {
 			// Draw horizon SKim
@@ -755,11 +742,8 @@ void MyTrial::updateGraphics(int what) {
 					}
 				}
 			}
-
 	}
 }
-
-
 
 //////////////////////////////////////////////////////////////////////
 /// updateHaptics: called from Hardware interrupt to allow for regular
@@ -804,9 +788,9 @@ void MyTrial::control() {
 
 	// check fingers
 	double force;
-	int numNewpress = 0; // is there a new press?
+	int numNewpress = 0;	// is there a new press?
 	int pressedFinger = 0;
-	int released = 0;
+	int released = 0;		// Number of buttons released from pressure
 
 	for (f = 0; f < 5; f++) {
 		force = gBox[hand - 1].getForce(f) * fGain[f];
@@ -833,128 +817,143 @@ void MyTrial::control() {
 	switch (state) {
 	case WAIT_TRIAL: // this state is before you enter the "run X *.tgt" command
 		gs.clearCues();
+		gTimer.reset(0);
 
 		break;
 	case START_TRIAL: // This state is right after you've entered
-		//recording and clears screen for new trial
+		if (gTimer[2] >= startTime) {
+			for (i = 0; i < NUMDISPLAYLINES; i++) {
+				gs.line[i] = "";
+			} // clear screen
 
-		for (i = 0; i < NUMDISPLAYLINES; i++) {
-			gs.line[i] = "";
-		} // clear screen
+			startTime = gTimer[0];
 
-		startTimeReal = gTimer[0];
+			//dataman.startRecording(); // see around line #660
+			gTimer.reset(1);	//time for whole trial
+			gTimer.reset(2);	//time for events in the trial			
 
-		//dataman.startRecording(); // see around line #660
-		gTimer.reset(1);	//time for whole trial
-		gTimer.reset(2);	//time for events in the trial			
-
-		state = START_FIX;
+			state = START_FIX;
+		}
 		break;
 
 	case START_FIX:
 		// check for time out
 		if (released == 5) {
+			startTimeReal = gTimer[0];
+
 			dataman.startRecording();
-			gTimer.reset(2);	// time for events in the trial
 			gs.clearCues();
 			for (i = 0; i < seqLength; i++) {
 				gs.cuePress[i] = cueP.at(i);
 			}
-
+			gTimer.reset(2);	// time for events in the trial
 			state = WAIT_GOCUE;
 		}
+
 		break;
+
 	case WAIT_GOCUE:
-		if (released == 5 && gTimer[2] > PrepTime) { // Wait for PrepTime, preplanning
-			gTimer.reset(2);
+		if (gTimer[2] > PrepTime) { // Wait for PrepTime, preplanning
 			gs.fixationColor = 3;
+			gTimer.reset(2);
 			state = WAIT_PRESS;
 		}
 		break;
 
 	case WAIT_PRESS: //Targets are shown here for preplanning
-		// Check if sequence is finished
-		if (numNewpress > 0 && seqCounter < seqLength) {
-			response[seqCounter] = pressedFinger;
-			pressTime[seqCounter] = gTimer[1];
-			if (seqCounter == 0) {
-				RT = gTimer[2];  // Reaction time for the first press
-			}
-			if (response[seqCounter] == press[seqCounter]) { // if press is correct
-				// PLAY SOUND
-//				channel = Mix_PlayChannel(-1, wavTask[0], 0); // SDL
-				//PlaySound("wav/chimes.wav", NULL, SND_ASYNC | SND_FILENAME);
-			}
-			else if (response[seqCounter] != press[seqCounter]) { // press is wrong
-				isError = 1;
-				// PLAY SOUND
-				// PlaySound("wav/chord.wav", NULL, SND_ASYNC | SND_FILENAME);
-				nFingerErrors++;
-				//				channel = Mix_PlayChannel(-1, wavTask[1], 0); // SDL
-			}
-			seqCounter++;
-		}
-		if (seqCounter == seqLength && released == 5) {
-			gTimer.reset(2); // time for events in the trial
-			state = WAIT_FEEDBACK;
-			gs.fixationColor = 1; 
-		}
-		break;
-
-	/*
-	case WAIT_END_RELEASE:
-
-		if (released == 5) {
-
-			MT = gTimer[1] - pressTime[0]; // Calculate total reaction time starting from the first press
-
-			if (isError > 0) {
-				gNumErrors++;
-				gNumFingerErrors += nFingerErrors;
-			}
-			else {
-				switch (seqType) {
-				case 1:
-					j = 0;
-					break;
-				case 2:
-					j = 1;
-					break;
+		if (gTimer[2] <= MTLimit) {
+			if (numNewpress > 0 && seqCounter < seqLength) {
+				response[seqCounter] = pressedFinger;
+				pressTime[seqCounter] = gTimer[1];
+				if (seqCounter == 0) {
+					RT = gTimer[2];  // Reaction time for the first press
 				}
-
-				critTime = MT;
-
-				if (critTime < timeThresholdSuper[j]) {
-					points = 3;
-					gNumPointsBlock += 3;
-					// PLAY SOUNDS
-	//				channel = Mix_PlayChannel(-1, wavTask[2], 0); // SDL
+				if (response[seqCounter] == press[seqCounter]) { // if press is correct
+					// PLAY SOUND
+					// channel = Mix_PlayChannel(-1, wavTask[0], 0); // SDL
+					//PlaySound("wav/chimes.wav", NULL, SND_ASYNC | SND_FILENAME);
 				}
-				else {
-					points = 1;
-					gNumPointsBlock += 1;
+				else if (response[seqCounter] != press[seqCounter]) { // press is wrong
+					isError = 1;
+					// PLAY SOUND
+					// PlaySound("wav/chord.wav", NULL, SND_ASYNC | SND_FILENAME);
+					nFingerErrors++;
+					// channel = Mix_PlayChannel(-1, wavTask[1], 0); // SDL
 				}
-
+				seqCounter++;
 			}
-			gTimer.reset(2);
-			gs.clearCues();
-
-			gTimer.reset(2);
-			state = WAIT_FEEDBACK;
+			if (seqCounter == seqLength) {
+				gTimer.reset(2);
+				gs.fixationColor = 1;
+				state = WAIT_END_RELEASE;
+			}
 		}
 		else {
-			state = WAIT_PRESS;
+			gTimer.reset(2);
+			gs.fixationColor = 1;
+			state = WAIT_END_RELEASE;
 		}
 
 		break;
-	*/
+
+	case WAIT_END_RELEASE:
+		MT = pressTime[4] - pressTime[0];
+
+		if (isError > 0) {
+			points = -1;
+				
+			gNumErrors++;
+			gNumFingerErrors += nFingerErrors;
+		}
+		else if (MT >= 0) {
+			/*switch (cueType) {
+			case 1:
+				j = 0;
+				break;
+			case 2:
+				j = 1;
+				break;
+			}*/
+			if (MT <= superThreshold) { // 0 <= MT < timeThreshSuper
+				points = 3;
+				// PLAY SOUNDS
+				// channel = Mix_PlayChannel(-1, wavTask[2], 0); // SDL
+			}
+			else if (MT <= timeThreshold) { // timeThreshSuper < MT < timeThresh
+				points = 1;
+			}
+			else { // timeThresh < MT <= MTLimit
+				points = 0;
+			}
+		}
+		else { // MT < 0
+			points = 0;
+		}
+		gNumPointsBlock += points;
+			
+		gs.clearCues();
+		gTimer.reset(2);
+
+		state = WAIT_FEEDBACK;
+
+		break;
 
 	case WAIT_FEEDBACK: 
 		if (gTimer[2] > FEEDBACKTIME) { // TrialTime = PrepTime + MovTimeLim
 			dataman.stopRecording();
 			gs.clearCues();
-			sprintf(buffer, "+%d", points);
-			gs.lineColor[2] = 1;
+			if (points > 0) {
+				sprintf(buffer, "+%d", points);
+				gs.lineColor[2] = 3;
+			}
+			else if (points == 0) {
+				sprintf(buffer, "%d", points);
+				gs.lineColor[2] = 1;
+			}
+			else {
+				sprintf(buffer, "%d", points);
+				gs.lineColor[2] = 2;
+			}
 			gs.line[2] = buffer; // displays the text
 			state = WAIT_ITI;
 		}
@@ -962,14 +961,12 @@ void MyTrial::control() {
 	case WAIT_ITI:  //
 		if (gTimer[2] > iti) { // TrialTime = PrepTime + MovTimeLim 
 			state = END_TRIAL;
-
 		}
 
 		break;
 	case END_TRIAL: //10 as apears in mov
 
 		break;
-
 	}
 }
 

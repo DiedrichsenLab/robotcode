@@ -83,9 +83,6 @@
     <ClCompile Include="..\..\..\source\StimulatorBox.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\source\TRCounter626.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="sslb2.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

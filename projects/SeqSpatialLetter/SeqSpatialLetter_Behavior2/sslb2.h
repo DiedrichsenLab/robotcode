@@ -36,9 +36,10 @@ enum TrialState {
 	START_FIX,	    	// 2 
 	WAIT_GOCUE,			// 3
 	WAIT_PRESS,			// 4
-	WAIT_FEEDBACK,		// 5 
-	WAIT_ITI,			// 6
-	END_TRIAL,			// 7 
+	WAIT_END_RELEASE,	// 5
+	WAIT_FEEDBACK,		// 6 
+	WAIT_ITI,			// 7
+	END_TRIAL,			// 8 
 };
 
 
@@ -149,6 +150,7 @@ public:
 private:
 	TrialState state;						///< State of the Trial 
 	int PrepTime;
+	int MTLimit;
 	int cueType;							///< 0: Letter cue 1: Spatial cue 
 	int press[MAX_PRESS];					///< Which digit to press 
 	int fGiven[MAX_PRESS];
@@ -174,8 +176,8 @@ private:
 		//variables for fMRI synchronisation, SKim
 	//int startSlice;						///< Starting value for slice no. 
 	//int startSlicereal;					///< Starting value for slice no. 
-	double startTime;					///< Time of the start of the trial relative to beginning of block
-	double startTimeReal;				///< Time of the start of the trial  relative to beginning of block
+	double startTime;						// scheduled trial start time
+	double startTimeReal;					// actual trial start time due to button release
 	DataManager<DataRecord, 30000 / 2> dataman;	///< For data recording for MOV file 
 };
 

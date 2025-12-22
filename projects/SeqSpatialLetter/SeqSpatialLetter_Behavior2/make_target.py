@@ -53,8 +53,8 @@ def trialstate_to_node(trialstate=(0,0)):
 	
 	return node
 
-def generate_trial_states(init_seq=0):
-	# args- init_seq: int, the initial node (from 0 to 7)
+def generate_trial_states(init_node=0):
+	# args- init_node: int, the initial node (from 0 to 7)
 
 	# Infinite loop until a valid sequence is generated
 	while True: 
@@ -68,7 +68,7 @@ def generate_trial_states(init_seq=0):
 			paths = [shuffle([[a, b] for b in numbers]) for a in numbers]
 			# Choose initial state based on input argument
 			if len(seq) == 0:
-				currNum = init_seq
+				currNum = init_node
 			else:
 				currNum = random.randint(0, 7)
 			# Traverse the graph until all states are visited
@@ -97,6 +97,34 @@ def generate_trial_states(init_seq=0):
 			break
 		
 	return trial_states, seq
+
+def find_Euler_circuit(adjcency_matrix=np.ones((8,8)), init_node=0):
+	# adjcency_matrix: The adjcency matrix of directed and unweighted graph
+	mat_A = np.copy(adjcency_matrix)
+
+	cnt = 0
+	for ways in mat_A:
+		if sum(ways)%2!=0:
+			cnt += 1
+ #	if not cnt==0 or cnt==2: # Eulerian path doesn't exist
+	if not cnt==0: # Eulerian circuit doesn't exist
+		return None
+
+	stack = [init_node]
+	circuit = []
+	while stack:
+		i = stack[-1]
+		has_edge = True
+		for ways in mat_A:
+			f = np.choice(ways>0)...
+			if f != None:
+				stack.append(f)
+				mat_A[i][f] -= 1
+				has_edge = False
+		if not has_edge:
+			circuit.append(stack.pop())
+
+	return np.array(circuit[::-1])
 
 def generate_tgt_file(trial_states, subj_id=1, run_id=1):
 	# trial_states[k][0]: sequence ID (1,2,3,4), 

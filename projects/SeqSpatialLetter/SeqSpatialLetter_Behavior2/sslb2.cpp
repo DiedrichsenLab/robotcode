@@ -808,9 +808,9 @@ void MyTrial::control() {
 	// All the colors are pre-defined in the Screen class
 	//0Black, 1white, 2red, 3green, 4blue, ....
 
-	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// state: WAIT_TRIAL (0) -> START_TRIAL (1) -> START_FIX (2) -> WAIT_GOCUE (3) -> WAIT_PRESS (4) -> WAIT_FEEDBACK (5) -> WAIT_ITI (6) -> END_TRIAL (7) //
-	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// state: 
+	// WAIT_TRIAL (0) -> START_TRIAL (1) -> START_FIX (2) -> WAIT_GOCUE (3) -> WAIT_PRESS (4) ->
+	// WAIT_END_RELEASE (5) -> WAIT_FEEDBACK (6) -> WAIT_ITI (7) -> END_TRIAL (8)
 	switch (state) {
 	case WAIT_TRIAL: // this state is before you enter the "run X *.tgt" command
 		gs.clearCues();

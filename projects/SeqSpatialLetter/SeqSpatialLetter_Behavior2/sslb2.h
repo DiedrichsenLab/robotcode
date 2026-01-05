@@ -30,6 +30,9 @@ using namespace std;
 ///////////////////////////////////////////////////////////////
 // Enumeration of Trial State 
 ///////////////////////////////////////////////////////////////
+// state: 
+// WAIT_TRIAL (0) -> START_TRIAL (1) -> START_FIX (2) -> WAIT_GOCUE (3) -> WAIT_PRESS (4) ->
+// WAIT_END_RELEASE (5) -> WAIT_FEEDBACK (6) -> WAIT_ITI (7) -> END_TRIAL (8)
 enum TrialState {
 	WAIT_TRIAL,			// 0
 	START_TRIAL,		// 1

@@ -79,12 +79,11 @@ float timeThresPercent = 110;	///< 110% of current median MT (previous block)
 float superThresPercent = 95;	///< 95% of current median MT (previous block)
 double timeThreshold = 2000;	// unit: ms 
 double superThreshold = 1000;	// unit: ms
-int b = 0;				///< Counter for relative block number with respect to start of session
 double medianMTarray[9];	///< preallocate array to keep track of MTs within session
 double ERarray[9];			///< preallocate array to keep track of ERs within session
 float ERthreshold = 20;		///< Trheshold of 20% of error rate in order to lower MT thresholds
 
-#define FEEDBACKTIME 400	// time for which the points of the trial is displayed at the end of a trial
+#define FEEDBACKTIME 200	// time for which the points of the trial is displayed at the end of a trial
 // Neda increased feedback time so that the subject has time to blink
 string FINGERSOUND[6] = { "A.wav", "C.wav", "D.wav", "E.wav", "G.wav" };
 //string TASKSOUNDS[5] = { "../../util/wav/smb_kick.wav",
@@ -120,7 +119,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	LPSTR kposzArgs, int nWinMode)
 {
 	gThisInst = hThisInst;
-	gExp = new MyExperiment("SeqSpatialLetter_Behavior2", "sslb2", "C:/data/SeqSpatialLetter_Behavior2/");
+	gExp = new MyExperiment("SeqSpatialLetter_Behavior2","sslb2","C:/data/SeqSpatialLetter_Behavior2/");
 	gExp->redirectIOToConsole();
 
 	// the white interactive window
@@ -406,16 +405,16 @@ void quartiles(double array[], int num_val, double& q1, double& q3) {
 /// giveFeedback and put it to the graphic state
 ///////////////////////////////////////////////////////////////
 void MyBlock::giveFeedback() {
-	int i;
-	int n = 0; // number of correct trials
-	int nn = 0; // number of total trials
+	int bn = gExp->theBlock->blockNumber;	// current block number
+	int n = 0;		// number of correct trials
+	int nn = 0;		// number of total trials
 	double MTarray[68];
 	double medianMT = 0;
 	MyTrial* tpnr;  //MyTrial object --> inherits class Trial in Experiment.h
 	
 	ERarray[0] = 0; // Initialise the ER for the 0th block to be 0
 	medianMTarray[0] = 20000;	//initialize MT array for the 0th block to be 20000 (impossible value, we have no median MT before that)
-	for (i = 0; i < trialNum; i++) { // check each trial
+	for (int i = 0; i < trialNum; i++) { // check each trial
 		tpnr = (MyTrial*)trialVec.at(i);
 		if (tpnr->isError == 0) {
 			MTarray[n] = tpnr->MT;	//remember the MT from the correct trials and add them
@@ -433,12 +432,11 @@ void MyBlock::giveFeedback() {
 		//superThreshold = q3;
 	//}
 
-	b++;	// increase block counter
 	if (n > 0) { //if at least one correct trial
 		medianMT = median(MTarray, n);
-		medianMTarray[b] = medianMT; // median of movement times
-		ERarray[b] = 100 * ((double)(gNumFingerErrors)) / (double)(nn); // error rate
-		if (ERarray[b] <= ERthreshold) {
+		medianMTarray[bn] = medianMT; // median of movement times
+		ERarray[bn] = 100 * ((double)(gNumFingerErrors)) / (double)(nn); // error rate
+		if (ERarray[bn] <= ERthreshold) {
 			//if (medianMT < (timeThreshold / (timeThresPercent * 0.01))) { //adjust only if MT of current block faster than MT that generated current threshold
 			timeThreshold = medianMT * (timeThresPercent * 0.01); // previous MT+10%
 			superThreshold = medianMT * (superThresPercent * 0.01); // previous MT-5% 	
@@ -450,24 +448,21 @@ void MyBlock::giveFeedback() {
 	}
 	else {
 		medianMT = 0;
-		ERarray[b] = 100; // 100% error rate
+		ERarray[bn] = 100; // 100% error rate
 	}
 	//ERarray[b] = 100 * ((double)gNumErrors) / (double)(trialNum); // error rate
 	//ERarray[b] = 100 * ((double)gNumFingerErrors) / (double)(trialNum * 14); // error rate, SKim
 
-	cout << "Points calculated!" << endl;
+	sprintf(buffer, "** Run %d completed! **", bn);
+	cout << buffer << endl;
 
-	// print FEEDBACK on the screen
-	sprintf(buffer, "Error rate: %.1f%%\tMT %2.0fms", ERarray[b], medianMTarray[b]);
-
-	//gs.line[0] = buffer;
-	//gs.lineColor[0] = 1;
-	gs.line[1] = buffer;
-	gs.lineColor[1] = 1;
+	sprintf(buffer, "Error rate: %.1f%%\tMT %2.0fms", ERarray[bn], medianMTarray[bn]);
+	gs.line[0] = buffer;	// print it on the subject's screen
+	gs.lineColor[0] = 1;
 
 	gnumPoints += gNumPointsBlock;
 	sprintf(buffer, "Point you've got: %d   Total points: %d", gNumPointsBlock, gnumPoints);
-	gs.line[2] = buffer;
+	gs.line[2] = buffer;	// print it on the subject's screen
 	gs.lineColor[2] = 1;
 }
 ///////////////////////////////////////////////////////////////
@@ -504,13 +499,13 @@ MyTrial::MyTrial() {
 ///////////////////////////////////////////////////////////////
 void MyTrial::read(istream& in) {
 	// read from .tgt file, [startTime, cueType, press 1-5, iti, PrepTime]
-	(in) >> startTime >> cueType;
+	(in) >> startTime >> PrepTime >> cueType;
 
 	for (int i = 0; i < MAX_PRESS; i++) { // MAX_PRESS = 14--> read presses
 		(in) >> press[i];
 		cueP += to_string(press[i]);
 	}
-	(in) >> iti >> PrepTime ;
+	(in) >> iti ;
 
 	// do other job
 	string zero("0");
@@ -556,7 +551,7 @@ void MyTrial::writeDat(ostream& out) {
 ///////////////////////////////////////////////////////////////
 // Header
 ///////////////////////////////////////////////////////////////
-void MyTrial::writeHeader(ostream& out) {
+void MyTrial::writeHeader(ostream& out) { // save the header only when BN==1
 	char header[200];
 	out << "cueType" << "\t"
 		//<< "Horizon" << "\t"
@@ -814,27 +809,27 @@ void MyTrial::control() {
 	switch (state) {
 	case WAIT_TRIAL: // this state is before you enter the "run X *.tgt" command
 		gs.clearCues();
-		gTimer.reset(0);
+		gTimer.reset(0);	// A timer for whole block
 
 		break;
+
 	case START_TRIAL: // This state is right after you've entered
-		if (gTimer[2] >= startTime) {
-			for (i = 0; i < NUMDISPLAYLINES; i++) {
-				gs.line[i] = "";
-			} // clear screen
+		for (i = 0; i < NUMDISPLAYLINES; i++) {
+			gs.line[i] = "";
+		} // clear screen
 
-			startTime = gTimer[0];
+		//dataman.startRecording(); // see around line #660
+		gTimer.reset(1);	// A timer for whole trial
+		gTimer.reset(2);	// A timer for each event in the trial			
 
-			//dataman.startRecording(); // see around line #660
-			gTimer.reset(1);	//time for whole trial
-			gTimer.reset(2);	//time for events in the trial			
-
+		if (gTimer[0] >= startTime) { // ready to run the task
 			state = START_FIX;
 		}
+
 		break;
 
 	case START_FIX:
-		// check for time out
+		// check timeout
 		if (released == 5) {
 			startTimeReal = gTimer[0];
 
@@ -843,7 +838,7 @@ void MyTrial::control() {
 			for (i = 0; i < seqLength; i++) {
 				gs.cuePress[i] = cueP.at(i);
 			}
-			gTimer.reset(2);	// time for events in the trial
+			gTimer.reset(2);
 			state = WAIT_GOCUE;
 		}
 
@@ -861,7 +856,7 @@ void MyTrial::control() {
 		if (gTimer[2] <= MTLimit) {
 			if (numNewpress > 0 && seqCounter < seqLength) {
 				response[seqCounter] = pressedFinger;
-				pressTime[seqCounter] = gTimer[1];
+				pressTime[seqCounter] = gTimer[1];	// initially, pressTime[i] = -1
 				if (seqCounter == 0) {
 					RT = gTimer[2];  // Reaction time for the first press
 				}
@@ -902,21 +897,13 @@ void MyTrial::control() {
 			gNumErrors++;
 			gNumFingerErrors += nFingerErrors;
 		}
-		else if (MT >= 0) {
-			/*switch (cueType) {
-			case 1:
-				j = 0;
-				break;
-			case 2:
-				j = 1;
-				break;
-			}*/
-			if (MT <= superThreshold) { // 0 <= MT < timeThreshSuper
+		else if (MT > 0) {	// with isError==0
+			if (MT <= superThreshold) { // 0 < MT <= timeThreshSuper
 				points = 3;
 				// PLAY SOUNDS
 				// channel = Mix_PlayChannel(-1, wavTask[2], 0); // SDL
 			}
-			else if (MT <= timeThreshold) { // timeThreshSuper < MT < timeThresh
+			else if (MT <= timeThreshold) { // timeThreshSuper < MT <= timeThresh
 				points = 1;
 			}
 			else { // timeThresh < MT <= MTLimit
@@ -926,7 +913,7 @@ void MyTrial::control() {
 				points = max(0, points-2);
 			}
 		}
-		else { // MT < 0
+		else { // MT <= 0
 			points = 0;
 		}
 		gNumPointsBlock += points;
@@ -939,27 +926,28 @@ void MyTrial::control() {
 		break;
 
 	case WAIT_FEEDBACK: 
-		if (gTimer[2] > FEEDBACKTIME) { // TrialTime = PrepTime + MovTimeLim
-			dataman.stopRecording();
+		if (gTimer[2] > FEEDBACKTIME) {
 			gs.clearCues();
 			if (points > 0) {
 				sprintf(buffer, "+%d", points);
-				gs.lineColor[2] = 3;
+				gs.lineColor[2] = 3;	// Green
 			}
 			else if (points == 0) {
 				sprintf(buffer, "%d", points);
-				gs.lineColor[2] = 1;
+				gs.lineColor[2] = 1;	// White
 			}
 			else {
 				sprintf(buffer, "%d", points);
-				gs.lineColor[2] = 2;
+				gs.lineColor[2] = 2;	// Red
 			}
-			gs.line[2] = buffer; // displays the text
+			gs.line[2] = buffer;	// displays the reward
+
 			state = WAIT_ITI;
 		}
 
 	case WAIT_ITI:  //
-		if (gTimer[2] > iti) { // TrialTime = PrepTime + MovTimeLim 
+		if (gTimer[2] > iti) {
+			dataman.stopRecording();
 			state = END_TRIAL;
 		}
 

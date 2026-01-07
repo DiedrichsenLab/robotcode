@@ -308,14 +308,14 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 
 	else if (arguments[0] == "thresh") {
 		if (numArgs != 3) {
-			tDisp.print("USAGE: thresh threshold superthres");
+			tDisp.print("USAGE: thresh superThreshold Threshold");
 		}
 		else {
 			sscanf(arguments[1].c_str(), "%f", &arg[0]);
-			timeThreshold = arg[0];
+			superThreshold = arg[0];
 
 			sscanf(arguments[2].c_str(), "%f", &arg[1]);
-			superThreshold = arg[1];
+			timeThreshold = arg[1];
 
 		}
 	}
@@ -374,7 +374,7 @@ void MyBlock::start() {
 }
 
 //	MDI0.cpp
-void get_q1_q3(int array[], int num_val, double& q1, double& q3) {
+void get_q1_q3(double array[], int num_val, double& q1, double& q3) {
 	int i, j;
 	double dummy;
 
@@ -407,8 +407,9 @@ void get_q1_q3(int array[], int num_val, double& q1, double& q3) {
 ///////////////////////////////////////////////////////////////
 void MyBlock::giveFeedback() {
 	int bn = gExp->theBlock->blockNumber;	// current block number
+	int totTrials = gExp->theBlock->numTrials;
 	
-	int tmpMT, tmpER, CountValidTrials=0;
+	int tmpMT, tmpER, CountValidTrials = 0;
 	MyTrial* tpnr;
 	for (int i = 0; i < trialNum; i++) { //check each trial
 		tpnr = (MyTrial*)trialVec.at(i);
@@ -420,24 +421,33 @@ void MyBlock::giveFeedback() {
 			CountValidTrials++;
 		}
 		//Ptarray[i] = (int)(tpnr->point);
-		numPointsTot = numPointsTot + tpnr->numPoints;
+		//numPointsTot = numPointsTot + tpnr->numPoints;
 	}
 
-	int* tmpMTarray = new int[CountValidTrials];
+	double* tmpMTarray = new double[CountValidTrials];
 	for (int i = 0; i < trialNum; i++) {
 		tpnr = (MyTrial*)trialVec.at(i);
 		tmpMT = (int)(tpnr->MT);
 		tmpER = (int)(tpnr->isError);
 		if ((tmpMT > 0) and (tmpER == 0)) { // only include valid trials
-			tmpMTarray[i] = MTarray[i];
+			tmpMTarray[i] = (double)MTarray[i];
 		}
 	}
 	double q1 = 0, q3 = 0;
 	get_q1_q3(tmpMTarray, CountValidTrials, q1, q3);
 
-	scanf(buffer, "** End of Block %d **", bn);
-	cout << buffer << endl;
-	scanf(buffer, " MT threshold: %d, %d", q1, q3);
+	sprintf(buffer, "Block %d / %d complete !",bn,8);
+	gs.line[0] = buffer;
+	gs.lineColor[0] = 1;
+	sprintf(buffer, "Points: %d / %d", gNumPointsBlock, 3*totTrials);
+	gs.line[1] = buffer;
+	gs.lineColor[1] = 1;
+	double ErrorRate = (double)(totTrials-CountValidTrials)*100 / totTrials;
+	sprintf(buffer, "Error Rate: %2.1f%", ErrorRate);
+	gs.line[2] = buffer;
+	gs.lineColor[2] = 1;
+
+	sprintf(buffer, "block %d (Error Rate=%2.1f%): Thresh_q1=%2.0fs    Thresh_q3=%2.0fs", bn, ErrorRate, q1, q3);
 	cout << buffer << endl;
 }
 
@@ -610,10 +620,10 @@ void MyTrial::updateTextDisplay() {
 	//sprintf(buffer,"Force:    %2.2f %2.2f %2.2f %2.2f %2.2f",gBox[hand-1].getForce(0),gBox[hand-1].getForce(1),gBox[hand-1].getForce(2),gBox[hand-1].getForce(3),gBox[hand-1].getForce(4));
 	//tDisp.setText(buffer,2,0);
 
-	sprintf(buffer, "State : %d   Trial: %d", state, gExp->theBlock->trialNum + 1);
+	sprintf(buffer, "Block: %d    Trial: %d/%d    State : %d", gExp->theBlock->blockNumber, gExp->theBlock->trialNum + 1, gExp->theBlock->numTrials, state);
 	tDisp.setText(buffer, 2, 0);
 
-	sprintf(buffer, "threshold : %2.0f Super: %2.0f ", timeThreshold, superThreshold);
+	sprintf(buffer, "SuperThresh: %2.0f Thresh : %2.0f ", superThreshold, timeThreshold);
 	tDisp.setText(buffer, 3, 0);
 
 	sprintf(buffer, "Press:  %d %d %d %d %d", finger[0], finger[1], finger[2], finger[3], finger[4]);
@@ -622,7 +632,7 @@ void MyTrial::updateTextDisplay() {
 	sprintf(buffer, "sequence Counter: %d ", seqCounter);
 	tDisp.setText(buffer, 5, 0);
 
-	sprintf(buffer, "gNumPointsBlock: %d", gNumPointsBlock);
+	sprintf(buffer, "Total Points: %d", gNumPointsBlock);
 	tDisp.setText(buffer, 8, 0);
 
 //	sprintf(buffer, "trial : %d cueType : %d state : %d", cTrial, cueType, state);

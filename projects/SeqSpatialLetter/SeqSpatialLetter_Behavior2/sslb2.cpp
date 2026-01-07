@@ -73,14 +73,15 @@ int gNumErrors = 0;		///< How many erros did you make during a block
 int gNumFingerErrors = 0;	// How many finger errors did you make during a block, SKim
 int finger[5];			///< State of each finger
 int gNumPointsBlock = 0;
-int gnumPoints = 0;
 
-float timeThresPercent = 110;	///< 110% of current median MT (previous block)
-float superThresPercent = 95;	///< 95% of current median MT (previous block)
+//float timeThresPercent = 110;	///< 110% of current median MT (previous block)
+//float superThresPercent = 95;	///< 95% of current median MT (previous block)
 double timeThreshold = 2000;	// unit: ms 
 double superThreshold = 1000;	// unit: ms
-double medianMTarray[9];	///< preallocate array to keep track of MTs within session
-double ERarray[9];			///< preallocate array to keep track of ERs within session
+
+int MTarray[70] = {0};
+int ERarray[70] = {0};
+int Ptarray[70] = {0};
 float ERthreshold = 20;		///< Trheshold of 20% of error rate in order to lower MT thresholds
 
 #define FEEDBACKTIME 200	// time for which the points of the trial is displayed at the end of a trial
@@ -373,7 +374,7 @@ void MyBlock::start() {
 }
 
 //	MDI0.cpp
-void quartiles(double array[], int num_val, double& q1, double& q3) {
+void get_q1_q3(int array[], int num_val, double& q1, double& q3) {
 	int i, j;
 	double dummy;
 
@@ -389,13 +390,13 @@ void quartiles(double array[], int num_val, double& q1, double& q3) {
 	}
 
 	// Calculate Q1
-	if (num_val % 2 == 0) {
-		i = num_val / 2;
+	if (num_val % 2 == 0) { // num_val is even
+		i = num_val * 0.5;
 		q1 = median(array, i); // median of lower half
 		q3 = median(array + i, i); // median of upper half
 	}
-	else {
-		i = (num_val - 1) / 2;
+	else { // num_val is odd
+		i = (num_val - 1) * 0.5;
 		q1 = median(array, i + 1); // median of lower half (including median)
 		q3 = median(array + i + 1, i); // median of upper half
 	}
@@ -406,65 +407,40 @@ void quartiles(double array[], int num_val, double& q1, double& q3) {
 ///////////////////////////////////////////////////////////////
 void MyBlock::giveFeedback() {
 	int bn = gExp->theBlock->blockNumber;	// current block number
-	int n = 0;		// number of correct trials
-	int nn = 0;		// number of total trials
-	double MTarray[68];
-	double medianMT = 0;
-	MyTrial* tpnr;  //MyTrial object --> inherits class Trial in Experiment.h
 	
-	ERarray[0] = 0; // Initialise the ER for the 0th block to be 0
-	medianMTarray[0] = 20000;	//initialize MT array for the 0th block to be 20000 (impossible value, we have no median MT before that)
-	for (int i = 0; i < trialNum; i++) { // check each trial
+	int tmpMT, tmpER, CountValidTrials=0;
+	MyTrial* tpnr;
+	for (int i = 0; i < trialNum; i++) { //check each trial
 		tpnr = (MyTrial*)trialVec.at(i);
-		if (tpnr->isError == 0) {
-			MTarray[n] = tpnr->MT;	//remember the MT from the correct trials and add them
-			// n += tpnr->numPoints;
-			n++;	// remember number of correct trials
+		tmpMT = (int)(tpnr->MT);
+		tmpER = (int)(tpnr->isError);
+		MTarray[i] = tmpMT;
+		ERarray[i] = tmpER;
+		if ((tmpMT>0) and (tmpER==0)) {
+			CountValidTrials++;
 		}
-		nn++;		// remember number of total trials
+		//Ptarray[i] = (int)(tpnr->point);
+		numPointsTot = numPointsTot + tpnr->numPoints;
 	}
-	// before eventual thres update, store the previous thres for writing in the .dat file
 
-	//double q1 = 0, q3 = 0;
-	//quartiles(MTarray, trialNum, q1, q3);
-	//if (accurateResp > 5) {
-		//timeThreshold = q1;
-		//superThreshold = q3;
-	//}
-
-	if (n > 0) { //if at least one correct trial
-		medianMT = median(MTarray, n);
-		medianMTarray[bn] = medianMT; // median of movement times
-		ERarray[bn] = 100 * ((double)(gNumFingerErrors)) / (double)(nn); // error rate
-		if (ERarray[bn] <= ERthreshold) {
-			//if (medianMT < (timeThreshold / (timeThresPercent * 0.01))) { //adjust only if MT of current block faster than MT that generated current threshold
-			timeThreshold = medianMT * (timeThresPercent * 0.01); // previous MT+10%
-			superThreshold = medianMT * (superThresPercent * 0.01); // previous MT-5% 	
-		}
-		else {
-			timeThreshold = medianMT * ((timeThresPercent+10) * 0.01); // previous MT+20%
-			superThreshold = medianMT * ((superThresPercent-5) * 0.01); // previous MT-10% 	
+	int* tmpMTarray = new int[CountValidTrials];
+	for (int i = 0; i < trialNum; i++) {
+		tpnr = (MyTrial*)trialVec.at(i);
+		tmpMT = (int)(tpnr->MT);
+		tmpER = (int)(tpnr->isError);
+		if ((tmpMT > 0) and (tmpER == 0)) { // only include valid trials
+			tmpMTarray[i] = MTarray[i];
 		}
 	}
-	else {
-		medianMT = 0;
-		ERarray[bn] = 100; // 100% error rate
-	}
-	//ERarray[b] = 100 * ((double)gNumErrors) / (double)(trialNum); // error rate
-	//ERarray[b] = 100 * ((double)gNumFingerErrors) / (double)(trialNum * 14); // error rate, SKim
+	double q1 = 0, q3 = 0;
+	get_q1_q3(tmpMTarray, CountValidTrials, q1, q3);
 
-	sprintf(buffer, "** Run %d completed! **", bn);
+	scanf(buffer, "** End of Block %d **", bn);
 	cout << buffer << endl;
-
-	sprintf(buffer, "Error rate: %.1f%%\tMT %2.0fms", ERarray[bn], medianMTarray[bn]);
-	gs.line[0] = buffer;	// print it on the subject's screen
-	gs.lineColor[0] = 1;
-
-	gnumPoints += gNumPointsBlock;
-	sprintf(buffer, "Point you've got: %d   Total points: %d", gNumPointsBlock, gnumPoints);
-	gs.line[2] = buffer;	// print it on the subject's screen
-	gs.lineColor[2] = 1;
+	scanf(buffer, " MT threshold: %d, %d", q1, q3);
+	cout << buffer << endl;
 }
+
 ///////////////////////////////////////////////////////////////
 /// My Trial class contains the main info of how a trial in this experiment is run
 ///////////////////////////////////////////////////////////////
@@ -484,7 +460,7 @@ MyTrial::MyTrial() {
 	MT = 0;				// init total movement time, SKim edited
 	RT = 0;				// Added by SKim, reaction time
 
-	points = 0;
+	point = 0;
 
 	for (int i = 0; i < MAX_PRESS; i++) { // MAX_PRESS = 5 defined in header
 		response[i] = -1;	// finger response
@@ -530,7 +506,7 @@ void MyTrial::writeDat(ostream& out) {
 		// << sounds << "\t"
 		<< MT << "\t"
 		<< RT << "\t"
-		<< points << "\t"
+		<< point << "\t"
 		<< isError << "\t";
 	for (int i = 0; i < MAX_PRESS; i++) {
 		out << response[i] << "\t";
@@ -567,7 +543,7 @@ void MyTrial::writeHeader(ostream& out) { // save the header only when BN==1
 		// << "sounds" << "\t"
 		<< "MT" << "\t"
 		<< "RT" << "\t"   // added by SKim
-		<< "points" << "\t"
+		<< "point" << "\t"
 		<< "isError" << "\t";
 	for (int i = 0; i < MAX_PRESS; i++) {
 		sprintf(header, "response%d", i);
@@ -892,31 +868,31 @@ void MyTrial::control() {
 		MT = pressTime[4] - pressTime[0];
 
 		if (isError > 0) {
-			points = -1;
+			point = -1;
 				
 			gNumErrors++;
 			gNumFingerErrors += nFingerErrors;
 		}
 		else if (MT > 0) {	// with isError==0
 			if (MT <= superThreshold) { // 0 < MT <= timeThreshSuper
-				points = 3;
+				point = 3;
 				// PLAY SOUNDS
 				// channel = Mix_PlayChannel(-1, wavTask[2], 0); // SDL
 			}
 			else if (MT <= timeThreshold) { // timeThreshSuper < MT <= timeThresh
-				points = 1;
+				point = 1;
 			}
 			else { // timeThresh < MT <= MTLimit
-				points = 0;
+				point = 0;
 			}
 			if (RT >= 500) { // Do not extend the PrepTime!
-				points = max(0, points-2);
+				point = max(0, point-2);
 			}
 		}
 		else { // MT <= 0
-			points = 0;
+			point = 0;
 		}
-		gNumPointsBlock += points;
+		gNumPointsBlock += point;
 			
 		gs.clearCues();
 		gTimer.reset(2);
@@ -928,16 +904,16 @@ void MyTrial::control() {
 	case WAIT_FEEDBACK: 
 		if (gTimer[2] > FEEDBACKTIME) {
 			gs.clearCues();
-			if (points > 0) {
-				sprintf(buffer, "+%d", points);
+			if (point > 0) {
+				sprintf(buffer, "+%d", point);
 				gs.lineColor[2] = 3;	// Green
 			}
-			else if (points == 0) {
-				sprintf(buffer, "%d", points);
+			else if (point == 0) {
+				sprintf(buffer, "%d", point);
 				gs.lineColor[2] = 1;	// White
 			}
 			else {
-				sprintf(buffer, "%d", points);
+				sprintf(buffer, "%d", point);
 				gs.lineColor[2] = 2;	// Red
 			}
 			gs.line[2] = buffer;	// displays the reward

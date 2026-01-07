@@ -166,7 +166,7 @@ private:
 	int isError;							///< Was there an error in the finger presses?
 	int numPoints;							///< Number of points awarded 
 	int nFingerErrors;						// Number of error tappings, SKim
-	int points;								///< How many points did you get in a trial 0/1/-1?
+	int point;								///< How many points did you get in a trial 0/1/-1?
 	int seqLength;							///< How long is the sequence (arbitrary)?
 	double pressTime[MAX_PRESS];			///< Time when each finger was pressed 
 	double releaseTime[MAX_PRESS];			///< Time when each finger was release

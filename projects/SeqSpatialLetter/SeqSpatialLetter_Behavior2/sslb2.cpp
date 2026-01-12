@@ -101,7 +101,7 @@ char TEXT[5] = { '1','2','3','4','5' };
 #define SIZE_CUE 9    // the font size of presses
 #define FIXCROSS_SIZE 1
 
-// Force Thresholds
+// Force Thresholdsf
 #define STARTTH 0.4	// Threshold for start
 #define preTH 1		// Press threshold
 #define relTH 0.5	// Release threshold
@@ -469,6 +469,7 @@ MyTrial::MyTrial() {
 	seqCounter = 0;		// init the sequence index variable
 	MT = 0;				// init total movement time, SKim edited
 	RT = 0;				// Added by SKim, reaction time
+	onsettime = 0;
 
 	point = 0;
 
@@ -807,6 +808,7 @@ void MyTrial::control() {
 		//dataman.startRecording(); // see around line #660
 		gTimer.reset(1);	// A timer for whole trial
 		gTimer.reset(2);	// A timer for each event in the trial			
+		onsettime = gTimer[0]; // time of the beginning of each trial since T=0
 
 		if (gTimer[0] >= startTime) { // ready to run the task
 			state = START_FIX;
@@ -842,7 +844,8 @@ void MyTrial::control() {
 		if (gTimer[2] <= MTLimit) {
 			if (numNewpress > 0 && seqCounter < seqLength) {
 				response[seqCounter] = pressedFinger;
-				pressTime[seqCounter] = gTimer[1];	// initially, pressTime[i] = -1
+				//pressTime[seqCounter] = gTimer[1];	// initially, pressTime[i] = -1. However if pressed lately, error could occur like a negative MT.
+				pressTime[seqCounter] = gTimer[0] - onsettime;	// time since the trial onset
 				if (seqCounter == 0) {
 					RT = gTimer[2];  // Reaction time for the first press
 				}
@@ -895,9 +898,9 @@ void MyTrial::control() {
 			else { // timeThresh < MT <= MTLimit
 				point = 0;
 			}
-			if (RT >= 500) { // Do not extend the PrepTime!
-				point = max(0, point-2);
-			}
+			//if (RT >= 500) { // Do not extend the PrepTime!
+			//	point = max(0, point-2);
+			//}
 		}
 		else { // MT <= 0
 			point = 0;

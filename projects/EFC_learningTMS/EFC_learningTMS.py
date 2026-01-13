@@ -653,7 +653,7 @@ class MainWindow(QtWidgets.QMainWindow):
         
                 # Create folders if they don't exist
                 os.makedirs(raw_data_folder, exist_ok=True)
-                os.makedirs(plotted_data_folder, exist_ok=True)
+                # os.makedirs(plotted_data_folder, exist_ok=True)
             except Exception as e:
                 QMessageBox.warning(self, "Warning", "Could not create data folders. Data may not be saved properly.")
         

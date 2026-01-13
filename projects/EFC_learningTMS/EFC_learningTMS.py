@@ -624,7 +624,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self._block_points += 1
             else:
                 # TMS trials: success but no points
-                self._countdown_label.setText("TMS")
+                self._countdown_label.setText("")
                 self._countdown_label.setStyleSheet(
                     "color: black; font-size: 48px; font-weight: bold;"
                 )

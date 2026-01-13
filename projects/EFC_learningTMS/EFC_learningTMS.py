@@ -299,7 +299,7 @@ class MainWindow(QtWidgets.QMainWindow):
             force_line = pg.PlotDataItem(
                 x=[i - line_width/2, i + line_width/2],
                 y=[0, 0],
-                pen=pg.mkPen('r', width=5)
+                pen=pg.mkPen('black', width=8)
             )
             force_line.setVisible(True)  # Always visible when streaming
             self._force_plot.addItem(force_line)
@@ -612,13 +612,25 @@ class MainWindow(QtWidgets.QMainWindow):
     def _handle_trial_success(self):
         """Handle successful trial completion and block-based flow"""
         try:
-            # Show point message (+1)
-            self._countdown_label.setText("+1")
-            self._countdown_label.setStyleSheet("color: green; font-size: 48px; font-weight: bold;")
             
-            # Update points
-            self._block_points += 1
+            trial_type = self._target_sets[self._current_target_set_index]['Type']
+            
+            if trial_type != 'TMS':
+                # Normal trials get points
+                self._countdown_label.setText("+1")
+                self._countdown_label.setStyleSheet(
+                    "color: green; font-size: 48px; font-weight: bold;"
+                )
+                self._block_points += 1
+            else:
+                # TMS trials: success but no points
+                self._countdown_label.setText("TMS")
+                self._countdown_label.setStyleSheet(
+                    "color: black; font-size: 48px; font-weight: bold;"
+                )
+            
             self._update_points_display()
+
         
             # Stop streaming to save hardware file (trial end)
             self._stop_streaming(is_trial_end=True)

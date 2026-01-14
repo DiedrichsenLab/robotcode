@@ -895,9 +895,9 @@ void MyTrial::control() {
 			else { // timeThresh < MT <= MTLimit
 				point = 0;
 			}
-			if (RT >= 500) { // Do not extend the PrepTime!
-				point = max(0, point-2);
-			}
+			//if (RT >= 500) { // Do not extend the PrepTime!
+			//	point = max(0, point-2);
+			//}
 		}
 		else { // MT <= 0
 			point = 0;

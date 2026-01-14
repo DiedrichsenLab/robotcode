@@ -135,26 +135,13 @@ private:
 	int feedbackTime;
 	int BN;
 	int QuartetType;
-	double rewThresh1 = 3000;
-	double rewThresh2 = 4500;
-	//int lastTrial;							///< Is that the last Trial? (important for scanning to the the last TRs)
+	double rewThresh1;						/// Recorded value of the applied reward threshold (from global)
+	double rewThresh2;						/// Recorded value of the applied reward threshold (from global)
 	int startTime;							///< When should the next trail start? is independent of TR time!
 	int planTime;
 	int execTime;
 	string sequence;
-	//int seqType;							///< Which sequence of finger movments has to be done? 
-	//int announce;
-	//int feedback;							///< Give Feedback or not? 
 	int iti;								///< Timedelay before the next trail starts in[ms]
-	//int trialType;							///< Are we doing a explain, test/left-right, train, trainscan, scan Trial? No effect on programm
-	//
-	//int hand;								///< Which board are we using left= 0 right= 1
-	//int seqCounter;							///< Which position in the seq are we?
-	//int errorFlag;							///< Was there an error in the finger presses?
-	//int lateFlag;							///< Was seq  complete and correct but time was already up?
-	//int incomplete;							///< Was sequence incomplete due to timethreshold but correct so fare?
-	//int hardpressKnown[NUMFINGERS];			///< Do we already meassure a hard press on that fingure?
-	//int hardPress;							///< Was the force to high for the finger presses?
 	int response[NUMFINGERS];					///< Which key is pressed 
 	bool releaseState = TRUE; //[NUMFINGERS];				///< Was the finger released already or is it still pressed?
 	int unpressedFinger = 0;

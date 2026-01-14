@@ -16,8 +16,8 @@ TextDisplay tDisp;				///< Text Display
 Screen gScreen;					///< Screen 
 TRCounter gCounter;				///< TR Counter 
 StimulatorBox gBox;			///< Stimulator Box
-double rewThresh1_global = 3000;
-double rewThresh2_global = 4500;
+double rewThresh1_global = 1890;
+double rewThresh2_global = 2530;
 char gKey;
 bool gKeyPressed;
 
@@ -33,9 +33,8 @@ char buffer[300];					///< String buffer
 HINSTANCE gThisInst;					///< Instance of Windows application 
 Experiment* gExp;					///< Pointer to myExperiment 
 Trial* currentTrial;					///< Pointer to current Trial 
-int accurateResp = 0;
-
-int digitCounter = 0;
+int accurateResp = 0;				/// 
+int digitCounter = 0;				
 
 #define TRTIME 1000
 int sliceNumber = 32;			///< How many slices do we have
@@ -230,7 +229,7 @@ void MyBlock::start() {
 	gCounter.start();
 }
 
-void quartiles(double array[], int num_val, double& q1, double& q3) {
+void quartiles(double array[], int num_val, double& q1, double& q2, double& q3) {
 	int i, j;
 	double dummy;
 
@@ -245,32 +244,29 @@ void quartiles(double array[], int num_val, double& q1, double& q3) {
 		}
 	}
 
-	// Calculate Q1
-	if (num_val % 2 == 0) {
-		i = num_val / 2;
-		q1 = median(array, i); // median of lower half
-		q3 = median(array + i, i); // median of upper half
-	}
-	else {
-		i = (num_val - 1) / 2;
-		q1 = median(array, i + 1); // median of lower half (including median)
-		q3 = median(array + i + 1, i); // median of upper half
-	}
+	int i1 = num_val / 4;
+	int i2 = num_val / 2; 
+	int i3 = num_val / 4 * 3; 
+
+	q1 = array[i1];
+	q2 = array[i2];
+	q3 = array[i3];
 }
 
 ///////////////////////////////////////////////////////////////
 /// giveFeedback and put it to the graphic state 
 ///////////////////////////////////////////////////////////////
+
 void MyBlock::giveFeedback() {
 	
 	double MT;
 	double* MTarray = new double[numTrials];
-	double q1 = 0, q3 = 0;
+	double q1 = 0, q2 =0, q3 = 0;
 	int i;
 	MyTrial* tpnr;
 	int numPointsTot = 0;
 
-	for (i = 0; i < trialNum; i++) { //check each trial
+	for (i = 0; i < numTrials; i++) { //check each trial
 		tpnr = (MyTrial*)trialVec.at(i);
 		MTarray[i] = tpnr->MT;
 		numPointsTot = numPointsTot + tpnr->numPoints;
@@ -280,18 +276,21 @@ void MyBlock::giveFeedback() {
 	sprintf(buffer, "End of Block");
 	gs.line[0] = buffer;
 	gs.lineColor[0] = 1;
-
-	sprintf(buffer, "Correct: %d/%d", accurateResp, trialNum);
+	
+	
+	sprintf(buffer, "Correct: %d/%d", accurateResp, numTrials);
 	gs.line[1] = buffer;
 	gs.lineColor[1] = 1;
 
+	
 	sprintf(buffer, "Points: %d", numPointsTot);
 	gs.line[2] = buffer;
 	gs.lineColor[2] = 1;
 
-	double MTmedian = median(MTarray, trialNum);
 
-	quartiles(MTarray, trialNum, q1, q3);
+	double MTmedian = median(MTarray, numTrials);
+
+	quartiles(MTarray, numTrials, q1, q2, q3);
 
 	if (accurateResp > 5) {
 		rewThresh1_global = q1;
@@ -302,6 +301,7 @@ void MyBlock::giveFeedback() {
 	gs.line[3] = buffer;
 	gs.lineColor[3] = 1;
 	cout << "Threshold up" << endl;
+	
 }
 
 ///////////////////////////////////////////////////////////////
@@ -312,8 +312,6 @@ void MyBlock::giveFeedback() {
 ///////////////////////////////////////////////////////////////
 MyTrial::MyTrial() {
 	state = WAIT_TRIAL;
-	//double rewThresh1 = 3000;
-	//double rewThresh2 = 4500;
 }
 
 ///////////////////////////////////////////////////////////////
@@ -455,7 +453,7 @@ void MyTrial::updateTextDisplay() {
 	sprintf(buffer, "read : %2.1f   readReal : %2.1f  accurateResp: %d", gTimer[0], gTimer.readReal(1), accurateResp);
 	tDisp.setText(buffer, 5, 0);
 
-	sprintf(buffer, "State : %d   Trial: %d   Block state: %d   RewThresh1: %.2f   RewThresh2: %.2f", state, gExp->theBlock->trialNum, gExp->theBlock->state, rewThresh1, rewThresh2);
+	sprintf(buffer, "State : %d   Trial: %d   Block state: %d   RewThresh1: %.2f   RewThresh2: %.2f", state, gExp->theBlock->trialNum, gExp->theBlock->state, rewThresh1_global, rewThresh2_global);
 	tDisp.setText(buffer,6,0);
 
 	sprintf(buffer, "Force:  %2.2f %2.2f %2.2f %2.2f %2.2f", gBox.getForce(0), gBox.getForce(1), gBox.getForce(2), gBox.getForce(3), gBox.getForce(4));
@@ -585,8 +583,6 @@ void MyTrial::control() {
 				gs.line[i] = "";
 			}
 		}
-		rewThresh1 = rewThresh1_global;
-		rewThresh2 = rewThresh2_global;
 		break;
 
 	case START_TRIAL: //0

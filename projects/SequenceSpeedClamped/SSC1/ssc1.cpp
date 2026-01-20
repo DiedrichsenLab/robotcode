@@ -52,6 +52,7 @@ double tempThres1 = timeThreshold;
 double tempThres2 = timeThresholdSuper;
 
 double clampedSpeedTolerance = 200 ;	///< Tolerance around clamped speed
+bool isClampSpeedSet = 0;				///< If the clamp speed has been set
 
 double estimated_medianET = 0; 		///< Estimated median ET of previous block
 
@@ -369,6 +370,17 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 		}
 	}
 
+	/// update clamp speed
+	else if (arguments[0] == "clamp") {
+		if (numArgs != 2) {
+			tDisp.print("USAGE: thresh clamp");
+		}
+		else {
+			sscanf(arguments[1].c_str(), "%f", &arg[0]);
+			estimated_medianET = arg[0];
+		}
+	}
+
 	else {
 		return false; /// Command not recognized
 	}
@@ -454,7 +466,10 @@ void MyBlock::giveFeedback() {
 				timeThresholdSuper = medianETarray[b] * (superThresPercent / 100); //previous ET-5% 	
 			}
 		}
-		estimated_medianET = medianETarray[b]; //update estimated median ET
+		
+		if (isClampSpeedSet == 0) {
+			estimated_medianET = medianETarray[b]; //update estimated median ET
+		}
 
 	}
 	else {
@@ -501,8 +516,9 @@ MyTrial::MyTrial() {
 		releaseTime[i] = 0;				// release time
 		press[i] = 0;                     // fingers needed to be pressed
 		handPressed[i] = 0;               // which hand
-
 	}
+
+	clammpedSpeed = estimated_medianET;
 }
 
 ///////////////////////////////////////////////////////////////

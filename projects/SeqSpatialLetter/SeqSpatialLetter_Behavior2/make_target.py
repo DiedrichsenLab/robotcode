@@ -177,7 +177,7 @@ def check_validation(circuit_node):
 # In[9]:
 
 
-def generate_tgt_file(circuit_ts, subj_id=1, run_id=1):
+def generate_tgt_file(circuit_ts, subj_id=1, run_id=1, long_iti=False):
 	# circuit_ts[k][0]: sequence ID (1,2,3,4), 
 	# circuit_ts[k][1]: condition (Letter cue: 0, Spatial visual cue: 1)
 	
@@ -201,10 +201,11 @@ def generate_tgt_file(circuit_ts, subj_id=1, run_id=1):
 		seqID = ts[0]
 		seq_i = seqID_to_seq(seqID)
 		iti = 1000
-		if t%17 == 16:	# For the last trial of each block consisting of 16 trials, not the first trial
-			iti = 16000
-		elif t%17 == 0 and t != 0:# For the last trial of each block consisting of 16 trials, not the first trial
-			seq_i = seq_f
+		if long_iti:
+			if t%17 == 16:	# For the last trial of each block consisting of 16 trials, not the first trial
+				iti = 16000
+			elif t%17 == 0 and t != 0:# For the last trial of each block consisting of 16 trials, not the first trial
+				seq_i = seq_f
 	
 		lines['press1'].append(seq_i[0])
 		lines['press2'].append(seq_i[1])

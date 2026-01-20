@@ -528,6 +528,9 @@ void MyTrial::read(istream& in) {
 	// read from .tgt file
 	in >> subNum >> hand >> cue >> isTrain >> group >> isClamped >> iti;
 	seqLength = cue.length(); //get seqLength
+	if (isClamped == 1) {
+		isClampSpeedSet = 1;
+	}
 }
 
 ///////////////////////////////////////////////////////////////

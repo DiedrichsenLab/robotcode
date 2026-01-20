@@ -108,9 +108,6 @@ public:
 	virtual Trial* getTrial();		// create a new Trial 
 	virtual void giveFeedback();
 	virtual void start();
-	virtual double mean(double array[], int num_val); 
-	virtual double std(double array[], int num_val);
-	virtual double percentile(double array[], int num_val, int percent);
 };
 
 ///////////////////////////////////////////////////////////////

@@ -51,6 +51,8 @@ double timeThresholdSuper = 2940;		///< Time threshold for super points (+3)
 double tempThres1 = timeThreshold;
 double tempThres2 = timeThresholdSuper;
 
+
+int firstClampedBlock = 5;		///< First block with clamped speed
 double clampedSpeedTolerance = 200 ;	///< Tolerance around clamped speed
 bool isClampSpeedSet = 0;				///< If the clamp speed has been set
 
@@ -373,7 +375,7 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 	/// update clamp speed
 	else if (arguments[0] == "clamp") {
 		if (numArgs != 2) {
-			tDisp.print("USAGE: thresh clamp");
+			tDisp.print("USAGE: clamp ET");
 		}
 		else {
 			sscanf(arguments[1].c_str(), "%f", &arg[0]);
@@ -467,7 +469,7 @@ void MyBlock::giveFeedback() {
 			}
 		}
 		
-		if (isClampSpeedSet == 0) {
+		if ((isClampSpeedSet == 0) && (blockNumber == (firstClampedBlock- 1))) { // set the clamped speed based on performance in block 4 (firs before the first clamped block)
 			estimated_medianET = medianETarray[b]; //update estimated median ET
 		}
 

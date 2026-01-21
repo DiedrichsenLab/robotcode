@@ -43,8 +43,8 @@ double gNumPointsBlock = 0;			///< How many points in this block?
 double gNumPoints = 0;				///< How many points so far in the entire session? 
 int timeMet = 0;						///< Initialize time for metronome
 int showLine = 0;					///< Show force lines or not
-float timeThresPercent = 105;		///< 105% of current median MT (best block)
-float superThresPercent = 98;		///< 98% of current median MT (best block)
+float timeThresPercent = 110;		///< 110% of current median MT (best block)
+float superThresPercent = 90;		///< 90% of current median MT (best block)
 float ERthreshold = 20;				///< Threshold of 20% of error rate in order to lower MT thresholds
 double timeThreshold = 3500; 			///< Time threshold for normal points (+0)
 double timeThresholdSuper = 2940;		///< Time threshold for super points (+3)
@@ -57,18 +57,6 @@ double clampedSpeedTolerance = 200 ;	///< Tolerance around clamped speed
 bool isClampSpeedSet = 0;				///< If the clamp speed has been set
 
 double estimated_medianET = 0; 		///< Estimated median ET of previous block
-
-int percentile_low = 45;	///< Lower percentile for ETs
-int percentile_high = 80;	///< Upper percentile for ETs
-int percentile_low_super = 10;	///< Lower percentile for ETs
-
-double estimated_ET_percentile_low = 0;	///< Estimated lower percentile of ETs
-double estimated_ET_percentile_high = 0;	///< Estimated upper percentile of ETs
-double estimated_ET_percentile_low_super = 0;	///< Estimated lower percentile of ETs
-
-double temp_ET_percentile_low = estimated_ET_percentile_low;	///< Estimated lower percentile of ETs
-double temp_ET_percentile_high = estimated_ET_percentile_high;	///< Estimated upper percentile of ETs
-double temp_ET_percentile_low_super = estimated_ET_percentile_low_super;	///< Estimated lower percentile of ETs
 
 double responseArray[11] = { 1,1,1,1,1,1,1,1,1,1,1 };
 //int symbolColor = 1;
@@ -1130,7 +1118,7 @@ void MyTrial::control() {
 				}
 				else if (points == 1) {
 					PlaySound(TASKSOUNDS[2].c_str(), NULL, SND_ASYNC);
-					gs.lineColor[1] = 7; // yellow
+					gs.lineColor[1] = 1; // white
 
 				}
 				else{
@@ -1142,25 +1130,28 @@ void MyTrial::control() {
 			}
 
 			else if (isError == 0 && isClamped == 1) {
+				gs.clearCues();
+				gs.size[1] = 8; // size of feedback text
+
 				if (ET > clammpedSpeed - clampedSpeedTolerance && 
 					ET < clammpedSpeed + clampedSpeedTolerance){ // within clamped speed range
-						gs.clearCues();
 						PlaySound(TASKSOUNDS[8].c_str(), NULL, SND_ASYNC);
 						gs.lineColor[1] = 3; // Green
 				}
 				else {
 					if (ET <= clammpedSpeed - clampedSpeedTolerance) {
-						gs.clearCues();
 						// print "Too fast"
 						sprintf(buffer, "Too fast");
 					}
 					else{
-						gs.clearCues();
 						// print "Too slow"
 						sprintf(buffer, "Too slow");
 					}
 					PlaySound(TASKSOUNDS[5].c_str(), NULL, SND_ASYNC);
 					gs.lineColor[1] = 2; // red
+					gs.line[1] = buffer;
+					gs.lineYpos[1] = 5.4;
+
 				}
 			}
 			else if (isError == 1 && isCross) {

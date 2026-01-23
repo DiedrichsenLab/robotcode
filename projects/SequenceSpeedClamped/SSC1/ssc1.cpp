@@ -51,6 +51,15 @@ double timeThresholdSuper = 2940;		///< Time threshold for super points (+3)
 double tempThres1 = timeThreshold;
 double tempThres2 = timeThresholdSuper;
 
+int percnetile_low = 25; ///< Lower percentile for ETs
+int percentile_high = 75; ///< Upper percentile for ETs
+
+double estimated_ET_percentile_low = 0; ///< Estimated lower percentile of ETs
+double estimated_ET_percentile_high = 0; ///< Estimated upper percentile of ETs
+
+double temp_ET_percentile_low = estimated_ET_percentile_low;
+double temp_ET_percentile_high = estimated_ET_percentile_high;
+
 
 int firstClampedBlock = 5;		///< First block with clamped speed
 double clampedSpeedTolerance = 250 ;	///< Tolerance around clamped speed
@@ -360,6 +369,19 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 		}
 	}
 
+	///update estimated ET percentile thresholds
+	else if (arguments[0] == "ET_percentile") {
+		if (numArgs != 3) {
+			tDisp.print("USAGE: ET_percentile low high");
+		}
+		else {
+			sscanf(arguments[1].c_str(), "%f", &arg[0]);
+			sscanf(arguments[2].c_str(), "%f", &arg[1]);
+			estimated_ET_percentile_low = arg[0];
+			estimated_ET_percentile_high = arg[1];
+		}
+		}
+
 	/// update clamp speed
 	else if (arguments[0] == "clamp") {
 		if (numArgs != 2) {
@@ -415,6 +437,32 @@ void MyBlock::start() {
 	gs.clearCues();
 }
 
+
+///////////////////////////////////////////////////////////////
+/// Calculating ET percentile of the block 
+///////////////////////////////////////////////////////////////
+double MyBlock::percentile(double array[],int num_val, int percent) { 
+	// sort the array
+	double temp;
+	for (int i = 0; i < num_val; i++) {
+		for (int j = i + 1; j < num_val; j++) {
+			if (array[i] > array[j]) {
+				temp = array[i];
+				array[i] = array[j];
+				array[j] = temp;
+			}
+		}
+	}
+	// return the value at the given percentile
+	int index = (int)(num_val * percent / 100.0);
+	if (index >= num_val) {
+		index = num_val - 1;
+	}
+	return array[index];
+
+} 
+
+
 ///////////////////////////////////////////////////////////////
 /// giveFeedback and put it to the graphic state 
 ///////////////////////////////////////////////////////////////
@@ -442,20 +490,27 @@ void MyBlock::giveFeedback() {
 	}
 
 	// before eventual thres update, store the previous thres for writing in the .dat file
-	tempThres1 = timeThreshold;
-	tempThres2 = timeThresholdSuper;
+	// tempThres1 = timeThreshold;
+	// tempThres2 = timeThresholdSuper;
+
+	temp_ET_percentile_high = estimated_ET_percentile_high;
+	temp_ET_percentile_low = estimated_ET_percentile_low;
 
 	if (n > 0) { //if at least one correct trial
 		b = b++; //increase counter of block number
 		medianETarray[b] = median(ETarray, n); //median of movement times	
 		ERarray[b] = (((double)gNumErrorsBlock) / (double)(nn) * 100); //error rate
 
-		if (ERarray[b] <= ERthreshold){ //if ER on current block <20%
-			if (medianETarray[b] < (timeThreshold / (timeThresPercent / 100))) { //adjust only if ET of current block faster than ET that generated current threshold
-				timeThreshold = medianETarray[b] * (timeThresPercent / 100); //previous ET+5%
-				timeThresholdSuper = medianETarray[b] * (superThresPercent / 100); //previous ET-5% 	
-			}
-		}
+		// if (ERarray[b] <= ERthreshold){ //if ER on current block <20%
+		// 	if (medianETarray[b] < (timeThreshold / (timeThresPercent / 100))) { //adjust only if ET of current block faster than ET that generated current threshold
+		// 		timeThreshold = medianETarray[b] * (timeThresPercent / 100); //previous ET+5%
+		// 		timeThresholdSuper = medianETarray[b] * (superThresPercent / 100); //previous ET-5% 	
+		// 	}
+		// }
+		estimated_ET_percentile_low = percentile(ETarray, n, percnetile_low); //estimated lower percentile of ETs
+		estimated_ET_percentile_high = percentile(ETarray, n, percentile_high); //estimated upper percentile of ETs
+
+
 		
 		if ((isClampSpeedSet == 0) && (blockNumber <= (firstClampedBlock- 1))) { // set the clamped speed based on performance in block 4 (firs before the first clamped block)
 			estimated_medianET = medianETarray[b]; //update estimated median ET
@@ -467,6 +522,9 @@ void MyBlock::giveFeedback() {
 		medianETarray[b] = 0;
 		ERarray[b] = 100;
 		estimated_medianET = 0;
+		estimated_ET_percentile_high = 0;
+		estimated_ET_percentile_low = 0;
+
 	}
 
 	// print FEEDBACK on the screen 
@@ -556,8 +614,10 @@ void MyTrial::writeDat(ostream& out) {
 		out << pressTime[i] << "\t";
 	}
 
-	out << tempThres1 << "\t"
-		<< tempThres2 << "\t"
+	// out << tempThres1 << "\t"
+	// 	<< tempThres2 << "\t"
+	out << temp_ET_percentile_high << "\t"
+		<< temp_ET_percentile_low << "\t"
 		<< startTime << "\t"
 		<< startTimeReal << "\t"
 		<< trialDur << "\t"
@@ -609,8 +669,10 @@ void MyTrial::writeHeader(ostream& out) {
 		out << header << "\t";
 	}
 
-	out << "timeThreshold" << "\t"
-		<< "timeThresholdSuper" << "\t"
+	// out << "timeThreshold" << "\t"
+	// 	<< "timeThresholdSuper" << "\t"
+	out << "estimatedPercentileHigh" << "\t"
+		<< "estimatedPercentileLow" << "\t"
 		<< "startTime" << "\t"
 		<< "startTimeReal" << "\t"
 		<< "trialDur" << "\t"
@@ -670,29 +732,31 @@ void MyTrial::updateTextDisplay() {
 	sprintf(buffer, "est median: %.2f", estimated_medianET);
 	tDisp.setText(buffer, 2, 0);
 
-	sprintf(buffer, "gTimer1: %2.2f   gTimer2: %2.2f   gTimer5: %2.2f", gTimer[1], gTimer[2], gTimer[5]);
-	tDisp.setText(buffer, 3, 0);
+	// sprintf(buffer, "gTimer1: %2.2f   gTimer2: %2.2f   gTimer5: %2.2f", gTimer[1], gTimer[2], gTimer[5]);
+	// tDisp.setText(buffer, 3, 0);
 
-	sprintf(buffer, "upper Threshold: %2.0f   lower Threshold: %2.0f", timeThreshold, timeThresholdSuper);
+	// sprintf(buffer, "upper Threshold: %2.0f   lower Threshold: %2.0f", timeThreshold, timeThresholdSuper);
+	// tDisp.setText(buffer, 4, 0);
+	sprintf(buffer, "ET perc low: %.2f   ET perc high: %.2f", estimated_ET_percentile_low, estimated_ET_percentile_high);
 	tDisp.setText(buffer, 4, 0);
 
 	sprintf(buffer, "trial: %d/%d   state: %d   seqNum: %lld", gExp->theBlock->trialNum + 1, gExp->theBlock->numTrials, state, std::stoll(cue));
 	tDisp.setText(buffer, 5, 0);
 
-	sprintf(buffer, "press RH: %d %d %d %d %d    force RH: %2.2f %2.2f %2.2f %2.2f %2.2f", finger[5], finger[6], finger[7], finger[8], finger[9], gBox[1].getForce(0), gBox[1].getForce(1), gBox[1].getForce(2), gBox[1].getForce(3), gBox[1].getForce(4));
-	tDisp.setText(buffer, 6, 0);
+	// sprintf(buffer, "press RH: %d %d %d %d %d    force RH: %2.2f %2.2f %2.2f %2.2f %2.2f", finger[5], finger[6], finger[7], finger[8], finger[9], gBox[1].getForce(0), gBox[1].getForce(1), gBox[1].getForce(2), gBox[1].getForce(3), gBox[1].getForce(4));
+	// tDisp.setText(buffer, 6, 0);
 
-	sprintf(buffer, "pressTime1: %2.0f   pressTime2: %2.0f   pressTime3: %2.0f   pressTime4: %2.0f   pressTime5: %2.0f", pressTime[0], pressTime[1], pressTime[2], pressTime[3], pressTime[4]);
-	tDisp.setText(buffer, 7, 0);
+	// sprintf(buffer, "pressTime1: %2.0f   pressTime2: %2.0f   pressTime3: %2.0f   pressTime4: %2.0f   pressTime5: %2.0f", pressTime[0], pressTime[1], pressTime[2], pressTime[3], pressTime[4]);
+	// tDisp.setText(buffer, 7, 0);
 
-	sprintf(buffer, "seqCounter: %d   seqLength: %d", seqCounter, seqLength);
-	tDisp.setText(buffer, 11, 0);
+	// sprintf(buffer, "seqCounter: %d   seqLength: %d", seqCounter, seqLength);
+	// tDisp.setText(buffer, 11, 0);
 
 	sprintf(buffer, "isError: %d   errors block: %d   points block: %2.1f", isError, gNumErrorsBlock, gNumPointsBlock);
 	tDisp.setText(buffer, 12, 0);
 
-	sprintf(buffer, "newPress: %d   released: %d", newPress, released);
-	tDisp.setText(buffer, 14, 0);
+	// sprintf(buffer, "newPress: %d   released: %d", newPress, released);
+	// tDisp.setText(buffer, 14, 0);
 
 }
 
@@ -1045,10 +1109,10 @@ void MyTrial::control() {
 
 		// CHECK FOR HARD PRESS
 		if (numHardPress > 0) {
-			isError = 1;
+			// isError = 1;
 			isPresshard = 1;
-			state = WAIT_RELEASE;
-			break;
+			// state = WAIT_RELEASE;
+			// break;
 		}
 
 		// START OF SEQUENCE
@@ -1122,10 +1186,16 @@ void MyTrial::control() {
 		if (released == NUMFINGERS) {
 			if (isError == 0 && isClamped == 0) {
 				if (isTrain){
-					if (ET < timeThresholdSuper) {
+					// if (ET < timeThresholdSuper) {
+					// 	points = 3;
+					// }
+					// else if (ET < timeThreshold) {
+					// 	points = 1;
+					// }
+					if (ET < estimated_ET_percentile_low) {
 						points = 3;
 					}
-					else if (ET < timeThreshold) {
+					else if (ET < estimated_ET_percentile_high) {
 						points = 1;
 					}
 					else {
@@ -1133,7 +1203,7 @@ void MyTrial::control() {
 					}
 				}
 				else {
-					points = 0; // no points in familiarization trials
+					points = 0; // no points in familiarization/random trials
 				}
 				gs.clearCues();
 				gs.size[1] = 8; // size of feedback text
@@ -1160,17 +1230,17 @@ void MyTrial::control() {
 				points = -1;
 				PlaySound(TASKSOUNDS[5].c_str(), NULL, SND_ASYNC);
 				gs.clearCues(); sprintf(buffer, "Remain within the red area");
-				gs.lineColor[1] = 2; // red
-				gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
+				gs.lineColor[0] = 2; // red
+				gs.line[0] = buffer; gs.lineYpos[0] = 8;
 			}
 
-			else if (isError == 1 && isPresshard) {
-				points = -1;
-				PlaySound(TASKSOUNDS[5].c_str(), NULL, SND_ASYNC);
-				gs.clearCues(); sprintf(buffer, "Hard press");
-				gs.lineColor[1] = 2; // red
-				gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
-			}
+			// else if (isError == 1 && isPresshard) {
+			// 	points = -1;
+			// 	PlaySound(TASKSOUNDS[5].c_str(), NULL, SND_ASYNC);
+			// 	gs.clearCues(); sprintf(buffer, "Hard press");
+			// 	gs.lineColor[1] = 2; // red
+			// 	gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
+			// }
 
 			else if (isError == 1 && timingError == 0) {
 				points = -1;
@@ -1187,24 +1257,45 @@ void MyTrial::control() {
 
 				if (ET > clammpedSpeed - clampedSpeedTolerance &&
 					ET < clammpedSpeed + clampedSpeedTolerance) { // within clamped speed range
-					PlaySound(TASKSOUNDS[8].c_str(), NULL, SND_ASYNC);
-					gs.lineColor[1] = 3; // Green
+						points = 2;
+					PlaySound(TASKSOUNDS[2].c_str(), NULL, SND_ASYNC);
+					gs.clearCues():
+					sprintf(buffer, "+%d", points);
+					gs.lineColor[1] = 1; // white
+					gs.line[1] = buffer;
+					gs.lineYpos[1] = 5.4;
 				}
 				else {
 					if (ET <= clammpedSpeed - clampedSpeedTolerance) {
+						points = -1;
+						PlaySound(TASKSOUNDS[5].c_str(), NULL, SND_ASYNC);
+						gs.clearCues();
+						sprintf(buffer, "+%d", points);
+						gs.lineColor[1] = 2; // red
+						gs.line[1] = buffer;
+						gs.lineYpos[1] = 5.4;
 						// print "Too fast"
 						sprintf(buffer, "Too fast");
+						gs.lineColor[0] = 1;
+						gs.line[0] = buffer;
+						gs.lineYpos[0] = 8;
+
 					}
 					else {
+						points = -1;
+						PlaySound(TASKSOUNDS[5].c_str(), NULL, SND_ASYNC);
+						gs.clearCues();
+						sprintf(buffer, "+%d", points);
+						gs.lineColor[1] = 2; // red
+						gs.line[1] = buffer;
+						gs.lineYpos[1] = 5.4;
 						// print "Too slow"
 						sprintf(buffer, "Too slow");
+						gs.lineColor[0] = 1;
+						gs.line[0] = buffer;
+						gs.lineYpos[0] = 8;
 					}
-					PlaySound(TASKSOUNDS[5].c_str(), NULL, SND_ASYNC);
-					gs.lineColor[1] = 2; // red
-					gs.line[1] = buffer;
-					gs.lineYpos[1] = 5.4;
 					isError = 1;
-
 				}
 			}
 

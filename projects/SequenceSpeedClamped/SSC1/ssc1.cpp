@@ -62,7 +62,7 @@ double temp_ET_percentile_high = estimated_ET_percentile_high;
 
 
 int firstClampedBlock = 5;		///< First block with clamped speed
-double clampedSpeedTolerance = 250 ;	///< Tolerance around clamped speed
+double clampedSpeedTolerance = 200 ;	///< Tolerance around clamped speed
 bool isClampSpeedSet = 0;				///< If the clamp speed has been set
 
 double estimated_medianET = 0; 		///< Estimated median ET of previous block
@@ -1326,12 +1326,7 @@ void MyTrial::control() {
 		// Wait for feedback time, keep count of ponits
 		if (gTimer[2] > FEEDBACKTIME) {
 			// count how many points and errors in the block
-			if (isClamped == 0) {
-				gNumPointsBlock += (double)points;
-			}
-			else{
-				gNumPointsBlock += 0;
-			}
+			gNumPointsBlock += (double)points;
 			gNumCrossesBlock += isCross;
 			gNumErrorsBlock += isError;
 			gTimer.reset(2);

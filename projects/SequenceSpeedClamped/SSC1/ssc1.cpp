@@ -1232,6 +1232,9 @@ void MyTrial::control() {
 				gs.clearCues(); sprintf(buffer, "Remain within the red area");
 				gs.lineColor[0] = 2; // red
 				gs.line[0] = buffer; gs.lineYpos[0] = 8;
+				sprintf(buffer, "%d", points);
+				gs.lineColor[1] = 2; // red
+				gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
 			}
 
 			// else if (isError == 1 && isPresshard) {
@@ -1259,7 +1262,7 @@ void MyTrial::control() {
 					ET < clammpedSpeed + clampedSpeedTolerance) { // within clamped speed range
 						points = 2;
 					PlaySound(TASKSOUNDS[2].c_str(), NULL, SND_ASYNC);
-					gs.clearCues():
+					gs.clearCues();
 					sprintf(buffer, "+%d", points);
 					gs.lineColor[1] = 1; // white
 					gs.line[1] = buffer;
@@ -1270,7 +1273,7 @@ void MyTrial::control() {
 						points = -1;
 						PlaySound(TASKSOUNDS[5].c_str(), NULL, SND_ASYNC);
 						gs.clearCues();
-						sprintf(buffer, "+%d", points);
+						sprintf(buffer, "%d", points);
 						gs.lineColor[1] = 2; // red
 						gs.line[1] = buffer;
 						gs.lineYpos[1] = 5.4;
@@ -1285,7 +1288,7 @@ void MyTrial::control() {
 						points = -1;
 						PlaySound(TASKSOUNDS[5].c_str(), NULL, SND_ASYNC);
 						gs.clearCues();
-						sprintf(buffer, "+%d", points);
+						sprintf(buffer, "%d", points);
 						gs.lineColor[1] = 2; // red
 						gs.line[1] = buffer;
 						gs.lineYpos[1] = 5.4;

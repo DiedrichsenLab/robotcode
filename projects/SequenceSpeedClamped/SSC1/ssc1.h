@@ -155,6 +155,7 @@ private:
 	int complete;
 	int isError;							///< Was there an error in the trial?
 	int isCross;							///< Was there a thres cross in the trial?
+	int isPresshard;						///< Was there a hard press in the trial
 	int numCrosses;							///< How many crosses in the trial?
 	int timeStamp;							///< When was the pre-movement threshold crossed?
 

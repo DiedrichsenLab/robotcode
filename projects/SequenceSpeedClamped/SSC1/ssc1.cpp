@@ -53,7 +53,7 @@ double tempThres2 = timeThresholdSuper;
 
 
 int firstClampedBlock = 5;		///< First block with clamped speed
-double clampedSpeedTolerance = 200 ;	///< Tolerance around clamped speed
+double clampedSpeedTolerance = 250 ;	///< Tolerance around clamped speed
 bool isClampSpeedSet = 0;				///< If the clamp speed has been set
 
 double estimated_medianET = 0; 		///< Estimated median ET of previous block
@@ -457,7 +457,7 @@ void MyBlock::giveFeedback() {
 			}
 		}
 		
-		if ((isClampSpeedSet == 0) && (blockNumber == (firstClampedBlock- 1))) { // set the clamped speed based on performance in block 4 (firs before the first clamped block)
+		if ((isClampSpeedSet == 0) && (blockNumber <= (firstClampedBlock- 1))) { // set the clamped speed based on performance in block 4 (firs before the first clamped block)
 			estimated_medianET = medianETarray[b]; //update estimated median ET
 		}
 
@@ -487,6 +487,7 @@ MyTrial::MyTrial() {
 	complete = 0;                       // end sequence flag
 	isError = 0;							// init error flag
 	isCross = 0;							// init threshold cross flag
+	isPresshard = 0;					// init press hard flag
 	numCrosses = 0;						// init how many times pre-mov threshold has been crossed in this trial
 	timingError = 0;						// init timing error flag
 	seqCounter = 0;						// init the sequence index variable
@@ -565,6 +566,7 @@ void MyTrial::writeDat(ostream& out) {
 		<< useMetronome << "\t"
 		<< isCross << "\t"			//whether pre-movement threshold has been crossed in this trial
 		<< timeStamp << "\t"
+		<< isPresshard << "\t"		//whether a hard press in the trial
 		<< endl;
 }
 
@@ -617,6 +619,7 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "useMetronome" << "\t"
 		<< "isCross" << "\t"
 		<< "crossTime" << "\t"
+		<< "isPresshard" << "\t"
 		<< endl;
 }
 
@@ -698,14 +701,15 @@ void MyTrial::updateTextDisplay() {
 ///////////////////////////////////////////////////////////////
 
 // force thresholds 
-#define preTH 1.5//1.5				// Press threshold
+#define preTH 1//1.5				// Press threshold
 #define relTH 0.8//1.0//1.0		// Release threshold
+#define hardTH 3				// Hard press threshold
 #define baseTHhi  0.5 //0.8//1.0		// Baseline higher threshold (to check for premature movements)
 //#define baseTHlow 0 //0.8//1.0		// Baseline lower threshold (to check for premature movements during sequence planning phase)
 #define baseTHlow -0.2 //0.8//1.0		// Baseline lower threshold (to check for premature movements)
 
 
-double THRESHOLD[2][5] = { {preTH, preTH, preTH, preTH, preTH}, {relTH, relTH, relTH, relTH, relTH} };
+double THRESHOLD[3][5] = { {preTH, preTH, preTH, preTH, preTH}, {relTH, relTH, relTH, relTH, relTH}, {hardTH, hardTH, hardTH, hardTH, hardTH} };
 double BASE_THRESHOLD_HI[2][5] = { {baseTHhi, baseTHhi, baseTHhi, baseTHhi, baseTHhi}, {baseTHhi - 0.1, baseTHhi - 0.1, baseTHhi - 0.1, baseTHhi - 0.1, baseTHhi - 0.1} };
 double BASE_THRESHOLD_LOW[2][5] = { {baseTHlow, baseTHlow, baseTHlow, baseTHlow, baseTHlow}, {baseTHlow + 0.1, baseTHlow + 0.1, baseTHlow + 0.1, baseTHlow + 0.1, baseTHlow + 0.1} };
 double fGain[5] = { 1.0,1.0,1.0,1.0,1.0 };
@@ -767,6 +771,15 @@ void MyTrial::updateGraphics(int what) {
 			// Force threshold		
 			gScreen.setColor(Screen::grey);
 			gScreen.drawLine(1. * BASELINE_X1, preTH * FORCESCALE + BASELINE_Y1, 1. * BASELINE_X2, preTH * FORCESCALE + BASELINE_Y2);
+
+			// press zone box
+			gScreen.setColor(Screen::pale);
+			// right
+			gScreen.drawBox(FINGWIDTH * N_FINGERS, (hardTH - preTH) * FORCESCALE, -0 * FINGWIDTH * N_FINGERS, (preTH * FORCESCALE) + ((hardTH - preTH) * FORCESCALE) / 2 + BASELINE_Y2);
+
+			// Hard press threshold
+			gScreen.setColor(Screen::grey);
+			gScreen.drawLine(1. * BASELINE_X1, hardTH * FORCESCALE + BASELINE_Y1, 1. * BASELINE_X2, hardTH * FORCESCALE + BASELINE_Y2);
 
 			// Finger forces (right)
 			for (i = 0; i < 5; i++) {
@@ -892,6 +905,7 @@ void MyTrial::control() {
 
 	int crossedFinger = 0;
 	int numNewThresCross = 0;			// has the pre-movement trheshold been crossed?
+	int numHardPress = 0;				// has a finger been pressed hard
 	int withinThres = 1;
 
 	for (f = 5; f < 10; f++) {
@@ -911,6 +925,10 @@ void MyTrial::control() {
 
 		if (force >= BASE_THRESHOLD_HI[0][f - 5] || force <= BASE_THRESHOLD_LOW[0][f-5]) {
 			numNewThresCross++;
+		}
+
+		if (force > THRESHOLD[2][f - 5]) { // hard press
+			numHardPress++;
 		}
 	}
 
@@ -1024,6 +1042,15 @@ void MyTrial::control() {
 		break;
 
 	case WAIT_PRESS: //4
+
+		// CHECK FOR HARD PRESS
+		if (numHardPress > 0) {
+			isError = 1;
+			isPresshard = 1;
+			state = WAIT_RELEASE;
+			break;
+		}
+
 		// START OF SEQUENCE
 		if (newPress > 0 && seqCounter < seqLength) { // correct timing
 			response[seqCounter] = pressedFinger;
@@ -1037,7 +1064,7 @@ void MyTrial::control() {
 				responseArray[seqCounter] = 3; // green
 			}
 			else { // error: wrong key pressed
-				responseArray[seqCounter] = 3; // green
+				responseArray[seqCounter] = 2; // red
 				isError = 1;
 			}
 			seqCounter++;
@@ -1129,35 +1156,18 @@ void MyTrial::control() {
 
 			}
 
-			else if (isError == 0 && isClamped == 1) {
-				gs.clearCues();
-				gs.size[1] = 8; // size of feedback text
-
-				if (ET > clammpedSpeed - clampedSpeedTolerance && 
-					ET < clammpedSpeed + clampedSpeedTolerance){ // within clamped speed range
-						PlaySound(TASKSOUNDS[8].c_str(), NULL, SND_ASYNC);
-						gs.lineColor[1] = 3; // Green
-				}
-				else {
-					if (ET <= clammpedSpeed - clampedSpeedTolerance) {
-						// print "Too fast"
-						sprintf(buffer, "Too fast");
-					}
-					else{
-						// print "Too slow"
-						sprintf(buffer, "Too slow");
-					}
-					PlaySound(TASKSOUNDS[5].c_str(), NULL, SND_ASYNC);
-					gs.lineColor[1] = 2; // red
-					gs.line[1] = buffer;
-					gs.lineYpos[1] = 5.4;
-
-				}
-			}
 			else if (isError == 1 && isCross) {
-				points = -5;
+				points = -1;
 				PlaySound(TASKSOUNDS[5].c_str(), NULL, SND_ASYNC);
-				gs.clearCues(); sprintf(buffer, "%d", points);
+				gs.clearCues(); sprintf(buffer, "Remain within the red area");
+				gs.lineColor[1] = 2; // red
+				gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
+			}
+
+			else if (isError == 1 && isPresshard) {
+				points = -1;
+				PlaySound(TASKSOUNDS[5].c_str(), NULL, SND_ASYNC);
+				gs.clearCues(); sprintf(buffer, "Hard press");
 				gs.lineColor[1] = 2; // red
 				gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
 			}
@@ -1170,6 +1180,34 @@ void MyTrial::control() {
 				gs.lineColor[1] = 2; // red
 				gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
 			}
+
+			else if (isError == 0 && isClamped == 1) {
+				gs.clearCues();
+				gs.size[1] = 8; // size of feedback text
+
+				if (ET > clammpedSpeed - clampedSpeedTolerance &&
+					ET < clammpedSpeed + clampedSpeedTolerance) { // within clamped speed range
+					PlaySound(TASKSOUNDS[8].c_str(), NULL, SND_ASYNC);
+					gs.lineColor[1] = 3; // Green
+				}
+				else {
+					if (ET <= clammpedSpeed - clampedSpeedTolerance) {
+						// print "Too fast"
+						sprintf(buffer, "Too fast");
+					}
+					else {
+						// print "Too slow"
+						sprintf(buffer, "Too slow");
+					}
+					PlaySound(TASKSOUNDS[5].c_str(), NULL, SND_ASYNC);
+					gs.lineColor[1] = 2; // red
+					gs.line[1] = buffer;
+					gs.lineYpos[1] = 5.4;
+					isError = 1;
+
+				}
+			}
+
 			//else if (isError == 1 && timingError == 1) {
 			//	points = -1;
 			//	// PLAY SOUND 
@@ -1231,7 +1269,7 @@ void MyTrial::control() {
 			}
 			else {
 				if (numNewThresCross > 0) {
-					sprintf(buffer, "Please remain within the red area");
+					sprintf(buffer, "Remain within the red area");
 					gs.lineColor[0] = 1;
 					gs.line[0] = buffer;
 					gs.lineYpos[0] = 8;

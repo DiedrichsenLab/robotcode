@@ -7,6 +7,7 @@
 #include "sslb2.h"
 #include "StimulatorBox.h"
 #include "Target.h"
+#include <algorithm>
 #include <ctime>
 ///////////////////////////////////////////////////////////////
 /// Global variables
@@ -79,9 +80,6 @@ int gNumPointsBlock = 0;
 double timeThreshold = 2000;	// unit: ms 
 double superThreshold = 1000;	// unit: ms
 
-int MTarray[70] = {0};
-int ERarray[70] = {0};
-int Ptarray[70] = {0};
 float ERthreshold = 20;		///< Trheshold of 20% of error rate in order to lower MT thresholds
 
 #define FEEDBACKTIME 200	// time for which the points of the trial is displayed at the end of a trial
@@ -373,33 +371,14 @@ void MyBlock::start() {
 	gs.line[2] = buffer;
 }
 
-//	MDI0.cpp
-void get_q1_q3(double array[], int num_val, double& q1, double& q3) {
-	int i, j;
-	double dummy;
+void get_q1_q3(int array[], int num_val, int& q1, int& q3) {
+	// Sort the array
+	sort(array, array + num_val);
 
-	// Sort the array (using selection sort as per original implementation)
-	for (i = 0; i < num_val - 1; i++) {
-		for (j = i + 1; j < num_val; j++) {
-			if (array[i] > array[j]) {
-				dummy = array[i];
-				array[i] = array[j];
-				array[j] = dummy;
-			}
-		}
-	}
-
-	// Calculate Q1
-	if (num_val % 2 == 0) { // num_val is even
-		i = num_val * 0.5;
-		q1 = median(array, i); // median of lower half
-		q3 = median(array + i, i); // median of upper half
-	}
-	else { // num_val is odd
-		i = (num_val - 1) * 0.5;
-		q1 = median(array, i + 1); // median of lower half (including median)
-		q3 = median(array + i + 1, i); // median of upper half
-	}
+	int idx_q1 = (int) num_val*0.25;
+	int idx_q3 = (int) num_val*0.75;
+	q1 = array[idx_q1];
+	q3 = array[idx_q3];
 }
 
 ///////////////////////////////////////////////////////////////
@@ -408,36 +387,30 @@ void get_q1_q3(double array[], int num_val, double& q1, double& q3) {
 void MyBlock::giveFeedback() {
 	int bn = gExp->theBlock->blockNumber;	// current block number
 	int totTrials = gExp->theBlock->numTrials;
-	
-	int tmpMT, tmpER, CountValidTrials = 0;
+	int* validTrialIdx = new int [totTrials] {-1};
+	int currentMT, currentER;
+	int CountValidTrial = 0;
 	MyTrial* tpnr;
 	for (int i = 0; i < trialNum; i++) { //check each trial
 		tpnr = (MyTrial*)trialVec.at(i);
-		tmpMT = (int)(tpnr->MT);
-		if (tmpMT < 0) {
-			tmpMT = 3000;
-		}
-		tmpER = (int)(tpnr->isError);
-		MTarray[i] = tmpMT;
-		ERarray[i] = tmpER;
-		if ((tmpMT>0) and (tmpER==0)) {
-			CountValidTrials++;
+		currentMT = (int)(tpnr->MT);
+		currentER = (int)(tpnr->isError);
+		if ((currentMT>0) and (currentER==0)) {
+			validTrialIdx[CountValidTrial] = i;
+			CountValidTrial++;
 		}
 		//Ptarray[i] = (int)(tpnr->point);
 		//numPointsTot = numPointsTot + tpnr->numPoints;
 	}
-
-	double* tmpMTarray = new double[CountValidTrials];
-	for (int i = 0; i < trialNum; i++) {
-		tpnr = (MyTrial*)trialVec.at(i);
-		tmpMT = (int)(tpnr->MT);
-		tmpER = (int)(tpnr->isError);
-		if ((tmpMT > 0) and (tmpER == 0)) { // only include valid trials
-			tmpMTarray[i] = (double)MTarray[i];
-		}
+	int idx;
+	int* MTarray = new int [CountValidTrial];
+	for (int i = 0; i < CountValidTrial; i++) {
+		idx = validTrialIdx[i];
+		tpnr = (MyTrial*)trialVec.at(idx);
+		MTarray[i] = (int)(tpnr->MT);
 	}
-	double q1 = 0, q3 = 0;
-	get_q1_q3(tmpMTarray, CountValidTrials, q1, q3);
+	int q1 = 0, q3 = 0;
+	get_q1_q3(MTarray, CountValidTrial, q1, q3);
 
 	sprintf(buffer, "Block %d / %d complete !",bn,8);
 	gs.line[0] = buffer;
@@ -445,13 +418,16 @@ void MyBlock::giveFeedback() {
 	sprintf(buffer, "Points: %d / %d", gNumPointsBlock, 3*totTrials);
 	gs.line[1] = buffer;
 	gs.lineColor[1] = 1;
-	double ErrorRate = (double)(totTrials-CountValidTrials)*100 / totTrials;
+	double ErrorRate = (double)(totTrials-CountValidTrial)*100 / totTrials;
 	sprintf(buffer, "Error Rate: %2.1f%", ErrorRate);
 	gs.line[2] = buffer;
 	gs.lineColor[2] = 1;
 
-	sprintf(buffer, "block %d (Error Rate=%2.1f%): Thresh_q1=%2.0fs    Thresh_q3=%2.0fs", bn, ErrorRate, q1, q3);
+	sprintf(buffer, "block %d (Error Rate=%2.1f%): MT_q1=%2.0ds    MT_q3=%2.0ds", bn, ErrorRate, q1, q3);
 	cout << buffer << endl;
+
+	delete[] validTrialIdx;
+	delete[] MTarray;
 }
 
 ///////////////////////////////////////////////////////////////
@@ -465,7 +441,7 @@ MyTrial::MyTrial() {
 	state = WAIT_TRIAL;
 
 	//INIT TRIAL VARIABLE
-	MTLimit = 3000;
+	MTLimit = 10000;
 	hand = 2;			// Read right box
 	isError = 0;		// init error flag
 	nFingerErrors = 0;	// Number of tapping errors, SKim  
@@ -813,7 +789,7 @@ void MyTrial::control() {
 		gTimer.reset(2);	// A timer for each event in the trial			
 		//onsettime = gTimer[0]; // time of the beginning of each trial since T=0
 
-		if (gTimer[0] >= startTime) { // ready to run the task
+		if (gTimer[0] >= 5000) { // ready to run the task
 			state = START_FIX;
 		}
 
@@ -866,13 +842,15 @@ void MyTrial::control() {
 				}
 				seqCounter++;
 			}
-			if (seqCounter == seqLength) {
+			if ((seqCounter == seqLength) and (released==5)) {
+				MT = gTimer[2] - RT;
 				gTimer.reset(2);
 				gs.fixationColor = 1;
 				state = WAIT_END_RELEASE;
 			}
 		}
 		else {
+			MT = gTimer[2] - RT;
 			gTimer.reset(2);
 			gs.fixationColor = 1;
 			state = WAIT_END_RELEASE;
@@ -881,14 +859,8 @@ void MyTrial::control() {
 		break;
 
 	case WAIT_END_RELEASE:
-		MT = pressTime[4] - pressTime[0];
-		if (MT < 0) {
-			MT = 3000;
-		}
-
 		if (isError > 0) {
 			point = -1;
-				
 			gNumErrors++;
 			gNumFingerErrors += nFingerErrors;
 		}
@@ -901,15 +873,9 @@ void MyTrial::control() {
 			else if (MT <= timeThreshold) { // timeThreshSuper < MT <= timeThresh
 				point = 1;
 			}
-			else { // timeThresh < MT <= MTLimit
-				point = 0;
-			}
 			//if (RT >= 500) { // Do not extend the PrepTime!
 			//	point = max(0, point-2);
 			//}
-		}
-		else { // MT <= 0
-			point = 0;
 		}
 		gNumPointsBlock += point;
 			

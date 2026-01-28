@@ -414,6 +414,9 @@ void MyBlock::giveFeedback() {
 	for (int i = 0; i < trialNum; i++) { //check each trial
 		tpnr = (MyTrial*)trialVec.at(i);
 		tmpMT = (int)(tpnr->MT);
+		if (tmpMT < 0) {
+			tmpMT = 3000;
+		}
 		tmpER = (int)(tpnr->isError);
 		MTarray[i] = tmpMT;
 		ERarray[i] = tmpER;
@@ -808,7 +811,7 @@ void MyTrial::control() {
 		//dataman.startRecording(); // see around line #660
 		gTimer.reset(1);	// A timer for whole trial
 		gTimer.reset(2);	// A timer for each event in the trial			
-		onsettime = gTimer[0]; // time of the beginning of each trial since T=0
+		//onsettime = gTimer[0]; // time of the beginning of each trial since T=0
 
 		if (gTimer[0] >= startTime) { // ready to run the task
 			state = START_FIX;
@@ -844,8 +847,8 @@ void MyTrial::control() {
 		if (gTimer[2] <= MTLimit) {
 			if (numNewpress > 0 && seqCounter < seqLength) {
 				response[seqCounter] = pressedFinger;
-				//pressTime[seqCounter] = gTimer[1];	// initially, pressTime[i] = -1. However if pressed lately, error could occur like a negative MT.
-				pressTime[seqCounter] = gTimer[0] - onsettime;	// time since the trial onset
+				pressTime[seqCounter] = gTimer[1];	// initially, pressTime[i] = -1. However if pressed lately, error could occur like a negative MT.
+				//pressTime[seqCounter] = gTimer[0] - onsettime;	// time since the trial onset
 				if (seqCounter == 0) {
 					RT = gTimer[2];  // Reaction time for the first press
 				}
@@ -879,6 +882,9 @@ void MyTrial::control() {
 
 	case WAIT_END_RELEASE:
 		MT = pressTime[4] - pressTime[0];
+		if (MT < 0) {
+			MT = 3000;
+		}
 
 		if (isError > 0) {
 			point = -1;

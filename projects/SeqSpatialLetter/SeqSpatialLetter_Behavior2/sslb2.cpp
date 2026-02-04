@@ -73,7 +73,8 @@ char gKey;				///< Which key?
 int gNumErrors = 0;		///< How many erros did you make during a block
 int gNumFingerErrors = 0;	// How many finger errors did you make during a block, SKim
 int finger[5];			///< State of each finger
-int gNumPointsBlock = 0;
+int gPointsBlock = 0;	/// a global variable, PointBlock
+int gPointsTotal = 0;	/// a global variable, PointTotal
 
 //float timeThresPercent = 110;	///< 110% of current median MT (previous block)
 //float superThresPercent = 95;	///< 95% of current median MT (previous block)
@@ -366,8 +367,8 @@ void MyBlock::start() {
 	gs.boxOn = true;
 	//gNumErrors = 0;
 	gNumFingerErrors = 0;
-	gNumPointsBlock = 0;
-	sprintf(buffer, "%d", gNumPointsBlock);
+	gPointsBlock = 0;
+	sprintf(buffer, "%d", gPointsBlock);
 	gs.line[2] = buffer;
 }
 
@@ -415,7 +416,7 @@ void MyBlock::giveFeedback() {
 	sprintf(buffer, "Block %d / %d complete !",bn,8);
 	gs.line[0] = buffer;
 	gs.lineColor[0] = 1;
-	sprintf(buffer, "Points: %d / %d", gNumPointsBlock, 3*totTrials);
+	sprintf(buffer, "Points: %d / %d", gPointsBlock, 3*totTrials);
 	gs.line[1] = buffer;
 	gs.lineColor[1] = 1;
 	double ErrorRate = (double)(totTrials-CountValidTrial)*100 / totTrials;
@@ -612,7 +613,7 @@ void MyTrial::updateTextDisplay() {
 	sprintf(buffer, "sequence Counter: %d ", seqCounter);
 	tDisp.setText(buffer, 5, 0);
 
-	sprintf(buffer, "Total Points: %d", gNumPointsBlock);
+	sprintf(buffer, "Total Points: %d", gPointsTotal);
 	tDisp.setText(buffer, 8, 0);
 
 //	sprintf(buffer, "trial : %d cueType : %d state : %d", cTrial, cueType, state);
@@ -877,7 +878,8 @@ void MyTrial::control() {
 			//	point = max(0, point-2);
 			//}
 		}
-		gNumPointsBlock += point;
+		gPointsBlock += point;
+		gPointsTotal += point;
 			
 		gs.clearCues();
 		gTimer.reset(2);

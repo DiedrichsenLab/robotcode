@@ -365,7 +365,7 @@ Trial* MyBlock::getTrial() {
 void MyBlock::start() {
 	for (int i = 0; i < NUMDISPLAYLINES; i++) { gs.line[i] = ""; }
 	gs.boxOn = true;
-	//gNumErrors = 0;
+	gNumErrors = 0;
 	gNumFingerErrors = 0;
 	gPointsBlock = 0;
 	sprintf(buffer, "%d", gPointsBlock);
@@ -420,11 +420,11 @@ void MyBlock::giveFeedback() {
 	gs.line[1] = buffer;
 	gs.lineColor[1] = 1;
 	double ErrorRate = (double)(totTrials-CountValidTrial)*100 / totTrials;
-	sprintf(buffer, "Error Rate: %2.1f%", ErrorRate);
+	sprintf(buffer, "Error Rate: %2.1f%%", ErrorRate);
 	gs.line[2] = buffer;
 	gs.lineColor[2] = 1;
 
-	sprintf(buffer, "block %d (Error Rate=%2.1f%): MT_q1=%2.0ds    MT_q3=%2.0ds", bn, ErrorRate, q1, q3);
+	sprintf(buffer, "block %d (Error Rate=%2.1f%%): MT_q1=%2.0ds    MT_q3=%2.0ds", bn, ErrorRate, q1, q3);
 	cout << buffer << endl;
 
 	delete[] validTrialIdx;
@@ -601,7 +601,7 @@ void MyTrial::updateTextDisplay() {
 	//sprintf(buffer,"Force:    %2.2f %2.2f %2.2f %2.2f %2.2f",gBox[hand-1].getForce(0),gBox[hand-1].getForce(1),gBox[hand-1].getForce(2),gBox[hand-1].getForce(3),gBox[hand-1].getForce(4));
 	//tDisp.setText(buffer,2,0);
 
-	sprintf(buffer, "Block: %d    Trial: %d/%d    State : %d", gExp->theBlock->blockNumber, gExp->theBlock->trialNum + 1, gExp->theBlock->numTrials, state);
+	sprintf(buffer, "Block: %d    Trial: %d/%d    Error: %d    State : %d", gExp->theBlock->blockNumber, gExp->theBlock->trialNum + 1, gExp->theBlock->numTrials, gNumErrors, state);
 	tDisp.setText(buffer, 2, 0);
 
 	sprintf(buffer, "SuperThresh: %2.0f Thresh : %2.0f ", superThreshold, timeThreshold);

@@ -62,7 +62,10 @@ int refPointNumX = 0;	// Basically, this is 0(central fixation)
 int jumpPointNumX = 1;	// Basically, this is fixation jump to rightward
 int refPointNumY = 0;	// Basically, this is 0(central fixation)
 int jumpPointNumY = 2;	// Basically, this is fixation jump to upward
+bool blockFeedbackFlag = 0;
 FixCross 	fixationCross;
+
+Matrix2D 	TransforMatrix(1, 0, 0, 1);
 
 char buffer[300];		///< String buffer
 HINSTANCE gThisInst;	///< defined in Experiment.cpp Instance of Windows application
@@ -367,6 +370,7 @@ void MyBlock::start() {
 	gs.boxOn = true;
 	gNumErrors = 0;
 	gNumFingerErrors = 0;
+	blockFeedbackFlag = 0;
 	gPointsBlock = 0;
 	sprintf(buffer, "%d", gPointsBlock);
 	gs.line[2] = buffer;
@@ -391,6 +395,8 @@ void MyBlock::giveFeedback() {
 	int* validTrialIdx = new int [totTrials] {-1};
 	int currentMT, currentER;
 	int CountValidTrial = 0;
+	blockFeedbackFlag = 1;
+
 	MyTrial* tpnr;
 	for (int i = 0; i < trialNum; i++) { //check each trial
 		tpnr = (MyTrial*)trialVec.at(i);
@@ -631,6 +637,16 @@ void MyTrial::updateTextDisplay() {
 void MyTrial::updateGraphics(int what) {
 	int i;
 	double height;
+
+	if (blockFeedbackFlag) {
+		gScreen.setCenter(Vector2D(0, 0));    // In cm //0,2
+		TransforMatrix = Matrix2D(1, 0, 0, 1);
+		gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));
+	}
+
+	TransforMatrix = Matrix2D(1, 0, 0, 1);
+	gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));
+
 	// Finger forces
 //	gScreen.printChar('+', 0, -3, SIZE_CUE);
 //	fixationCross.position = gScreen.getCenter();

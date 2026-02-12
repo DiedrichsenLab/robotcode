@@ -303,6 +303,7 @@ void MyTrial::writeDat(ostream& out) {
 		<< releaseTime[2] << "\t"
 		<< releaseTime[3] << "\t"
 		<< releaseTime[4] << "\t"
+		<< ET << "\t"
 		<< MT << "\t"
 		<< numCorrect << "\t"
 		<< rewThresh1 << "\t"
@@ -344,7 +345,8 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "releaseTime3" << "\t"
 		<< "releaseTime4" << "\t"
 		<< "releaseTime5" << "\t"
-		<< "Movement Time" << "\t"
+		<< "ExecutionTime" << "\t"
+		<< "MovementTime" << "\t"
 		<< "numCorrectDigits" << "\t"
 		<< "rewThresh1" << "\t"
 		<< "rewThresh2" << "\t"
@@ -607,9 +609,9 @@ void MyTrial::control() {
 				unpressedFinger++;
 			}
 		}
-		if (unpressedFinger == 5) {
+		if ((unpressedFinger == 5) && (releaseState==FALSE)) {
 			releaseState = TRUE;
-			if ((digitCounter > -1)) {
+			if (digitCounter > -1) {
 				releaseTime[digitCounter] = gTimer[2];
 			}
 		}

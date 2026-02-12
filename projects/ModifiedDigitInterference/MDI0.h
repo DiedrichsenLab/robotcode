@@ -29,7 +29,7 @@ using namespace std;
 // Enumeration of Trial State 
 ///////////////////////////////////////////////////////////////
 enum TrialState {
-	WAIT_TRIAL,
+	WAIT_TRIAL, 
 	START_TRIAL,
 	WAIT_TR,
 	WAIT_PLAN, //3 
@@ -150,9 +150,11 @@ private:
 	int numPoints;								///< Number of points awarded 
 	//int inactiveFinger;						///< How many fingers are inactive?
 	//int allPressed;							///< Counts how many fingers are already placed on the board
-	double RT[NUMFINGERS] = { 0, 0, 0, 0, 0 };					///< When was the finger moved (time-count starts with trial)
+	double RT[NUMFINGERS] = { 0, 0, 0, 0, 0 };					///< When was the finger pressed (time-count starts with go)
+	double releaseTime[NUMFINGERS] = { 0, 0, 0, 0 , 0 };		/// When was the finger released
 	double pressed[NUMFINGERS] = { 0, 0, 0, 0, 0 };				/// pressed digit
 	double MT = 0;								///< Movement time, time till finishing a finger-sequence
+	double ET = 0;
 	//double Force;							///< sum of max Froces in a sequence
 
 	DataManager<DataRecord, 30000 / 5> dataman;	///< For data recording for MOV file 

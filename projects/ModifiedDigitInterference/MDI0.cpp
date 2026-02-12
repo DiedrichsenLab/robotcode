@@ -15,24 +15,23 @@ S626sManager s626;				///< Hardware Manager
 TextDisplay tDisp;				///< Text Display
 Screen gScreen;					///< Screen 
 TRCounter gCounter;				///< TR Counter 
-StimulatorBox gBox;			///< Stimulator Box
-double rewThresh1_global = 1890;
-double rewThresh2_global = 2530;
+StimulatorBox gBox;			    ///< Stimulator Box
+double rewThresh1_global = 2000;
+double rewThresh2_global = 4000;
 char gKey;
 bool gKeyPressed;
+bool blockFeedbackFlag = 0;
 
-//StimulatorBox gBox[2];		///< Stimulator Box 
 Timer gTimer(UPDATERATE);		///< Timer from S626 board experiments 
-HapticState hs;					///< This is the haptic State as d by the interrupt 
-///< For Thread safety this SHOULD NOT be assessed While 
-///< the interrupt is running. Use Thread-safe copy to 
-///< Get the current haptic state for graphical display 
+HapticState hs;					///< This is the haptic State as d by the interrupt  
 GraphicState gs;
 
+Matrix2D 	TransforMatrix(1, 0, 0, 1);
+
 char buffer[300];					///< String buffer 
-HINSTANCE gThisInst;					///< Instance of Windows application 
+HINSTANCE gThisInst;			    ///< Instance of Windows application 
 Experiment* gExp;					///< Pointer to myExperiment 
-Trial* currentTrial;					///< Pointer to current Trial 
+Trial* currentTrial;			    ///< Pointer to current Trial 
 int accurateResp = 0;				/// 
 int digitCounter = 0;				
 
@@ -138,12 +137,11 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 			Sleep(10);
 		}
 		cout << endl;
-
-			for (j = 0; j < 5; j++) {
-				volts[j] /= 100;
-				cout << volts[j] << "  " << endl;
-			}
-			gBox.zeroForce(volts);
+		for (j = 0; j < 5; j++) {
+			volts[j] /= 100;
+			cout << volts[j] << "  " << endl;
+		}
+		gBox.zeroForce(volts);
 		tDisp.unlock();
 	}
 
@@ -155,37 +153,6 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 		else {
 			rewThresh1_global = std::stod(arguments[1]);
 			rewThresh2_global = std::stod(arguments[2]);
-		}
-	}
-
-	/// Set TR Counter to simulated or non-simulated 
-	else if (arguments[0] == "TR") {
-		if (numArgs != 2) {
-			tDisp.print("USAGE: TR delay [ms]");
-		}
-		else {
-			sscanf(arguments[1].c_str(), "%f", &arg[0]);
-			if (arg[0] >= 0) {
-				gCounter.simulate(arg[0]);
-			}
-			else {
-				gCounter.simulate(0);
-			}
-		}
-	}
-
-	/// Flip display left-right or up-down 
-	else if (arguments[0] == "flip") {
-		if (numArgs != 3) {
-			tDisp.print("USAGE: flip horz_sign vert_sign");
-		}
-		else {
-			sscanf(arguments[1].c_str(), "%f", &arg[0]);
-			sscanf(arguments[2].c_str(), "%f", &arg[1]);
-			gScreen.setScale(Vector2D(SCR_SCALE * arg[0], SCR_SCALE * arg[1]));
-			//gScreen.setScale(Vector2D(0.02*arg[0],0.02*arg[1]));			
-			gScreen.setCenter(Vector2D(2 * arg[0], 3 * arg[1]));
-			//gScreen.setCenter(Vector2D(0.02*arg[0],0.02*arg[1]));			
 		}
 	}
 
@@ -223,34 +190,10 @@ Trial* MyBlock::getTrial() {
 ///////////////////////////////////////////////////////////////
 void MyBlock::start() {
 	for (int i = 0; i < NUMDISPLAYLINES; i++) { gs.line[i] = ""; }
-	//gs.boxOn = true;
 	accurateResp = 0;
+	blockFeedbackFlag = 0;
 	gCounter.reset();
 	gCounter.start();
-}
-
-void quartiles(double array[], int num_val, double& q1, double& q2, double& q3) {
-	int i, j;
-	double dummy;
-
-	// Sort the array (using selection sort as per original implementation)
-	for (i = 0; i < num_val - 1; i++) {
-		for (j = i + 1; j < num_val; j++) {
-			if (array[i] > array[j]) {
-				dummy = array[i];
-				array[i] = array[j];
-				array[j] = dummy;
-			}
-		}
-	}
-
-	int i1 = num_val / 4;
-	int i2 = num_val / 2; 
-	int i3 = num_val / 4 * 3; 
-
-	q1 = array[i1];
-	q2 = array[i2];
-	q3 = array[i3];
 }
 
 ///////////////////////////////////////////////////////////////
@@ -265,10 +208,11 @@ void MyBlock::giveFeedback() {
 	int i;
 	MyTrial* tpnr;
 	int numPointsTot = 0;
+	blockFeedbackFlag = 1;
 
 	for (i = 0; i < numTrials; i++) { //check each trial
 		tpnr = (MyTrial*)trialVec.at(i);
-		MTarray[i] = tpnr->MT;
+		MTarray[i] = tpnr->ET;
 		numPointsTot = numPointsTot + tpnr->numPoints;
 	}
 
@@ -287,17 +231,16 @@ void MyBlock::giveFeedback() {
 	gs.line[2] = buffer;
 	gs.lineColor[2] = 1;
 
-
 	double MTmedian = median(MTarray, numTrials);
 
 	quartiles(MTarray, numTrials, q1, q2, q3);
 
-	if (accurateResp > 5) {
+	if (accurateResp > 3 * numTrials / 4) {
 		rewThresh1_global = q1;
 		rewThresh2_global = q3;
 	}
 
-	sprintf(buffer, "Median MT: %f", MTmedian);
+	sprintf(buffer, "Median execution time: %f", MTmedian);
 	gs.line[3] = buffer;
 	gs.lineColor[3] = 1;
 	cout << "Threshold up" << endl;
@@ -355,6 +298,11 @@ void MyTrial::writeDat(ostream& out) {
 		<< RT[2] << "\t"
 		<< RT[3] << "\t"
 		<< RT[4] << "\t"
+		<< releaseTime[0] << "\t"
+		<< releaseTime[1] << "\t"
+		<< releaseTime[2] << "\t"
+		<< releaseTime[3] << "\t"
+		<< releaseTime[4] << "\t"
 		<< MT << "\t"
 		<< numCorrect << "\t"
 		<< rewThresh1 << "\t"
@@ -368,6 +316,7 @@ void MyTrial::writeDat(ostream& out) {
 // Header
 ///////////////////////////////////////////////////////////////
 void MyTrial::writeHeader(ostream& out) {
+	char header[200];
 	out << "startTR" << "\t"
 		<< "startTRReal" << "\t"
 		<< "startTimeReal" << "\t"
@@ -390,6 +339,11 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "reactionTime3" << "\t"
 		<< "reactionTime4" << "\t"
 		<< "reactionTime5" << "\t"
+		<< "releaseTime1" << "\t"
+		<< "releaseTime2" << "\t"
+		<< "releaseTime3" << "\t"
+		<< "releaseTime4" << "\t"
+		<< "releaseTime5" << "\t"
 		<< "Movement Time" << "\t"
 		<< "numCorrectDigits" << "\t"
 		<< "rewThresh1" << "\t"
@@ -445,8 +399,6 @@ void MyTrial::updateTextDisplay() {
 	sprintf(buffer, "TR : %d time: %2.2f slice:%d", gCounter.readTR(), gCounter.readTime(), gCounter.readSlice());
 	tDisp.setText(buffer, 2, 0);
 
-	//sprintf(buffer,"TIME : %1.4f:", gScreen.lastCycle);
-	//tDisp.setText(buffer,4,0);
 	sprintf(buffer, "State : %d  State time: %2.1f  releaseState: %d  unpressedFinger: %d  digitCounter: %d", state, gTimer[1], releaseState, unpressedFinger, digitCounter);
 	tDisp.setText(buffer, 4, 0);
 
@@ -471,6 +423,12 @@ void MyTrial::updateTextDisplay() {
 
 void MyTrial::updateGraphics(int what) {
 	int i, j;
+
+	if (blockFeedbackFlag) {
+		gScreen.setCenter(Vector2D(0, 0));    // In cm //0,2
+		TransforMatrix = Matrix2D(1, 0, 0, 1);
+		gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));
+	}
 		
 	if (gs.showSequence) {
 		for (i = 0; i < 5; i++) {
@@ -488,6 +446,8 @@ void MyTrial::updateGraphics(int what) {
 		}
 	}
 
+	TransforMatrix = Matrix2D(1, 0, 0, 1);
+	gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));
 
 	// Remove 
 	if (gs.showDiagnostics) {
@@ -533,17 +493,8 @@ void MyTrial::updateHaptics() {
 	gTimer.countup();
 	gTimer.countupReal();
 	s626.updateAD(0);
-
 	gCounter.update();
-	/////if we need to check for the TR counter signal:
-	//{ 
-	//		buffer[0]=gCounter.readTR()%9+90;
-	//		buffer[1]='0';
-	//		gSerial.Write(buffer,1); 
-	//	};
 	gBox.update();
-	//gBox[1].update(); 
-	/// Call the Trial for control 
 	currentTrial->control();
 
 	/// record the data at record frequency 
@@ -563,16 +514,13 @@ void MyTrial::updateHaptics() {
 //////////////////////////////////////////////////////////////////////
 void MyTrial::control() {
 	int i;
-	Vector2D recSize;
-	Vector2D recPos;
 	double force;
-	int goalResponse;
 
-	//cout << gExp->theBlock->state;
+	gs.showDiagnostics = 0;
 
 	switch (state) {
 	case WAIT_TRIAL:
-		gs.showDiagnostics = 0;
+		
 		gs.showFeedback = 0;
 		for (i = 0; i < 11; i++) { gs.line[i] = ""; }			// clear screen
 		gs.lineColor[7] = 1;					// WHITE
@@ -599,14 +547,12 @@ void MyTrial::control() {
 
 	case WAIT_TR: //1		
 		gs.showFeedback = 0;
-		/// Wait for TR counter to be at the right place & reset the clocks
 		if (gCounter.readTR() == 0) {
 			gTimer.reset(0);
 		}
 		if (gCounter.readTR() > 0 && gCounter.readTotTime() >= startTime) {
 			startTimeReal = gCounter.readTotTime();
-			startTRReal = gCounter.readTR(); // number of TR arrived so far
-
+			startTRReal = gCounter.readTR();
 			dataman.clear();
 			dataman.startRecording();
 			gTimer.reset(1);					//time for whole trial
@@ -615,7 +561,6 @@ void MyTrial::control() {
 			gs.showSequence = 1; //Print sequence
 			state = WAIT_PLAN;
 		}
-
 		break;
 
 	case WAIT_PLAN: //2
@@ -627,6 +572,9 @@ void MyTrial::control() {
 			isError = 0;
 			for (i = 0; i < NUMFINGERS; i++) {
 				gs.digit_color[i] = 1; // white
+				RT[i] = 0;
+				releaseTime[i] = 0;
+				pressed[i] = 0;
 			}
 			numCorrect = 0;
 			numPoints = -1;
@@ -641,18 +589,16 @@ void MyTrial::control() {
 				
 				digitCounter = digitCounter + 1;
 				RT[digitCounter] = gTimer[2];
-				pressed[digitCounter] = i;
+				pressed[digitCounter] = i + 1;
 
 				releaseState = FALSE; // set the finger to pressed
 				std::string seqChar = std::string(1, sequence[digitCounter]);
 				std::string iStr = std::to_string(i + 1);
 				if (seqChar == iStr) {
-					
 					gs.digit_color[digitCounter] = 3; // green
 					numCorrect++;
 				}
 				else {
-					
 					gs.digit_color[digitCounter] = 2; // red
 					isError = 1;
 				}
@@ -663,18 +609,21 @@ void MyTrial::control() {
 		}
 		if (unpressedFinger == 5) {
 			releaseState = TRUE;
+			if ((digitCounter > -1)) {
+				releaseTime[digitCounter] = gTimer[2];
+			}
 		}
 
-
 		if ((gTimer[2] > execTime) || (digitCounter>=4  && releaseState)){
-			MT = gTimer[2];
+			ET = gTimer[2];
+			MT = ET - RT[0];
 			if (isError == 0) {
-				if (MT <= rewThresh2 && MT > rewThresh1 && digitCounter >= 4) {
+				if (ET <= rewThresh2 && ET > rewThresh1 && digitCounter >= 4) {
 					numPoints = 1;
 					sprintf(buffer, "+1");
 					accurateResp++;
 				}
-				else if (MT <= rewThresh1 && digitCounter >= 4) {
+				else if (ET <= rewThresh1 && digitCounter >= 4) {
 					numPoints = 3;
 					sprintf(buffer, "+3");
 					accurateResp++;
@@ -683,10 +632,10 @@ void MyTrial::control() {
 					numPoints = -1;
 					sprintf(buffer, "-1");
 				}
-
 			}
 			else {
 				numPoints = -1;
+				ET = execTime;
 				MT = execTime;
 				sprintf(buffer, "-1");
 			}
@@ -711,7 +660,7 @@ void MyTrial::control() {
 
 	case WAIT_ITI:  //5
 		gs.showFeedback = 0;
-		gs.showSequence = FALSE;
+		gs.showSequence = 0;
 		if (gTimer[2] > iti) {
 			dataman.stopRecording();
 			state = END_TRIAL;

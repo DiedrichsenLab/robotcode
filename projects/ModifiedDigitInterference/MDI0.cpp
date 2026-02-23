@@ -22,23 +22,24 @@ char gKey;
 bool gKeyPressed;
 bool blockFeedbackFlag = 0;
 
+int finger[5] = { 0, 0, 0, 0, 0 };						///< State of each finger
+
 Timer gTimer(UPDATERATE);		///< Timer from S626 board experiments 
 HapticState hs;					///< This is the haptic State as d by the interrupt  
 GraphicState gs;
-
-Matrix2D 	TransforMatrix(1, 0, 0, 1);
 
 char buffer[300];					///< String buffer 
 HINSTANCE gThisInst;			    ///< Instance of Windows application 
 Experiment* gExp;					///< Pointer to myExperiment 
 Trial* currentTrial;			    ///< Pointer to current Trial 
 int accurateResp = 0;				/// 
-int digitCounter = 0;				
+int digitCounter = 0;		
+int releaseCounter = 0;
 
 #define TRTIME 1000
 int sliceNumber = 32;			///< How many slices do we have
 
-double threshForce = 1;//THRESHOLD[5] = { resTH, resTH, resTH, resTH, resTH }; //, {relTH, relTH, relTH, relTH, relTH}, {maxTH, maxTH, maxTH, maxTH, maxTH} };
+double threshForce = 1;
 
 ///////////////////////////////////////////////////////////////
 /// Main Program: Start the experiment, initialize the task and run it 
@@ -145,6 +146,18 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 		tDisp.unlock();
 	}
 
+	/// Flip display left-right or up-down 
+	else if (arguments[0] == "resize") {
+		if (numArgs != 2) {
+			tDisp.print("USAGE: resize 0|1");
+		}
+		else {
+			sscanf(arguments[1].c_str(), "%f", &arg[0]);
+			gScreen.setCenter(Vector2D(0, 0));    // In cm //0,2
+			gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));
+		}
+	}
+
 	else if (arguments[0] == "rewThresh") {
 		if (numArgs != 3) {
 			tDisp.print("USAGE: rewThesh <value1> <value1>");
@@ -210,10 +223,15 @@ void MyBlock::giveFeedback() {
 	int numPointsTot = 0;
 	blockFeedbackFlag = 1;
 
+	int n = 0;
 	for (i = 0; i < numTrials; i++) { //check each trial
 		tpnr = (MyTrial*)trialVec.at(i);
-		MTarray[i] = tpnr->ET;
 		numPointsTot = numPointsTot + tpnr->numPoints;
+		if (tpnr->isError==0) {
+			MTarray[n] = tpnr->ET;
+			n++;
+		}
+		
 	}
 
 	cout << "Points calculated" << endl;
@@ -231,16 +249,15 @@ void MyBlock::giveFeedback() {
 	gs.line[2] = buffer;
 	gs.lineColor[2] = 1;
 
-	double MTmedian = median(MTarray, numTrials);
+	//double MTmedian = median(MTarray, n);
+	quartiles(MTarray, n, q1, q2, q3);
+	sprintf(buffer, "Median execution time: %f", q2);
 
-	quartiles(MTarray, numTrials, q1, q2, q3);
-
-	if (accurateResp > 3 * numTrials / 4) {
+	if (n >= 5) {
 		rewThresh1_global = q1;
 		rewThresh2_global = q3;
 	}
 
-	sprintf(buffer, "Median execution time: %f", MTmedian);
 	gs.line[3] = buffer;
 	gs.lineColor[3] = 1;
 	cout << "Threshold up" << endl;
@@ -268,7 +285,6 @@ void MyTrial::read(istream& in) {
         >> feedbackTime
 		>> iti
 		>> QuartetType
-		>> BN
 	    >> sequence;
 }
 
@@ -293,16 +309,22 @@ void MyTrial::writeDat(ostream& out) {
 		<< pressed[2] << "\t"
 		<< pressed[3] << "\t"
 		<< pressed[4] << "\t"
-		<< RT[0] << "\t"
-		<< RT[1] << "\t"
-		<< RT[2] << "\t"
-		<< RT[3] << "\t"
-		<< RT[4] << "\t"
+		<< released[0] << "\t"
+		<< released[1] << "\t"
+		<< released[2] << "\t"
+		<< released[3] << "\t"
+		<< released[4] << "\t"
+		<< pressTime[0] << "\t"
+		<< pressTime[1] << "\t"
+		<< pressTime[2] << "\t"
+		<< pressTime[3] << "\t"
+		<< pressTime[4] << "\t"
 		<< releaseTime[0] << "\t"
 		<< releaseTime[1] << "\t"
 		<< releaseTime[2] << "\t"
 		<< releaseTime[3] << "\t"
 		<< releaseTime[4] << "\t"
+		<< isError << "\t"
 		<< ET << "\t"
 		<< MT << "\t"
 		<< numCorrect << "\t"
@@ -335,6 +357,11 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "pressedDigit3" << "\t"
 		<< "pressedDigit4" << "\t"
 		<< "pressedDigit5" << "\t"
+		<< "releasedDigit1" << "\t"
+		<< "releasedDigit2" << "\t"
+		<< "releasedDigit3" << "\t"
+		<< "releasedDigit4" << "\t"
+		<< "releasedDigit5" << "\t"
 		<< "reactionTime1" << "\t"
 		<< "reactionTime2" << "\t"
 		<< "reactionTime3" << "\t"
@@ -345,6 +372,7 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "releaseTime3" << "\t"
 		<< "releaseTime4" << "\t"
 		<< "releaseTime5" << "\t"
+		<< "isError" << "\t"
 		<< "ExecutionTime" << "\t"
 		<< "MovementTime" << "\t"
 		<< "numCorrectDigits" << "\t"
@@ -401,7 +429,7 @@ void MyTrial::updateTextDisplay() {
 	sprintf(buffer, "TR : %d time: %2.2f slice:%d", gCounter.readTR(), gCounter.readTime(), gCounter.readSlice());
 	tDisp.setText(buffer, 2, 0);
 
-	sprintf(buffer, "State : %d  State time: %2.1f  releaseState: %d  unpressedFinger: %d  digitCounter: %d", state, gTimer[1], releaseState, unpressedFinger, digitCounter);
+	sprintf(buffer, "State : %d  State time: %2.1f  digitCounter: %d", state, gTimer[1], digitCounter);
 	tDisp.setText(buffer, 4, 0);
 
 	sprintf(buffer, "read : %2.1f   readReal : %2.1f  accurateResp: %d", gTimer[0], gTimer.readReal(1), accurateResp);
@@ -428,7 +456,7 @@ void MyTrial::updateGraphics(int what) {
 
 	if (blockFeedbackFlag) {
 		gScreen.setCenter(Vector2D(0, 0));    // In cm //0,2
-		TransforMatrix = Matrix2D(1, 0, 0, 1);
+		//TransforMatrix = Matrix2D(1, 0, 0, 1);
 		gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));
 	}
 		
@@ -448,8 +476,8 @@ void MyTrial::updateGraphics(int what) {
 		}
 	}
 
-	TransforMatrix = Matrix2D(1, 0, 0, 1);
-	gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));
+	//TransforMatrix = Matrix2D(1, 0, 0, 1);
+	//.setScale(Vector2D(SCR_SCALE, SCR_SCALE));
 
 	// Remove 
 	if (gs.showDiagnostics) {
@@ -538,8 +566,7 @@ void MyTrial::control() {
 	case START_TRIAL: //0
 		gTimer.reset(1);
 		gTimer.reset(2);
-		for (i = 0; i < NUMFINGERS; i++) {
-			response[i] = 0; // not pressed 
+		for (i = 0; i < NUMFINGERS; i++) { 
 			gs.digit_color[i] = 4; // Blue?
 		}
 		rewThresh1 = rewThresh1_global;
@@ -566,34 +593,46 @@ void MyTrial::control() {
 		break;
 
 	case WAIT_PLAN: //2
-		digitCounter = -1;
+		digitCounter = 0;
+		releaseCounter = 0;
 		if (gTimer[2] > planTime) {
 			state = WAIT_RESPONSE;
 			gTimer.reset(2);
-			releaseState = TRUE;
-			isError = 0;
+			
+			//init digits
 			for (i = 0; i < NUMFINGERS; i++) {
 				gs.digit_color[i] = 1; // white
-				RT[i] = 0;
+				pressTime[i] = 0;
 				releaseTime[i] = 0;
 				pressed[i] = 0;
+				released[i] = 0;
 			}
+
+			// init fingers
+			for (i = 0; i < 5; i++) {
+				finger[i] = 0;
+			}
+
+			isError = 0;
 			numCorrect = 0;
 			numPoints = -1;
 		}
 		break;
 
 	case WAIT_RESPONSE: //3
-		unpressedFinger = 0;
-		for (i = 0; i < 5; i++) { // check all finger 
-			force = gBox.getForce(i);
-			if (force > threshForce && releaseState) { // check for initial press
-				
-				digitCounter = digitCounter + 1;
-				RT[digitCounter] = gTimer[2];
-				pressed[digitCounter] = i + 1;
 
-				releaseState = FALSE; // set the finger to pressed
+		for (i = 0; i < 5; i++) {
+			force = gBox.getForce(i);
+			if (finger[i] == 0 && force > threshForce) { // Press threshold comparison
+
+				if (digitCounter >= NUMFINGERS) {
+					isError = 1;               // optional: mark as error
+					continue;
+				}
+
+				pressTime[digitCounter] = gTimer[2];
+				pressed[digitCounter] = i + 1;
+				finger[i] = 1;
 				std::string seqChar = std::string(1, sequence[digitCounter]);
 				std::string iStr = std::to_string(i + 1);
 				if (seqChar == iStr) {
@@ -604,33 +643,38 @@ void MyTrial::control() {
 					gs.digit_color[digitCounter] = 2; // red
 					isError = 1;
 				}
+				digitCounter++;
 			}
-			else if (force <= threshForce) { // count fingers that are not pressed
-				unpressedFinger++;
-			}
-		}
-		if ((unpressedFinger == 5) && (releaseState==FALSE)) {
-			releaseState = TRUE;
-			if (digitCounter > -1) {
-				releaseTime[digitCounter] = gTimer[2];
+			//todo: Should I add release fingers? Ask Jorn
+			if (finger[i] == 1 && force <= threshForce) { // Release threshold comparison
+				finger[i] = 0;
+				released[releaseCounter] = i + 1;
+				releaseTime[releaseCounter] = gTimer[2];
+				releaseCounter++;
 			}
 		}
 
-		if ((gTimer[2] > execTime) || (digitCounter>=4  && releaseState)){
+		if ((gTimer[2] > execTime) || (releaseCounter >= NUMFINGERS)){
 			ET = gTimer[2];
-			MT = ET - RT[0];
+			MT = ET - pressTime[0];
 			if (isError == 0) {
-				if (ET <= rewThresh2 && ET > rewThresh1 && digitCounter >= 4) {
+				if (ET <= rewThresh2 && ET > rewThresh1 && releaseCounter >= NUMFINGERS) {
 					numPoints = 1;
 					sprintf(buffer, "+1");
 					accurateResp++;
 				}
-				else if (ET <= rewThresh1 && digitCounter >= 4) {
+				else if (ET <= rewThresh1 && releaseCounter >= NUMFINGERS) {
 					numPoints = 3;
 					sprintf(buffer, "+3");
 					accurateResp++;
 				}
-				else {
+				else if (ET > rewThresh2 && releaseCounter >= NUMFINGERS) {
+					numPoints = -1;
+					sprintf(buffer, "-1");
+					accurateResp++;
+				}
+				else if (releaseCounter < NUMFINGERS) {
+					isError = 1;
 					numPoints = -1;
 					sprintf(buffer, "-1");
 				}

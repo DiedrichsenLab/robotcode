@@ -142,17 +142,18 @@ private:
 	int execTime;
 	string sequence;
 	int iti;								///< Timedelay before the next trail starts in[ms]
-	int response[NUMFINGERS];					///< Which key is pressed 
-	bool releaseState = TRUE; //[NUMFINGERS];				///< Was the finger released already or is it still pressed?
-	int unpressedFinger = 0;
+	//int response[NUMFINGERS];					///< Which key is pressed 
+	//bool releaseState = TRUE; //[NUMFINGERS];				///< Was the finger released already or is it still pressed?
+	//int unpressedFinger = 0;
 	int numCorrect = 0;								///< Number of corrrect presses 
 	int isError;								///< Is a error made 
 	int numPoints;								///< Number of points awarded 
 	//int inactiveFinger;						///< How many fingers are inactive?
 	//int allPressed;							///< Counts how many fingers are already placed on the board
-	double RT[NUMFINGERS] = { 0, 0, 0, 0, 0 };					///< When was the finger pressed (time-count starts with go)
+	double pressTime[NUMFINGERS] = { 0, 0, 0, 0, 0 };					///< When was the finger pressed (time-count starts with go)
 	double releaseTime[NUMFINGERS] = { 0, 0, 0, 0 , 0 };		/// When was the finger released
 	double pressed[NUMFINGERS] = { 0, 0, 0, 0, 0 };				/// pressed digit
+	double released[NUMFINGERS] = { 0, 0, 0, 0, 0 };				/// pressed digit
 	double MT = 0;								///< Movement time, time till finishing a finger-sequence
 	double ET = 0;
 	//double Force;							///< sum of max Froces in a sequence

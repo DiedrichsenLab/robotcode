@@ -1185,26 +1185,36 @@ void MyTrial::control() {
 		// Wait for the release of all keys, assign points
 		if (released == NUMFINGERS) {
 			if (isError == 0 && isClamped == 0) {
-				if (isTrain){
-					// if (ET < timeThresholdSuper) {
-					// 	points = 3;
-					// }
-					// else if (ET < timeThreshold) {
-					// 	points = 1;
-					// }
-					if (ET < estimated_ET_percentile_low) {
-						points = 3;
-					}
-					else if (ET < estimated_ET_percentile_high) {
-						points = 1;
-					}
-					else {
-						points = 0;
-					}
+				if (ET < estimated_ET_percentile_low) {
+					points = 3;
+				}
+				else if (ET < estimated_ET_percentile_high) {
+					points = 1;
 				}
 				else {
-					points = 0; // no points in familiarization/random trials
+					points = 0;
 				}
+
+				//if (isTrain){
+				//	// if (ET < timeThresholdSuper) {
+				//	// 	points = 3;
+				//	// }
+				//	// else if (ET < timeThreshold) {
+				//	// 	points = 1;
+				//	// }
+				//	if (ET < estimated_ET_percentile_low) {
+				//		points = 3;
+				//	}
+				//	else if (ET < estimated_ET_percentile_high) {
+				//		points = 1;
+				//	}
+				//	else {
+				//		points = 0;
+				//	}
+				//}
+				//else {
+				//	points = 0; // no points in familiarization/random trials
+				//}
 				gs.clearCues();
 				gs.size[1] = 8; // size of feedback text
 				sprintf(buffer, "+%d", points);

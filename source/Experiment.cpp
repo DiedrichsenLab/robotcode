@@ -532,3 +532,31 @@ double median(double array[],int num_val) {
 		return(array[i]); 
 	} 
 } 
+
+/////////////////////////////////////////////////////////
+/// quartiles: Helper function most used for Block::giveFeedback 
+/// calculates q1,q2,q3 of an array of values 
+/////////////////////////////////////////////////////////
+void quartiles(double array[], int num_val, double& q1, double& q2, double& q3) {
+	int i, j;
+	double dummy;
+
+	// Sort the array (using selection sort as per original implementation)
+	for (i = 0; i < num_val - 1; i++) {
+		for (j = i + 1; j < num_val; j++) {
+			if (array[i] > array[j]) {
+				dummy = array[i];
+				array[i] = array[j];
+				array[j] = dummy;
+			}
+		}
+	}
+
+	int i1 = num_val / 4;
+	int i2 = num_val / 2;
+	int i3 = num_val / 4 * 3;
+
+	q1 = array[i1];
+	q2 = array[i2];
+	q3 = array[i3];
+}

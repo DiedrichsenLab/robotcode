@@ -15,38 +15,34 @@
 #include "TRCounter626.h" 
 #include "Win626.h"
 #include <gl/glut.h>
-#include "Target.h"    // Neda added--> Simple class that implements rectangles that can change color
+#include "Target.h"		// Neda added--> Simple class that implements rectangles that can change color
 
 using namespace std;
 
 #define Pi 3.141592654
 //#define FIX_SIZE 0.004
 #define NUMFINGERS 5
-#define UPDATERATE 2    // sampling rate at every UPDATERATE ms 1=1K, 2=500Hz ...
-#define RECORDRATE 2    // recording update rate
+#define UPDATERATE 2		// sampling rate at every UPDATERATE ms 1=1K, 2=500Hz ...
+#define RECORDRATE 2		// recording update rate
 #define UPDATE_TEXTDISP 60
-#define SCR_SCALE 1.84/72 //3/72 //2.54/72 // cm/pixel 
-#define MAX_PRESS 5 // edited by SKim, fMRI
+#define SCR_SCALE 1.84/72	//3/72 //2.54/72 // cm/pixel 
+#define MAX_PRESS 5			// edited by SKim, fMRI
 ///////////////////////////////////////////////////////////////
 // Enumeration of Trial State 
 ///////////////////////////////////////////////////////////////
+// state: 
+// WAIT_TRIAL (0) -> START_TRIAL (1) -> START_FIX (2) -> WAIT_GOCUE (3) -> WAIT_PRESS (4) ->
+// WAIT_END_RELEASE (5) -> WAIT_FEEDBACK (6) -> WAIT_ITI (7) -> END_TRIAL (8)
 enum TrialState {
-	WAIT_TRIAL,			// 1
-	START_TRIAL,		// 2
-	//____________________Neda
-	START_FIX,	    	// 3 wait for eye to fixate at the begining of the seq
-	//____________________end
-	//WAIT_ALLRELEASE,	// 4
-	WAIT_GOCUE,		// 5
-	WAIT_PRESS,			// 6
-	WAIT_END_RELEASE,		// 7
-	//WAIT_FEEDBACK,		// 8
-	//END_FIX,            // 9      
-	WAIT_ITI,			// 10
-	//____________________Neda	
-	END_TRIAL,			// 11 wait for eye to fixate at the begining of the seq
-	//CALIB        		// 12 only used for calibration
-	//____________________end
+	WAIT_TRIAL,			// 0
+	START_TRIAL,		// 1
+	START_FIX,	    	// 2 
+	WAIT_GOCUE,			// 3
+	WAIT_PRESS,			// 4
+	WAIT_END_RELEASE,	// 5
+	WAIT_FEEDBACK,		// 6 
+	WAIT_ITI,			// 7
+	END_TRIAL,			// 8 
 };
 
 
@@ -68,13 +64,14 @@ class GraphicState {
 public:
 	GraphicState();
 	void reset(void);							///< Reset all targets to invisble 
-	string line[NUMDISPLAYLINES + 1];				///< Number of lines in Feedback display 
+	string line[NUMDISPLAYLINES + 1];			///< Number of lines in Feedback display 
 	double lineXpos[NUMDISPLAYLINES + 1];
 	double lineYpos[NUMDISPLAYLINES + 1];
 	void clearCues(void);						///< Clear all the cues on the screen 
 	//Vector2D FixPlusPos[1];
 	double FixPlusX;
 	double FixPlusY;
+	int fixationColor; 
 	int lineColor[NUMDISPLAYLINES + 1];
 	int boxColor[2];
 	GLfloat size[NUMDISPLAYLINES + 1];
@@ -82,9 +79,8 @@ public:
 	int showLines;
 
 	char Points[2];
-	char cuePress[14];
+	char cuePress[5];
 };
-
 
 ///////////////////////////////////////////////////////////////
 /// Data Record: holds a data frame for DataManager. determines what 
@@ -99,15 +95,16 @@ public:
 	int state;
 	double timeReal;
 	double time;
+
 	double force_left[5];
 	double force_right[5];
 	///_______________________Neda add
 
-	int eyeTime;						///< eye tracker data - timestamp
-	float eyeX;							///< eye tracker data - x position(easy calibration)
-	float eyeY;							///< eye tracker data - y position(easy calibration)
-	float eyeX_org;						///< eye tracker data - x position(original coordinate of Eyelink)
-	float eyeY_org;						///< eye tracker data - y position(original coordinate of Eyelink)
+	int eyeTime;		///< eye tracker data - timestamp
+	float eyeX;			///< eye tracker data - x position(easy calibration)
+	float eyeY;			///< eye tracker data - y position(easy calibration)
+	float eyeX_org;		///< eye tracker data - x position(original coordinate of Eyelink)
+	float eyeY_org;		///< eye tracker data - y position(original coordinate of Eyelink)
 	float pupil_size;
 	float PPDx;
 	float PPDy;
@@ -155,40 +152,36 @@ public:
 	friend  void MyBlock::giveFeedback();
 private:
 	TrialState state;						///< State of the Trial 
-	int cTrial; 							///< Trial number
-	int Horizon;                            ///< How mnay digits ahead can you see
-	int StimTimeLim;							///< For how long is the seq/chunk displayed
-	//int subNum;
-	int PrepTime; 
-	int seqType;							///< Which sequence of finger movments has to be done? 
-	int MovTimeLim;							// Added by SKim for fMRI
-	int TrialTime;							// Added by SKim for fMRI, TrialTime = PrepTime + MovTime + iti
+	int PrepTime;
+	int MTLimit;
+	int cueType;							///< 0: Letter cue 1: Spatial cue 
 	int press[MAX_PRESS];					///< Which digit to press 
 	int fGiven[MAX_PRESS];
+	int response[MAX_PRESS];				///< Which key is pressed 
 	int feedback;							///< Give Feedback or not? 
-	int complete;							///< How much time do you have to complete the seq.?
 	int iti;								///< Timedelay before the next trail starts in[ms]
 	int sounds;								///< Do we play the sounds for finger presses
 	int hand;								///< Which board are we using left= 0 right= 1
 	int seqCounter;							///< Which position in the seq are we?
-	int numNewpress;
-	int released;
-	int tempCounter;							///< Which position in the seq are we?
-	int DigPressed;							///< For Horizon-wize digit revealing
 	int isError;							///< Was there an error in the finger presses?
+	int numPoints;							///< Number of points awarded 
 	int nFingerErrors;						// Number of error tappings, SKim
-	int isComplete;							///< Are all presses made  
-	int response[MAX_PRESS];				///< Which key is pressed 
-	int points;								///< How many points did you get in a trial 0/1/-1?
+	int point;								///< How many points did you get in a trial 0/1/-1?
 	int seqLength;							///< How long is the sequence (arbitrary)?
-	int chunkLength;						///< How many chunks in the sequence?
 	double pressTime[MAX_PRESS];			///< Time when each finger was pressed 
 	double releaseTime[MAX_PRESS];			///< Time when each finger was release
 
+	double onsettime;						///< Time when the trial starts
 	double MT;								///< Overall MT 
 	double RT;								// Reaction Time, added by SKim
 	string cueP;							// edited by SKim, using only press cue	
-//	string cueS, cueC, cueP; 					///< Visual cues for sequence, chunk, and press
+	//	string cueS, cueC, cueP; 			///< Visual cues for sequence, chunk, and press
+
+		//variables for fMRI synchronisation, SKim
+	//int startSlice;						///< Starting value for slice no. 
+	//int startSlicereal;					///< Starting value for slice no. 
+	double startTime;						// scheduled trial start time
+	double startTimeReal;					// actual trial start time due to button release
 	DataManager<DataRecord, 30000 / 2> dataman;	///< For data recording for MOV file 
 };
 
@@ -205,6 +198,20 @@ public:
 	virtual bool parseCommand(string args[], int numArgs);
 
 };
+
+
+//////////////////////////////////////////////////////////////
+class FixCross : public Target {
+public:
+	void draw();
+};
+void FixCross::draw() {
+	//setColor(1);
+	gScreen.setColor(color);
+	gScreen.drawBox(Vector2D(size[0], 0.3), Vector2D(position[0], position[1]));
+	gScreen.drawBox(Vector2D(0.3, size[1]), Vector2D(position[0], position[1]));
+}
+
 
 // computing standard deviation
 double mystd(double array[], int sizeOfArray);

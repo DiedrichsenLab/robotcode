@@ -1,8 +1,10 @@
 #include <windows.h>
 #include <conio.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <string>
 #include "TextDisplay.h"
 #include "Screen.h"
@@ -15,30 +17,37 @@
 #include "TRCounter626.h" 
 #include "Win626.h"
 #include <gl/glut.h>
+#include <utility>
+#include <vector>
+#include <algorithm>
+//#include "SDL.h" // SDL library
+//#include "SDL_mixer.h" // Necessary for playing multiple sounds (added by a-yokoi)
 
 using namespace std;
 
 #define Pi 3.141592654
-//#define FIX_SIZE 0.004
-#define NUMFINGERS 5 // maximal number of fingers in the sequence 
-#define UPDATERATE 5 // in ms 
-#define RECORDRATE 5 // in ms 
-#define UPDATE_TEXTDISP 10
+#define NUMFINGERS 5
+#define UPDATERATE 5
+#define RECORDRATE 5
+#define UPDATE_TEXTDISP 60
 #define SCR_SCALE 1.84/72 //3/72 //2.54/72 // cm/pixel 
+#define MAX_PRESS 7 // max number of finger presses in a sequence
+
 ///////////////////////////////////////////////////////////////
 // Enumeration of Trial State 
 ///////////////////////////////////////////////////////////////
-enum TrialState {
-	WAIT_TRIAL, 
-	START_TRIAL,
-	WAIT_TR,
-	WAIT_PLAN, //3 
-	WAIT_RESPONSE, //4 
-	WAIT_FEEDBACK,//5 
-	WAIT_ITI,
-	END_TRIAL
-};
 
+enum TrialState {
+	WAIT_TRIAL,			// 0
+	START_TRIAL,		// 1
+	WAIT_TR,			// 2
+	WAIT_PREP,			// 3
+	WAIT_PRESS,			// 4
+	WAIT_RELEASE,		// 5
+	WAIT_FEEDBACK,		// 6 
+	WAIT_ITI,			// 7
+	END_TRIAL			// 8
+};
 
 ///////////////////////////////////////////////////////////////
 // Define haptic state: collection of variables that define the haptic scene 
@@ -50,29 +59,28 @@ public:
 	long counter[2];	// Holds the raw values of the 2 counters 
 };
 
-#define NUMDISPLAYLINES 15
+#define NUMDISPLAYLINES 100 //20
+#define MAX_LEADERBOARD_LINE 20
+
 ///////////////////////////////////////////////////////////////
 // Define graphics state: collection of variables that define the graphic scene 
 ///////////////////////////////////////////////////////////////
 class GraphicState {
 public:
 	GraphicState();
-	void reset(void);							///< Reset all targets to invisble 
+	void reset(void);							///< Reset all display lines 
+	void clearCues(void);						///< Clear all the cues on the screen 
 	string line[NUMDISPLAYLINES];				///< Number of lines in Feedback display 
 	double lineXpos[NUMDISPLAYLINES];
 	double lineYpos[NUMDISPLAYLINES];
 	int lineColor[NUMDISPLAYLINES];
-	GLfloat lineSize[NUMDISPLAYLINES];
-	//bool boxOn;
-	bool showLines;
-	int showBoxes;
 	int boxColor;
-	bool showFeedback;
-	bool showDiagnostics;
-	bool showSequence;
-	int digit_color[NUMFINGERS];	/// Color of each of the digits in the sequence
+	GLfloat size[NUMDISPLAYLINES];
+	bool boxOn;
+	bool showlines;
+	char seq[MAX_PRESS];
+	char seqMask[MAX_PRESS];
 };
-
 
 ///////////////////////////////////////////////////////////////
 /// Data Record: holds a data frame for DataManager. determines what 
@@ -81,17 +89,15 @@ public:
 class DataRecord {
 public:
 	DataRecord() {}
-	DataRecord(int s, int t);
+	DataRecord(int s);
 	void write(ostream& out);
 public:
-	int trialNum;
 	int state;
 	double timeReal;
 	double time;
 	double force_left[5];
 	double force_right[5];
 };
-
 
 ///////////////////////////////////////////////////////////////
 // MyBlock
@@ -102,6 +108,7 @@ public:
 	virtual Trial* getTrial();		// create a new Trial 
 	virtual void giveFeedback();
 	virtual void start();
+	virtual double percentile(double array[], int num_val, int percent);
 };
 
 ///////////////////////////////////////////////////////////////
@@ -126,39 +133,55 @@ public:
 	virtual void writeDat(ostream& out);		// has to be implemented 
 	virtual void writeMov(ostream& out);		// Trial output to data file 
 	friend  void MyBlock::giveFeedback();
-	
 private:
 	TrialState state;						///< State of the Trial 
-	int startTR;							///< Which TR should the trial Start? 
-	int startTRReal;
-	int startTimeReal;
-	int feedbackTime;
-	int BN;
-	int QuartetType;
-	double rewThresh1;						/// Recorded value of the applied reward threshold (from global)
-	double rewThresh2;						/// Recorded value of the applied reward threshold (from global)
-	int startTime;							///< When should the next trail start? is independent of TR time!
-	int planTime;
-	int execTime;
-	string sequence;
-	int iti;								///< Timedelay before the next trail starts in[ms]
-	//int response[NUMFINGERS];					///< Which key is pressed 
-	//bool releaseState = TRUE; //[NUMFINGERS];				///< Was the finger released already or is it still pressed?
-	//int unpressedFinger = 0;
-	int numCorrect = 0;								///< Number of corrrect presses 
-	int isError;								///< Is a error made 
-	int numPoints;								///< Number of points awarded 
-	//int inactiveFinger;						///< How many fingers are inactive?
-	//int allPressed;							///< Counts how many fingers are already placed on the board
-	double pressTime[NUMFINGERS] = { 0, 0, 0, 0, 0 };					///< When was the finger pressed (time-count starts with go)
-	double releaseTime[NUMFINGERS] = { 0, 0, 0, 0 , 0 };		/// When was the finger released
-	double pressed[NUMFINGERS] = { 0, 0, 0, 0, 0 };				/// pressed digit
-	double released[NUMFINGERS] = { 0, 0, 0, 0, 0 };				/// pressed digit
-	double MT = 0;								///< Movement time, time till finishing a finger-sequence
-	double ET = 0;
-	//double Force;							///< sum of max Froces in a sequence
+	int subNum;									///< Which subject number 
+	int group; 								///< Which group (Clamped or not)
+	bool isTrain;							///< Specific sequence or not
+	bool isClamped;						///< Is speed clamped or not
+	int iti; 									///< inter-trial interval
+	int press[MAX_PRESS];					///< Which digit to press (in intrinsic coordinates 1:thumb 5: pinkie) 
+	int hand;								///< Which board are we using left= 1 right= 2
+	int seqCounter;							///< Which position in the seq are we?
+	int fixed_dur;							///< Is the trial duration fixed or not?
 
-	DataManager<DataRecord, 30000 / 5> dataman;	///< For data recording for MOV file 
+	int newPress;							///< Is this a new press?
+	int newRelease;							///todo: Should I add this? Ask Jorn
+	int pressedFinger;						///< Which finger was pressed
+	int pressedHand;                        ///< Which hand was pressed
+	int released;							///< Are all fingers released?
+
+	int numNewThresCross;					///< Has the pre-movement threshold been crossed?
+
+	int complete;
+	int isError;							///< Was there an error in the trial?
+	int isCross;							///< Was there a thres cross in the trial?
+	int isPresshard;						///< Was there a hard press in the trial
+	int numCrosses;							///< How many crosses in the trial?
+	int timeStamp;							///< When was the pre-movement threshold crossed?
+
+	int timingError;						///< Was there an error in the timing of finger presses? (e.g. anticipation)
+	int response[MAX_PRESS];				///< Which digit is pressed (in intrinsic coordinates 1:thumb 5: pinkie) 
+	int handPressed[MAX_PRESS];             ///< Which hand is pressed
+	int points;							///< How many points did you get in a trial -1/0/+1/+3?
+	int seqLength;							///< How long is the sequence (arbitrary)?
+	int startTime;							///< Requested start time for trial in ms
+	int startTimeReal;						///< Actual start time for trial (as recorded) in ms
+	int startTR;							///< Requested start time for trial in TRs
+	int startTRtime;						///< Actual start time for trial (as recorded) in TRs	
+	int useMetronome;						///< Use timer metronome? 1=yes; 0=no
+	int trialDur;							///< How long was this trial? (in ms)
+	double stimOnsetTime;					///< Is it the last trial of the run? 1=yes; 0=no
+	double waitTime;						///< How long to wait before the first trial? (for behavioral version only)	
+	double pressTime[MAX_PRESS];			///< Time when each finger was pressed
+	double releaseTime[MAX_PRESS];			///< Time when each finger was released
+	double RT;								///< Reaction time (from go cue)
+	double ET;								///< Execution time (RT + MT)
+	double MT;								///< Movement time 
+	double clammpedSpeed;					///< Clamped speed for this trial
+
+	string cue;							///< Visual cue for sequences
+	DataManager<DataRecord, 30000 / 2> dataman;///< For data recording for MOV file 
 };
 
 ///////////////////////////////////////////////////////////////
@@ -170,10 +193,8 @@ public:
 	MyExperiment(string tit, string code, string dDir);
 	void init(); // Initializes the Experiment 
 	virtual void control();							// Main control loop 
-	virtual void printHeader(ostream& out) {}		// Prints the dat_header to files
 	virtual void onExit(void);						// Called upon exit 
 	virtual bool parseCommand(string args[], int numArgs);
 
 };
 
-#pragma once

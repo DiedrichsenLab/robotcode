@@ -691,6 +691,12 @@ void MyTrial::writeDat(ostream& out) {
 		<< points << "\t"
 		<< rewThresh1 << "\t"
 		<< rewThresh2 << "\t"
+		<< TrigExec << "\t"
+		<< TrigPlan << "\t"
+		<< TrigBaseline << "\t"
+		<< stimTrigExec << "\t"
+		<< stimTrigPlan << "\t"
+		<< stimTrigBaseline << "\t"
 		<< endl;
 }
 
@@ -729,6 +735,12 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "points" << "\t"
 		<< "rewThresh1" << "\t"
 		<< "rewThresh2" << "\t"
+		<< "TrigExec" << "\t"
+		<< "TrigPlan" << "\t"
+		<< "TrigBaseline" << "\t"
+		<< "stimTrigExec" << "\t"
+		<< "stimTrigPlan" << "\t"
+		<< "stimTrigBaseline" << "\t"
 		<< endl;
 }
 

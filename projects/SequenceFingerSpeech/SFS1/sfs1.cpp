@@ -2,7 +2,7 @@
 /// SequenceLearningReward Project - ....
 ///////////////////////////////////////////////////////////////
 
-#include "slr1.h" 
+#include "sfs1.h" 
 #include "StimulatorBox.h"
 
 #include <string>
@@ -114,7 +114,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	LPSTR kposzArgs, int nWinMode)
 {
 	gThisInst = hThisInst;
-	gExp = new MyExperiment("SequenceFingerSpeech", "SequenceFingerSpeech", "C:/data/SequenceFingerSpeech/SFS1/");
+	gExp = new MyExperiment("SequenceLearningReward", "SequenceLearningReward", "C:/data/SequenceLearningReward/SLR1/");
 
 	gExp->redirectIOToConsole();
 
@@ -369,7 +369,7 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 			timeThresholdSuper = (arg[0] * (superThresPercent / 100));
 		}
 	}
-	
+
 
 	/////update percentile thresholds
 	//else if (arguments[0] == "percentile") {
@@ -399,7 +399,7 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 			estimated_ET_percentile_high = arg[1];
 			estimated_ET_percentile_low_super = arg[2];
 		}
-		}
+	}
 
 
 	else if (arguments[0] == "mean") {
@@ -462,37 +462,37 @@ void MyBlock::start() {
 ///////////////////////////////////////////////////////////////
 /// Calculating ET mean of the block 
 ///////////////////////////////////////////////////////////////
-double MyBlock::mean(double array[],int num_val) { 
-	double sum = 0; 
-	for (int i=0;i<num_val;i++) { 
-		sum+=array[i]; 
-	} 
-	return(sum/num_val);
+double MyBlock::mean(double array[], int num_val) {
+	double sum = 0;
+	for (int i = 0; i < num_val; i++) {
+		sum += array[i];
+	}
+	return(sum / num_val);
 }
 
 
 ///////////////////////////////////////////////////////////////
 /// Calculating ET standard deviation of the block 
 ///////////////////////////////////////////////////////////////
-double MyBlock::std(double array[],int num_val) { 
-	double sum = 0; 
-	double mean = 0; 
-	for (int i=0;i<num_val;i++) { 
-		sum+=array[i]; 
-	} 
-	mean=sum/num_val;
-	sum=0;
-	for (int i=0;i<num_val;i++) { 
-		sum+=pow(array[i]-mean,2); 
-	} 
-	return(sqrt(sum/(num_val-1))); // sample std
-} 
+double MyBlock::std(double array[], int num_val) {
+	double sum = 0;
+	double mean = 0;
+	for (int i = 0; i < num_val; i++) {
+		sum += array[i];
+	}
+	mean = sum / num_val;
+	sum = 0;
+	for (int i = 0; i < num_val; i++) {
+		sum += pow(array[i] - mean, 2);
+	}
+	return(sqrt(sum / (num_val - 1))); // sample std
+}
 
 
 ///////////////////////////////////////////////////////////////
 /// Calculating ET percentile of the block 
 ///////////////////////////////////////////////////////////////
-double MyBlock::percentile(double array[],int num_val, int percent) { 
+double MyBlock::percentile(double array[], int num_val, int percent) {
 	// sort the array
 	double temp;
 	for (int i = 0; i < num_val; i++) {
@@ -511,7 +511,7 @@ double MyBlock::percentile(double array[],int num_val, int percent) {
 	}
 	return array[index];
 
-} 
+}
 
 
 
@@ -566,7 +566,7 @@ void MyBlock::giveFeedback() {
 		estimated_ET_percentile_low = percentile(ETarray, n, percentile_low); //lower percentile of ETs
 		estimated_ET_percentile_low_super = percentile(ETarray, n, percentile_low_super); //lower percentile of ETs for super points
 
-		
+
 
 
 		//todo: change the update on ET thresholds
@@ -635,7 +635,7 @@ void MyBlock::giveFeedback() {
 	// Sort the leaderboard by points in descending order
 	sort(leaderboard.begin(), leaderboard.end(), [](const pair<string, double>& a, const pair<string, double>& b) {
 		return a.second > b.second;
-	});
+		});
 
 	// Write the updated leaderboard to the file
 	ofstream outfile(gExp->dataDir + "leaderboard.txt");
@@ -664,7 +664,7 @@ void MyBlock::giveFeedback() {
 	//	gs.lineColor[3 + i] = 1;
 	//}
 
-	
+
 
 
 
@@ -880,7 +880,7 @@ void MyTrial::updateTextDisplay() {
 
 	// sprintf(buffer, "est mean ET: %d  est std ET: %d", estimated_ET_mean, estimated_ET_std);
 	// tDisp.setText(buffer, 2, 0);
-	
+
 	sprintf(buffer, "est perc low: %.2f  est perc high: %.2f est perc low super: %.2f", estimated_ET_percentile_low, estimated_ET_percentile_high, estimated_ET_percentile_low_super);
 	tDisp.setText(buffer, 2, 0);
 
@@ -1135,7 +1135,7 @@ void MyTrial::control() {
 			released++;
 		}
 
-		if (force >= BASE_THRESHOLD_HI[0][f - 5] || force <= BASE_THRESHOLD_LOW[0][f-5]) {
+		if (force >= BASE_THRESHOLD_HI[0][f - 5] || force <= BASE_THRESHOLD_LOW[0][f - 5]) {
 			numNewThresCross++;
 		}
 	}
@@ -1203,12 +1203,12 @@ void MyTrial::control() {
 					gTimer.reset(1); gTimer.reset(2); gTimer.reset(5);
 					dataman.startRecording();
 					time_t now = time(NULL);
-					struct tm *utc = gmtime(&now); // UTC time
+					struct tm* utc = gmtime(&now); // UTC time
 					//global_start_time = asctime(utc);
 					// Format without newline
 					strftime(global_start_time, sizeof(global_start_time), "%a %b %d %H:%M:%S %Y", utc);
 
-					
+
 					state = WAIT_PREP;
 				}
 			}
@@ -1232,7 +1232,7 @@ void MyTrial::control() {
 					gTimer.reset(1); gTimer.reset(2); gTimer.reset(5);
 					dataman.startRecording();
 					time_t now = time(NULL);
-					struct tm *utc = gmtime(&now); // UTC time
+					struct tm* utc = gmtime(&now); // UTC time
 					//global_start_time = asctime(utc);
 					// Format without newline
 					strftime(global_start_time, sizeof(global_start_time), "%a %b %d %H:%M:%S %Y", utc);
@@ -1488,7 +1488,7 @@ void MyTrial::control() {
 				// 	points = 0;
 				// }
 
-				if (isTrain){
+				if (isTrain) {
 					if (ET < estimated_ET_percentile_low_super) {
 						points = 3;
 						zone = 1;
@@ -1523,7 +1523,7 @@ void MyTrial::control() {
 				gs.size[1] = 8; // size of feedback text
 				sprintf(buffer, "+%d", points);
 
-				if (points == 3){
+				if (points == 3) {
 					PlaySound(TASKSOUNDS[8].c_str(), NULL, SND_ASYNC);
 					gs.lineColor[1] = 3; // Green
 				}
@@ -1532,9 +1532,9 @@ void MyTrial::control() {
 					gs.lineColor[1] = 7; // yellow
 
 				}
-				else{
+				else {
 					gs.lineColor[1] = 1; //white
-				}				
+				}
 
 				gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
 
@@ -1678,12 +1678,12 @@ GraphicState::GraphicState() {
 	size[2] = 5;
 
 	// Ensure all leaderboard lines have positions and size
-    for (int i = 3; i < MAX_LEADERBOARD_LINE; ++i) {
-        lineXpos[i] = 0;
-        lineYpos[i] = 4 - (i - 2); // Stack downward, or adjust as needed
-        lineColor[i] = 1;
-        size[i] = 3; // Slightly smaller than main feedback
-    }
+	for (int i = 3; i < MAX_LEADERBOARD_LINE; ++i) {
+		lineXpos[i] = 0;
+		lineYpos[i] = 4 - (i - 2); // Stack downward, or adjust as needed
+		lineColor[i] = 1;
+		size[i] = 3; // Slightly smaller than main feedback
+	}
 
 
 	clearCues();

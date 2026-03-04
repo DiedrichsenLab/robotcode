@@ -19,8 +19,16 @@ bool AudioRecorder::start(const std::string& wavPath, int sr, int ch, int bps) {
     fmt.nAvgBytesPerSec = fmt.nSamplesPerSec * fmt.nBlockAlign;
     fmt.cbSize = 0;
 
-    if (waveInOpen(&hWaveIn, WAVE_MAPPER, &fmt, (DWORD_PTR)&AudioRecorder::waveInProc, (DWORD_PTR)this, CALLBACK_FUNCTION) != MMSYSERR_NOERROR)
+    // if (waveInOpen(&hWaveIn, WAVE_MAPPER, &fmt, (DWORD_PTR)&AudioRecorder::waveInProc, (DWORD_PTR)this, CALLBACK_FUNCTION) != MMSYSERR_NOERROR)
+    //     return false;
+
+    MMRESULT r = waveInOpen(&hWaveIn, WAVE_MAPPER, &fmt,
+                            (DWORD_PTR)&AudioRecorder::waveInProc,
+                            (DWORD_PTR)this, CALLBACK_FUNCTION);
+    if (r != MMSYSERR_NOERROR) {
+        std::cerr << "AudioRecorder: waveInOpen failed (" << r << ")\n";
         return false;
+    }
 
     for (int i = 0; i < NBUF; ++i) {
         buffers[i].resize(BUF_BYTES);
@@ -32,16 +40,38 @@ bool AudioRecorder::start(const std::string& wavPath, int sr, int ch, int bps) {
         waveInAddBuffer(hWaveIn, &headers[i], sizeof(WAVEHDR));
     }
 
-    if (waveInStart(hWaveIn) != MMSYSERR_NOERROR) return false;
+    // if (waveInStart(hWaveIn) != MMSYSERR_NOERROR) return false;
+    r = waveInStart(hWaveIn);
+    if (r != MMSYSERR_NOERROR) {
+        std::cerr << "AudioRecorder: waveInStart failed (" << r << ")\n";
+        for (int i = 0; i < NBUF; ++i)
+            waveInUnprepareHeader(hWaveIn, &headers[i], sizeof(WAVEHDR));
+        waveInClose(hWaveIn);
+        hWaveIn = nullptr;
+        return false;
+    }
+
     recording = true;
     return true;
 }
 
 void AudioRecorder::stop() {
     if (!hWaveIn) return;
-    recording = false;
+    // recording = false;
     waveInStop(hWaveIn);
+    recording = false;
     waveInReset(hWaveIn);
+
+    // collect any remaining recorded bytes from prepared headers
+    {
+        std::lock_guard<std::mutex> lock(mtx);
+        for (int i = 0; i < NBUF; ++i) {
+            if (headers[i].dwBytesRecorded > 0 && headers[i].lpData) {
+                unsigned char* begin = reinterpret_cast<unsigned char*>(headers[i].lpData);
+                pcm.insert(pcm.end(), begin, begin + headers[i].dwBytesRecorded);
+            }
+        }
+    }
 
     for (int i = 0; i < NBUF; ++i)
         waveInUnprepareHeader(hWaveIn, &headers[i], sizeof(WAVEHDR));
@@ -71,8 +101,10 @@ void AudioRecorder::writeWavFile() {
     if (outPath.empty() || pcm.empty()) return;
 
     std::ofstream out(outPath, std::ios::binary);
-    if (!out) return;
-
+    if (!out) {
+        std::cerr << "AudioRecorder: cannot open output file: " << outPath << "\n";
+        return;
+    }
     uint32_t dataSize = (uint32_t)pcm.size();
     uint32_t riffSize = 36 + dataSize;
 

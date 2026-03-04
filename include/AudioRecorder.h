@@ -9,7 +9,7 @@ public:
     AudioRecorder();
     ~AudioRecorder();
 
-    bool start(const std::string& wavPath, int sampleRate = 500, int channels = 1, int bitsPerSample = 16);
+    bool start(const std::string& wavPath, int sampleRate = 16000, int channels = 1, int bitsPerSample = 16);
     void stop();
     bool isRecording() const { return recording; }
 

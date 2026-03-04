@@ -63,6 +63,7 @@ double temp_ET_percentile_high = estimated_ET_percentile_high;	///< Estimated up
 
 
 double responseArray[11] = { 1,1,1,1,1,1,1,1,1,1,1 };
+int symbolColor = 1;
 
 double medianETarray[50];			///< blocks per subject, preallocate array to keep track of ETs within session
 double stdETarray[50];				///< blocks per subject, preallocate array to keep track of ETs within session
@@ -308,16 +309,14 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 
 	///update estimated ET percentile thresholds
 	else if (arguments[0] == "ET_percentile") {
-		if (numArgs != 4) {
-			tDisp.print("USAGE: ET_percentile low high low_super");
+		if (numArgs != 3) {
+			tDisp.print("USAGE: ET_percentile low high");
 		}
 		else {
 			sscanf(arguments[1].c_str(), "%f", &arg[0]);
 			sscanf(arguments[2].c_str(), "%f", &arg[1]);
-			sscanf(arguments[3].c_str(), "%f", &arg[2]);
 			estimated_ET_percentile_low = arg[0];
 			estimated_ET_percentile_high = arg[1];
-			estimated_ET_percentile_low_super = arg[2];
 		}
 	}
 
@@ -445,7 +444,6 @@ void MyBlock::giveFeedback() {
 	int n = 0; //number of correct trials
 	int nn = 0; //number of total trials
 	double ETarray[65];  //60 trials per block		///< preallocate array to keep track of ETs within session
-	double ER;
 	MyTrial* tpnr;
 
 	medianETarray[0] = 20000;	//initialize ET array for the 0th block to be 20000 (impossible value, we have no median ET before that)
@@ -511,7 +509,6 @@ MyTrial::MyTrial() {
 	MT = 0;						// init sequence Movement Time
 	RT = 0;								// init reaction time
 	ET = 0;								// init sequence execution time
-	zone = 0;							// zone in ET percentiles
 	points = 0;							// init points gained
 	waitTime = 3000;						// how long to wait for first trial in block
 	stimOnsetTime = 100;					// stimulus onset time in free-RT task
@@ -540,7 +537,7 @@ MyTrial::MyTrial() {
 ///////////////////////////////////////////////////////////////
 void MyTrial::read(istream& in) {
 	// read from .tgt file
-	in >> subNum >> hand >> isTrain >> cue >> iti;
+	in >> subNum >> group >> hand >> symbol >> isTrain >> cue >> fixed_dur >> execTime >> iti;
 	seqLength = cue.length(); //get seqLength
 }
 
@@ -561,8 +558,7 @@ void MyTrial::writeDat(ostream& out) {
 		<< MT << "\t"
 		<< isError << "\t"
 		<< timingError << "\t"
-		<< points << "\t"
-		<< zone << "\t";
+		<< points << "\t";
 
 	for (i = 0; i < MAX_PRESS; i++) {
 		out << response[i] << "\t";
@@ -583,7 +579,6 @@ void MyTrial::writeDat(ostream& out) {
 		// << tempStd << "\t"
 		<< temp_ET_percentile_high << "\t"
 		<< temp_ET_percentile_low << "\t"
-		<< temp_ET_percentile_low_super << "\t"
 
 		<< startTime << "\t"
 		<< startTimeReal << "\t"
@@ -593,7 +588,6 @@ void MyTrial::writeDat(ostream& out) {
 		<< useMetronome << "\t"
 		<< isCross << "\t"			//whether pre-movement threshold has been crossed in this trial
 		<< timeStamp << "\t"
-		<< global_start_time << "\t"
 		<< audioFile << "\t"
 		<< audioStartReal << "\t"
 		<< audioStopReal << "\t"
@@ -621,8 +615,7 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "MT" << "\t"
 		<< "isError" << "\t"
 		<< "timingError" << "\t"
-		<< "points" << "\t"
-		<< "zone" << "\t";
+		<< "points" << "\t";
 
 	for (i = 0; i < MAX_PRESS; i++) {
 		sprintf(header, "response%d", i + 1);
@@ -644,7 +637,6 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "timeThresholdSuper" << "\t"
 		<< "estimatedPercentileHigh" << "\t"
 		<< "estimatedPercentileLow" << "\t"
-		<< "estimatedPercentileLowSuper" << "\t"
 		<< "startTime" << "\t"
 		<< "startTimeReal" << "\t"
 		<< "trialDur" << "\t"
@@ -653,7 +645,6 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "useMetronome" << "\t"
 		<< "isCross" << "\t"
 		<< "crossTime" << "\t"
-		<< "globalStartTime" << "\t"
 		<< "audioFile" << "\t"
 		<< "audioStartReal" << "\t"
 		<< "audioStopReal" << "\t"
@@ -717,7 +708,7 @@ void MyTrial::updateTextDisplay() {
 	// sprintf(buffer, "est mean ET: %d  est std ET: %d", estimated_ET_mean, estimated_ET_std);
 	// tDisp.setText(buffer, 2, 0);
 
-	sprintf(buffer, "est perc low: %.2f  est perc high: %.2f est perc low super: %.2f", estimated_ET_percentile_low, estimated_ET_percentile_high, estimated_ET_percentile_low_super);
+	sprintf(buffer, "est perc low: %.2f  est perc high: %.2f est perc low super: %.2f", estimated_ET_percentile_low, estimated_ET_percentile_high);
 	tDisp.setText(buffer, 2, 0);
 
 	sprintf(buffer, "gTimer1: %2.2f   gTimer2: %2.2f   gTimer5: %2.2f", gTimer[1], gTimer[2], gTimer[5]);
@@ -853,6 +844,10 @@ void MyTrial::updateGraphics(int what) {
 		gScreen.setColor(responseArray[i]);
 		gScreen.printChar(gs.seq[i], (i - ((double)((MAX_PRESS) / 2))) * WIDTH_CHAR_CUE + WIDTH_CHAR_CUE * ((double)(MAX_PRESS - seqLength) / 2), CUE_PRESS_yPOS, SIZE_CUE);
 	}
+
+	// Symbol Cue
+	gScreen.setColor(symbolColor);
+	gScreen.printChar(gs.symbol, (seqLength/2 + 1 - ((double)((MAX_PRESS + 1) / 2 ))) * WIDTH_CHAR_CUE + WIDTH_CHAR_CUE * ((double)(MAX_PRESS - seqLength) / 2), CUE_PRESS_yPOS + RECWIDTH_Y + 0.5, SIZE_CUE);
 
 	Vector2D recSize, recPos;
 	// press rectangle
@@ -1035,10 +1030,12 @@ void MyTrial::control() {
 						// }
 					}
 
+					gs.symbol = symbol;
+
 					gTimer.reset(1); gTimer.reset(2); gTimer.reset(5);
 					dataman.startRecording();
 
-					audioFile = gExp->dataDir + gExp->subjectName + "_block" + to_string(gExp->theBlock->blockNum) + "_trial" + to_string(gExp->theBlock->trialNum+1) + ".wav";
+					audioFile = gExp->dataDir + gExp->subjectName + "_block" + to_string(gExp->theBlock->blockNumber) + "_trial" + to_string(gExp->theBlock->trialNum+1) + ".wav";
 					audioOn = gAudio.start(audioFile);
 					audioStartReal = gTimer.getRealtime();
 
@@ -1062,10 +1059,12 @@ void MyTrial::control() {
 						// 	}
 						// }
 					}
+
+					gs.symbol = symbol;
 					gTimer.reset(1); gTimer.reset(2); gTimer.reset(5);
 					dataman.startRecording();
 
-					audioFile = gExp->dataDir + gExp->subjectName + "_block" + to_string(gExp->theBlock->blockNum) + "_trial" + to_string(gExp->theBlock->trialNum+1) + ".wav";
+					audioFile = gExp->dataDir + gExp->subjectName + "_block" + to_string(gExp->theBlock->blockNumber) + "_trial" + to_string(gExp->theBlock->trialNum+1) + ".wav";
 					audioOn = gAudio.start(audioFile);
 					audioStartReal = gTimer.getRealtime();
 
@@ -1284,6 +1283,14 @@ void MyTrial::control() {
 
 
 	case WAIT_RELEASE: //5
+
+		if (audioOn) {
+			gAudio.stop();
+			audioOn = false;
+			audioStopReal = gTimer.getRealtime();
+		}
+
+
 		// Wait for the release of all keys, assign points
 		if (released == NUMFINGERS) {
 			if (isError == 0) {
@@ -1394,11 +1401,11 @@ void MyTrial::control() {
 		else {
 			if (gTimer[2] > (iti - FEEDBACKTIME)) {
 				dataman.stopRecording();
-				if (audioOn) {
-					gAudio.stop();
-					audioOn = false;
-					audioStopReal = gTimer.getRealtime();
-				}
+				//if (audioOn) {
+				//	gAudio.stop();
+				//	audioOn = false;
+				//	audioStopReal = gTimer.getRealtime();
+				//}
 				trialDur = gTimer[1];
 				state = END_TRIAL;
 			}
@@ -1470,15 +1477,6 @@ GraphicState::GraphicState() {
 	lineColor[2] = 1;			// white 
 	size[2] = 5;
 
-	// Ensure all leaderboard lines have positions and size
-	for (int i = 3; i < MAX_LEADERBOARD_LINE; ++i) {
-		lineXpos[i] = 0;
-		lineYpos[i] = 4 - (i - 2); // Stack downward, or adjust as needed
-		lineColor[i] = 1;
-		size[i] = 3; // Slightly smaller than main feedback
-	}
-
-
 	clearCues();
 
 	boxOn = false;
@@ -1491,6 +1489,7 @@ void GraphicState::clearCues(void) {
 		seq[i] = 0;
 		seqMask[i] = 0;
 	}
+	symbol = 0;
 }
 
 void GraphicState::reset(void) {

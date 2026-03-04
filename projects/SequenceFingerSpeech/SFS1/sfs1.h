@@ -79,7 +79,7 @@ public:
 	bool showlines;
 	char seq[MAX_PRESS];
 	char seqMask[MAX_PRESS];
-	//char symbol;
+	char symbol;
 	//char cross;
 };
 
@@ -139,6 +139,7 @@ public:
 private:
 	TrialState state;						///< State of the Trial 
 	int subNum;									///< Which subject number 
+	int group;									///< which group
 	bool isTrain;							///< Specific sequence or not
 	//bool isMasked;							///< Showing only symbol or cue as well
 	char symbol;							///< symbol for effector

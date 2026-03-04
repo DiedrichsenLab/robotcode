@@ -131,6 +131,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\source\AudioRecorder.cpp" />
     <ClCompile Include="..\..\..\source\Experiment.cpp" />
     <ClCompile Include="..\..\..\source\S626sManager.cpp" />
     <ClCompile Include="..\..\..\source\Screen.cpp" />
@@ -143,6 +144,7 @@
     <ClCompile Include="sfs1.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\include\AudioRecorder.h" />
     <ClInclude Include="..\..\..\include\DataManager.h" />
     <ClInclude Include="..\..\..\include\Experiment.h" />
     <ClInclude Include="..\..\..\include\FingerBox.h" />

@@ -588,7 +588,7 @@ void MyTrial::writeDat(ostream& out) {
 		<< useMetronome << "\t"
 		<< isCross << "\t"			//whether pre-movement threshold has been crossed in this trial
 		<< timeStamp << "\t"
-		<< audioFile << "\t"
+		//<< audioFile << "\t"
 		<< audioStartReal << "\t"
 		<< audioStopReal << "\t"
 		<< endl;
@@ -645,7 +645,7 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "useMetronome" << "\t"
 		<< "isCross" << "\t"
 		<< "crossTime" << "\t"
-		<< "audioFile" << "\t"
+		//<< "audioFile" << "\t"
 		<< "audioStartReal" << "\t"
 		<< "audioStopReal" << "\t"
 		<< endl;

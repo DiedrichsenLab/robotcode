@@ -1,5 +1,6 @@
 #include "AudioRecorder.h"
 #include <fstream>
+#include <iostream>
 
 #pragma comment(lib, "winmm.lib")
 

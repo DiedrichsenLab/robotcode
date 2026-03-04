@@ -60,7 +60,6 @@ public:
 };
 
 #define NUMDISPLAYLINES 100 //20
-#define MAX_LEADERBOARD_LINE 20
 
 ///////////////////////////////////////////////////////////////
 // Define graphics state: collection of variables that define the graphic scene 
@@ -142,8 +141,8 @@ private:
 	int subNum;									///< Which subject number 
 	bool isTrain;							///< Specific sequence or not
 	//bool isMasked;							///< Showing only symbol or cue as well
-	//char symbol;							///< symbol for seq1, seq2, and Rand
-	//int execTime;							///< Total time of the trial
+	char symbol;							///< symbol for effector
+	int execTime;							///< Total time of the trial
 	int iti;
 	//int precueTime;
 	//string windowSize;
@@ -199,11 +198,11 @@ private:
 	double RT;								///< Reaction time (from go cue)
 	double ET;								///< Execution time (RT + MT)
 	double MT;								///< Movement time 
-	int zone;								///< zone in the ET percentiles
 
-	//string global_start_time; 					///< Global start time of the trial
-	char global_start_time[40]; 					///< Global start time of the trial
-
+	bool audioOn;
+	string audioFile;
+	double audioStartReal;
+	double audioStopReal;
 
 
 

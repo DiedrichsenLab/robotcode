@@ -4,7 +4,7 @@
 
 #include "sfs1.h" 
 #include "StimulatorBox.h"
-
+#include "AudioRecorder.h"
 #include <string>
 #include <chrono>
 
@@ -20,6 +20,7 @@ StimulatorBox gBox[2];			///< Stimulator Box
 TRCounter gCounter;				///< TR Counter 
 Timer gTimer(UPDATERATE);		///< Timer from S626 board experiments 
 HapticState hs;					///< This is the haptic State as d by the interrupt 
+AudioRecorder gAudio; 			///< Audio Recorder
 
 ///< For Thread safety this SHOULD NOT be assessed While 
 ///< the interrupt is running. Use Thread-safe copy to 
@@ -50,26 +51,18 @@ double timeThreshold = 3500; 			///< Time threshold for normal points (+0)
 double timeThresholdSuper = 2940;		///< Time threshold for super points (+3)
 double tempThres1 = timeThreshold;
 double tempThres2 = timeThresholdSuper;
-// double estimated_ET_mean = 0;	///< Estimated mean of ETs
-// double estimated_ET_std = 0;	///< Estimated variance of ETs
-// double tempMean = estimated_ET_mean;	///< Estimated mean of ETs
-// double tempStd = estimated_ET_std;	///< Estimated variance of ETs
 
-int percentile_low = 45;	///< Lower percentile for ETs
-int percentile_high = 80;	///< Upper percentile for ETs
-int percentile_low_super = 10;	///< Lower percentile for ETs
+int percentile_low = 25;	///< Lower percentile for ETs
+int percentile_high = 75;	///< Upper percentile for ETs
 
 double estimated_ET_percentile_low = 0;	///< Estimated lower percentile of ETs
 double estimated_ET_percentile_high = 0;	///< Estimated upper percentile of ETs
-double estimated_ET_percentile_low_super = 0;	///< Estimated lower percentile of ETs
 
 double temp_ET_percentile_low = estimated_ET_percentile_low;	///< Estimated lower percentile of ETs
 double temp_ET_percentile_high = estimated_ET_percentile_high;	///< Estimated upper percentile of ETs
-double temp_ET_percentile_low_super = estimated_ET_percentile_low_super;	///< Estimated lower percentile of ETs
+
 
 double responseArray[11] = { 1,1,1,1,1,1,1,1,1,1,1 };
-//int symbolColor = 1;
-
 
 double medianETarray[50];			///< blocks per subject, preallocate array to keep track of ETs within session
 double stdETarray[50];				///< blocks per subject, preallocate array to keep track of ETs within session
@@ -114,73 +107,19 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	LPSTR kposzArgs, int nWinMode)
 {
 	gThisInst = hThisInst;
-	gExp = new MyExperiment("SequenceLearningReward", "SequenceLearningReward", "C:/data/SequenceLearningReward/SLR1/");
+	gExp = new MyExperiment("SequenceFingerSpeech", "SequenceFingerSpeech", "C:/data/SequenceFingerSpeech/SFS1/");
 
 	gExp->redirectIOToConsole();
-
-
-
-	//tDisp.init(gThisInst,100,200,600,30,9,2,&(::parseCommand)); // STARK
 	tDisp.init(gThisInst, 0, 0, 400, 20, 9, 2, &(::parseCommand));
 
 	tDisp.setText("Subj", 0, 0);
-
-	//gScreen.init(gThisInst, -1024, 0, 1920, 1024, &(::updateGraphics)); // CHOMSKY
-	//gScreen.init(gThisInst, 1920, 0, 1920, 1080, &(::updateGraphics)); // Windows 10 PC
-	//gScreen.init(gThisInst, 1920, 0, 1440, 900, &(::updateGraphics)); // Windows 10 PC Ali
-	//gScreen.init(gThisInst, 2200, 0, 1366, 768, &(::updateGraphics)); // Windows 10 PC
-	//gScreen.init(gThisInst,1280,0,1280,1024,&(::updateGraphics)); // STARK
 	gScreen.init(gThisInst, 1920, 0, 1680, 1050, &(::updateGraphics)); ///< Display for subject
 
 
 	gScreen.setCenter(Vector2D(0, 0));    // In cm //0,2
 	gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE)); // cm/pixel
-
-
-
-
-
-
 	// initialize s626cards 
 	s626.init("c:/robotcode/calib/s626_single.txt");
-
-
-	// high force 1
-//gBox[0].init(BOX_LEFT,"c:/robotcode/calib/Flatbox1_highforce_LEFT_07-Jun-2017.txt");
- //gBox[1].init(BOX_RIGHT,"c:/robotcode/calib/Flatbox1_highforce_RIGHT_31-July-2017.txt"); //todo: check this with Jorn
-
-// high force 2
-//gBox[0].init(BOX_LEFT,"c:/robotcode/calib/Flatbox1_highforce2_LEFT_03-Dec-2021.txt");
-
-
-//high force 3
-//gBox[0].init(BOX_LEFT,"c:/robotcode/calib/flatbox2_highforce2_LEFT_27-May-2018.txt");
-//gBox[1].init(BOX_RIGHT,"c:/robotcode/calib/flatbox2_highforce2_RIGHT_27-May-2018.txt");
-
-//high force 4
-//gBox[0].init(BOX_LEFT,"c:/robotcode/calib/flatbox2_highforce_LEFT_02-Mar-2017.txt");
-//gBox[1].init(BOX_RIGHT, "c:/robotcode/calib/flatbox2_highforce_RIGHT_07-Feb-2017.txt");
-
-
-
-// STARK
-//gBox[0].init(BOX_LEFT,"c:/robot/calib/Flatbox1_highforce2_LEFT_12-Feb-2022.txt");
-//gBox[1].init(BOX_RIGHT,"c:/robot/calib/Flatbox1_highforce2_RIGHT_03-Dec-2021.txt");
-
-
-// CHOMSKY
-//auto start = std::chrono::high_resolution_clock::now();
-	//gBox[0].init(BOX_LEFT, "c:/robotcode/calib/LEFT_lowForce_FlatBox2_24-Jan-2018.txt");
-	//gBox[1].init(BOX_RIGHT, "c:/robotcode/calib/flatbox2_lowforce_RIGHT_06-Jul-2017.txt");
-	//auto end = std::chrono::high_resolution_clock::now();
-	//auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-
-	//std::cout << "Process time: " << duration.count() << " microseconds" << std::endl;
-
-	// low force
-	//gBox[0].init(BOX_LEFT,"c:/robot/calib/flatbox2_lowforce_LEFT_03-Mar-2017.txt");
-	//gBox[1].init(BOX_RIGHT,"c:/robotcode/calib/flatbox2_lowforce_RIGHT_06-Jul-2017.txt");
-
 
 	//low force Flatbox3
 	gBox[1].init(BOX_RIGHT, "c:/robotcode/calib/Flatbox3_lowforce_RIGHT_22_Aug_2024.txt");
@@ -196,9 +135,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 		s626.initInterrupt(updateHaptics, UPDATERATE); // initialize at 200 Hz update rate 
 	}
 
-
 	gTimer.init();
-
 	// initialize TR counter 
 	gCounter.init3();
 	gCounter.simulate(TR);
@@ -206,7 +143,6 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 
 	// Seed the random number generator
 	srand(time(NULL));
-
 	return 0;
 }
 
@@ -370,22 +306,6 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 		}
 	}
 
-
-	/////update percentile thresholds
-	//else if (arguments[0] == "percentile") {
-	//	if (numArgs != 4) {
-	//		tDisp.print("USAGE: percentile low high low_super");
-	//	}
-	//	else {
-	//		sscanf(arguments[1].c_str(), "%f", &arg[0]);
-	//		sscanf(arguments[2].c_str(), "%f", &arg[1]);
-	//		sscanf(arguments[3].c_str(), "%f", &arg[2]);
-	//		percentile_low = arg[0];
-	//		percentile_high = arg[1];
-	//		percentile_low_super = arg[2];
-	//	}
-	//}
-
 	///update estimated ET percentile thresholds
 	else if (arguments[0] == "ET_percentile") {
 		if (numArgs != 4) {
@@ -542,16 +462,8 @@ void MyBlock::giveFeedback() {
 		nn++; //count total trials
 	}
 
-	// before eventual thres update, store the previous thres for writing in the .dat file
-	// tempThres1 = timeThreshold;
-	// tempThres2 = timeThresholdSuper;
-
-	// tempMean = estimated_ET_mean;
-	// tempStd = estimated_ET_std;
-
 	temp_ET_percentile_low = estimated_ET_percentile_low;
 	temp_ET_percentile_high = estimated_ET_percentile_high;
-	temp_ET_percentile_low_super = estimated_ET_percentile_low_super;
 
 
 
@@ -559,114 +471,23 @@ void MyBlock::giveFeedback() {
 	if (n > 0) { //if at least one correct trial
 		b = b++; //increase counter of block number
 		medianETarray[b] = median(ETarray, n); //median of movement times	
-		// stdETarray[b] = std(ETarray, n); //std of movement times
 		ERarray[b] = (((double)gNumErrorsBlock) / (double)(nn) * 100); //error rate
 
 		estimated_ET_percentile_high = percentile(ETarray, n, percentile_high); //upper percentile of ETs
 		estimated_ET_percentile_low = percentile(ETarray, n, percentile_low); //lower percentile of ETs
-		estimated_ET_percentile_low_super = percentile(ETarray, n, percentile_low_super); //lower percentile of ETs for super points
-
-
-
-
-		//todo: change the update on ET thresholds
-
-		//if ((ERarray[b] <= ERthreshold) && (ERarray[b - 1] >= ERthreshold)) { //if ER on previous block > 20%
-		//	if (medianETarray[b] < (timeThreshold / (timeThresPercent / 100))) { //adjust only if ET of current block faster than ET that generated current threshold
-		//		timeThreshold = medianETarray[b] * (timeThresPercent / 100); //previous ET+5%
-		//		timeThresholdSuper = medianETarray[b] * (superThresPercent / 100); //previous ET-5% 	
-		//	}
-		//}
-
-		// if ((ERarray[b] <= ERthreshold) && (ERarray[b - 1] <= ERthreshold)) { //if ER on previous block <20%	
-		// 	if (medianETarray[b] < (timeThreshold / (timeThresPercent / 100))) { //adjust only if ET of current block faster than ET that generated current threshold
-		// 		timeThreshold = medianETarray[b] * (timeThresPercent / 100); //previous ET+5%
-		// 		timeThresholdSuper = medianETarray[b] * (superThresPercent / 100); //previous ET-5%
-		// 	}
-		// }
-
-		// estimated_ET_mean = medianETarray[b]; //update the estimated mean
-		// estimated_ET_std = stdETarray[b]; //update the estimated std
-
-
-
-
 	}
 	else {
 		b = b++;
 		medianETarray[b] = 0;
-		// stdETarray[b] = 0;
 		ERarray[b] = 100;
 		estimated_ET_percentile_high = 0; //upper percentile of ETs
 		estimated_ET_percentile_low = 0; //lower percentile of ETs
-		estimated_ET_percentile_low_super = 0; //lower percentile of ETs for super points
 	}
-
-
-	// update/create subjecNum points in the leaderboard
-	vector <pair <string, double>> leaderboard;
-	ifstream infile(gExp->dataDir + "leaderboard.txt");
-	string line;
-	while (getline(infile, line)) {
-		istringstream iss(line);
-		string name;
-		double points;
-		if (iss >> name >> points) {
-			leaderboard.push_back(make_pair(name, points));
-		}
-	}
-	infile.close();
-
-	// Update the leaderboard with the current subject's points
-	// Check if the subject is already in the leaderboard
-	bool found = false;
-	for (auto& entry : leaderboard) {
-		if (entry.first == gExp->subjectName) {
-			entry.second += gNumPointsBlock; // Update points
-			found = true;
-			break;
-		}
-	}
-	// If not found, add the subject to the leaderboard
-	if (!found) {
-		leaderboard.push_back(make_pair(gExp->subjectName, gNumPointsBlock));
-	}
-
-	// Sort the leaderboard by points in descending order
-	sort(leaderboard.begin(), leaderboard.end(), [](const pair<string, double>& a, const pair<string, double>& b) {
-		return a.second > b.second;
-		});
-
-	// Write the updated leaderboard to the file
-	ofstream outfile(gExp->dataDir + "leaderboard.txt");
-	for (const auto& entry : leaderboard) {
-		outfile << entry.first << " " << entry.second << endl;
-	}
-	outfile.close();
-
-
-
 
 	// print FEEDBACK on the screen 
 	sprintf(buffer, "Acc %3.1f%%     ET %2.0fms     PTS %2.1f", 100 - ERarray[b], medianETarray[b], gNumPointsBlock);
 	gs.line[1] = buffer;
 	gs.lineColor[1] = 1;
-
-
-	////print leaderboard of all participants on the screen
-	//sprintf(buffer, "Leaderboard: ");
-	//gs.line[2] = buffer;
-	//gs.lineColor[2] = 1;
-	//for (int i = 0; i < leaderboard.size(); i++) {
-	//	sprintf(buffer, "%s: %0.2f", leaderboard[i].first.c_str(), leaderboard[i].second);
-	//	printf("Leaderboard Entry %d: %s\n", i, buffer);
-	//	gs.line[3 + i] = buffer;
-	//	gs.lineColor[3 + i] = 1;
-	//}
-
-
-
-
 
 	//gScreen.setCenter(Vector2D(0, 0));    // In cm //0,2
 	//gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE)); // cm/pixel
@@ -698,6 +519,12 @@ MyTrial::MyTrial() {
 	useMetronome = 0;//1;
 	startTime = 0;
 	cue = "0";
+
+	audioOn = false;
+	audioFile = "";
+	audioStartReal = -1;
+	audioStopReal = -1;
+
 	for (int i = 0; i < MAX_PRESS; i++) {
 		response[i] = 0;					// finger response
 		pressTime[i] = 0;					// press time	
@@ -767,6 +594,9 @@ void MyTrial::writeDat(ostream& out) {
 		<< isCross << "\t"			//whether pre-movement threshold has been crossed in this trial
 		<< timeStamp << "\t"
 		<< global_start_time << "\t"
+		<< audioFile << "\t"
+		<< audioStartReal << "\t"
+		<< audioStopReal << "\t"
 		<< endl;
 }
 
@@ -812,8 +642,6 @@ void MyTrial::writeHeader(ostream& out) {
 
 	out << "timeThreshold" << "\t"
 		<< "timeThresholdSuper" << "\t"
-		// << "estimatedMean" << "\t"
-		// << "estimatedStd" << "\t"
 		<< "estimatedPercentileHigh" << "\t"
 		<< "estimatedPercentileLow" << "\t"
 		<< "estimatedPercentileLowSuper" << "\t"
@@ -826,6 +654,9 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "isCross" << "\t"
 		<< "crossTime" << "\t"
 		<< "globalStartTime" << "\t"
+		<< "audioFile" << "\t"
+		<< "audioStartReal" << "\t"
+		<< "audioStopReal" << "\t"
 		<< endl;
 }
 
@@ -850,6 +681,11 @@ void MyTrial::start() {
 void MyTrial::end() {
 	state = END_TRIAL;
 	dataman.stopRecording();
+	if (audioOn) {
+		gAudio.stop();
+		audioOn = false;
+		audioStopReal = gTimer.getRealtime();
+	}
 	gs.reset();
 }
 
@@ -1129,7 +965,6 @@ void MyTrial::control() {
 			finger[f] = 1;
 			released = 0;
 		}
-		//todo: Should I add release fingers? Ask Jorn
 		if (force <= THRESHOLD[1][f - 5]) { // Release threshold comparison
 			finger[f] = 0;
 			released++;
@@ -1202,12 +1037,10 @@ void MyTrial::control() {
 
 					gTimer.reset(1); gTimer.reset(2); gTimer.reset(5);
 					dataman.startRecording();
-					time_t now = time(NULL);
-					struct tm* utc = gmtime(&now); // UTC time
-					//global_start_time = asctime(utc);
-					// Format without newline
-					strftime(global_start_time, sizeof(global_start_time), "%a %b %d %H:%M:%S %Y", utc);
 
+					audioFile = gExp->dataDir + gExp->subjectName + "_block" + to_string(gExp->theBlock->blockNum) + "_trial" + to_string(gExp->theBlock->trialNum+1) + ".wav";
+					audioOn = gAudio.start(audioFile);
+					audioStartReal = gTimer.getRealtime();
 
 					state = WAIT_PREP;
 				}
@@ -1231,11 +1064,11 @@ void MyTrial::control() {
 					}
 					gTimer.reset(1); gTimer.reset(2); gTimer.reset(5);
 					dataman.startRecording();
-					time_t now = time(NULL);
-					struct tm* utc = gmtime(&now); // UTC time
-					//global_start_time = asctime(utc);
-					// Format without newline
-					strftime(global_start_time, sizeof(global_start_time), "%a %b %d %H:%M:%S %Y", utc);
+
+					audioFile = gExp->dataDir + gExp->subjectName + "_block" + to_string(gExp->theBlock->blockNum) + "_trial" + to_string(gExp->theBlock->trialNum+1) + ".wav";
+					audioOn = gAudio.start(audioFile);
+					audioStartReal = gTimer.getRealtime();
+
 					state = WAIT_PREP;
 				}
 			}
@@ -1290,10 +1123,7 @@ void MyTrial::control() {
 			PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
 			gTimer.reset(2);
 			state = WAIT_PRESS;
-
 		}
-
-
 
 
 		// CHECK FOR BASELINE FINGER FORCES
@@ -1400,30 +1230,8 @@ void MyTrial::control() {
 				responseArray[seqCounter] = 3; // green
 				isError = 1;
 			}
-
-			//if (isTrain == 1) {
-			//	if ((seqCounter >= maskCounter + (chunkSize[chunkIndex] - '0') - 1) && seqCounter != (seqLength - 1)) {
-			//		maskCounter += chunkSize[chunkIndex] - '0';
-			//		chunkIndex++;
-			//		cout << "chunkIndex" << chunkIndex << "\n";
-			//		for (i = 0; i < chunkSize[chunkIndex] - '0'; i++) {
-			//			gs.seqMask[i + maskCounter] = 0;
-			//		}
-			//	}
-			//}
-
-			//if (seqCounter + stoi(windowSize) < seqLength) {
-			//	if (!isMasked) {
-			//		gs.seqMask[seqCounter + stoi(windowSize)] = 0;
-			//	}
-			//}
-
-
-
 			seqCounter++;
 		}
-
-
 		// END OF SEQUENCE: get execution time and movement time
 		if (seqCounter >= seqLength && released == NUMFINGERS) {
 			if (complete == 0) {
@@ -1432,41 +1240,45 @@ void MyTrial::control() {
 				complete = 1;
 				gTimer.reset(5);
 			}
-			//if (fixed_dur == 1) { // fixed trial duration: wait exeTime before moving on to wait release (same time for GO and NOGO trials)
-			//	if (gTimer[2] >= execTime) {
-			//		state = WAIT_RELEASE;
-			//	}
-			//}
-			//else { // flexible trial duration: move on to next trial, just wait an extra 200ms to make color feedback visible
-			//	if (gTimer[5] >= 200) {
-			//		state = WAIT_RELEASE;
-			//	}
-			//}
+			// if (fixed_dur == 1) { // fixed trial duration: wait exeTime before moving on to wait release (same time for GO and NOGO trials)
+			// 	if (gTimer[2] >= execTime) {
+			// 		state = WAIT_RELEASE;
+			// 	}
+			// }
+			// else { // flexible trial duration: move on to next trial, just wait an extra 200ms to make color feedback visible
+			// 	if (gTimer[5] >= 200) {
+			// 		state = WAIT_RELEASE;
+			// 	}
+			// }
 
 			else {
 				if (gTimer[5] >= 200) {
 					state = WAIT_RELEASE;
 				}
 			}
-
-
 			// SEQUENCE TIME OUT
 		}
-		//else if (gTimer[2] >= execTime) { // time out (if sequence not completed in time)
-		//	RT = RT;				// reaction time
-		//	ET = execTime;	// execution time
-		//	MT = ET - RT;
-		//	isError = 1;
-		//	timingError = 1;
-		//	// PLAY SOUND 
-		//	PlaySound(TASKSOUNDS[6].c_str(), NULL, SND_ASYNC);
-		//	gs.clearCues(); sprintf(buffer, "TOO SLOW");
-		//	gs.lineColor[0] = 1;
-		//	gs.line[0] = buffer;
-		//	gs.lineYpos[0] = 8;
-		//	gTimer.reset(5);
-		//	state = WAIT_RELEASE;
-		//}
+		else if (fixed_dur == 1){ // fixed trial duration: wait exeTime before moving on to wait release 
+			if (gTimer[2] >= execTime){
+				state = WAIT_RELEASE;
+			}
+		}
+
+		// else if (gTimer[2] >= execTime) { // time out (if sequence not completed in time)
+		// 	RT = RT;				// reaction time
+		// 	ET = execTime;	// execution time
+		// 	MT = ET - RT;
+		// 	isError = 1;
+		// 	timingError = 1;
+		// 	// PLAY SOUND 
+		// 	PlaySound(TASKSOUNDS[6].c_str(), NULL, SND_ASYNC);
+		// 	gs.clearCues(); sprintf(buffer, "TOO SLOW");
+		// 	gs.lineColor[0] = 1;
+		// 	gs.line[0] = buffer;
+		// 	gs.lineYpos[0] = 8;
+		// 	gTimer.reset(5);
+		// 	state = WAIT_RELEASE;
+		// }
 
 		break;
 
@@ -1474,50 +1286,21 @@ void MyTrial::control() {
 	case WAIT_RELEASE: //5
 		// Wait for the release of all keys, assign points
 		if (released == NUMFINGERS) {
-
-
 			if (isError == 0) {
 
-				// if (ET < timeThresholdSuper) {
-				// 	points = 3;
-				// }
-				// else if (ET < timeThreshold) {
-				// 	points = 1;
-				// }
-				// else {
-				// 	points = 0;
-				// }
-
 				if (isTrain) {
-					if (ET < estimated_ET_percentile_low_super) {
+					if (ET < estimated_ET_percentile_low) {
 						points = 3;
-						zone = 1;
-					}
-					else if (ET < estimated_ET_percentile_low) {
-						//randomly asssign point (either 1 or 3)
-						points = (rand() % 2) * 2 + 1;
-						zone = 2;
 					}
 					else if (ET > estimated_ET_percentile_high) {
 						points = 0;
-						zone = 4;
 					}
 					else {
-						// randomly assing point (either 0 or 1)
-						points = rand() % 2;
-						zone = 3;
+						points = 1;
 					}
 				}
 				else {
-					if (ET < timeThresholdSuper) {
-						points = 0;
-					}
-					else if (ET < timeThreshold) {
-						points = 0;
-					}
-					else {
-						points = 0;
-					}
+					points = 0;
 				}
 				gs.clearCues();
 				gs.size[1] = 8; // size of feedback text
@@ -1599,6 +1382,11 @@ void MyTrial::control() {
 		if (startTime > 0 && (gExp->theBlock->trialNum + 1) >= (gExp->theBlock->numTrials)) {
 			if (gTimer[2] > (iti - FEEDBACKTIME + endOfRunRest)) { // for scanner only (wait rest periord before presenting block results)
 				dataman.stopRecording();
+				if (audioOn) {
+					gAudio.stop();
+					audioOn = false;
+					audioStopReal = gTimer.getRealtime();
+				}
 				trialDur = gTimer[1];
 				state = END_TRIAL;
 			}
@@ -1606,6 +1394,11 @@ void MyTrial::control() {
 		else {
 			if (gTimer[2] > (iti - FEEDBACKTIME)) {
 				dataman.stopRecording();
+				if (audioOn) {
+					gAudio.stop();
+					audioOn = false;
+					audioStopReal = gTimer.getRealtime();
+				}
 				trialDur = gTimer[1];
 				state = END_TRIAL;
 			}

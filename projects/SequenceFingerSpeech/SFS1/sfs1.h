@@ -145,7 +145,7 @@ private:
 	char symbol;							///< symbol for effector
 	int execTime;							///< Total time of the trial
 	int iti;
-	//int precueTime;
+	int precueTime;
 	//string windowSize;
 
 

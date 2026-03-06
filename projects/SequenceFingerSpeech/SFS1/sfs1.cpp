@@ -537,7 +537,7 @@ MyTrial::MyTrial() {
 ///////////////////////////////////////////////////////////////
 void MyTrial::read(istream& in) {
 	// read from .tgt file
-	in >> subNum >> group >> hand >> symbol >> isTrain >> cue >> fixed_dur >> execTime >> iti;
+	in >> subNum >> group >> hand >> symbol >> isTrain >> cue >> fixed_dur >> execTime >> iti >> precueTime;
 	seqLength = cue.length(); //get seqLength
 }
 
@@ -1108,71 +1108,56 @@ void MyTrial::control() {
 		gs.line[0] = buffer;
 		gs.lineYpos[0] = 8;
 
+		// // CHECK FOR BASELINE FINGER FORCES
+		// if (numNewThresCross > 0) { // check for pre-movement finger presses
+		// 	timeStamp = gTimer[1];
+		// 	isError = 1;
+		// 	isCross = 1;
+		// 	state = WAIT_RELEASE;
+		// }
+		// else {
+		// 	for (i = 0; i < seqLength; i++) {
+		// 		gs.seqMask[i] = 0;
+		// 	}
+		// 	PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
+		// 	gTimer.reset(2);
+		// 	state = WAIT_PRESS;
+		// }
+
+
 		// CHECK FOR BASELINE FINGER FORCES
-		if (numNewThresCross > 0) { // check for pre-movement finger presses
+		if (numNewThresCross > 0 && gTimer[1] < precueTime) { // check for pre-movement finger presses
 			timeStamp = gTimer[1];
 			isError = 1;
 			isCross = 1;
-			state = WAIT_RELEASE;
-		}
-		else {
-			for (i = 0; i < seqLength; i++) {
-				gs.seqMask[i] = 0;
+
+			if (startTime == 0) { // display warning message (practice blocks only)
+				sprintf(buffer, "Please remain within the red area");
+				gs.lineColor[0] = 1;
+				gs.line[0] = buffer;
+				gs.lineYpos[0] = 8;
 			}
-			PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
-			gTimer.reset(2);
-			state = WAIT_PRESS;
 		}
 
+		if (gTimer[1] >= precueTime) { // give go/nogo signal
+			sprintf(buffer, "");
+			gs.lineColor[0] = 1;
+			gs.line[0] = buffer;
+			gs.lineYpos[0] = 8;
 
-		// CHECK FOR BASELINE FINGER FORCES
-		//if (numNewThresCross > 0 && gTimer[1] < precueTime) { // check for pre-movement finger presses
-		//	timeStamp = gTimer[1];
-		//	isError = 1;
-		//	isCross = 1;
+			if (isCross) {
+				state = WAIT_RELEASE;
+			}
+			else {
+				for (i = 0; i < seqLength; i++) {
+					gs.seqMask[i] = 0;
+				}
+				PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
+				gTimer.reset(2);
+				state = WAIT_PRESS;
 
-		//	if (startTime == 0) { // display warning message (practice blocks only)
-		//		sprintf(buffer, "Please remain within the red area");
-		//		gs.lineColor[0] = 1;
-		//		gs.line[0] = buffer;
-		//		gs.lineYpos[0] = 8;
-		//	}
-		//}
-
-		//if (gTimer[1] >= precueTime) { // give go/nogo signal
-		//	sprintf(buffer, "");
-		//	gs.lineColor[0] = 1;
-		//	gs.line[0] = buffer;
-		//	gs.lineYpos[0] = 8;
-
-		//	if (isCross) {
-		//		state = WAIT_RELEASE;
-		//	}
-		//	else {
-		//		if (isMasked) {
-		//			for (i = 0; i < seqLength; i++) {
-		//				gs.seqMask[i] = '*';
-		//			}
-		//		}
-		//		else {
-		//			for (i = 0; i < seqLength; i++) {
-		//				if (i < maskCounter + stoi(windowSize)) {
-		//					gs.seqMask[i] = 0;
-		//				}
-		//				else {
-		//					gs.seqMask[i] = '*';
-		//				}
-		//			}
-
-		//		}
-
-
-		//		PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
-		//		gTimer.reset(2);
-		//		state = WAIT_PRESS;
-
-		//	}
-		//}
+			}
+		}
 
 		//sprintf(buffer, "");
 		//gs.lineColor[0] = 1;
@@ -1215,21 +1200,27 @@ void MyTrial::control() {
 
 		// START OF SEQUENCE
 		if (newPress > 0 && seqCounter < seqLength) { // correct timing
-			response[seqCounter] = pressedFinger;
-			handPressed[seqCounter] = pressedHand;
-			pressTime[seqCounter] = gTimer[1];
-			if (seqCounter == 0) {			// if first press 
-				RT = gTimer[2];
-				gTimer.reset(5);
-			}
-			if (response[seqCounter] == press[seqCounter] && handPressed[seqCounter] == hand) { // correct press	
-				responseArray[seqCounter] = 3; // green
-			}
-			else { // error: wrong key pressed
-				responseArray[seqCounter] = 3; // green
+			if (fixed_dur == 1){
 				isError = 1;
+				state = WAIT_RELEASE;
 			}
-			seqCounter++;
+			else{
+				response[seqCounter] = pressedFinger;
+				handPressed[seqCounter] = pressedHand;
+				pressTime[seqCounter] = gTimer[1];
+				if (seqCounter == 0) {			// if first press 
+					RT = gTimer[2];
+					gTimer.reset(5);
+				}
+				if (response[seqCounter] == press[seqCounter] && handPressed[seqCounter] == hand) { // correct press	
+					responseArray[seqCounter] = 3; // green
+				}
+				else { // error: wrong key pressed
+					responseArray[seqCounter] = 2; // red
+					isError = 1;
+				}
+				seqCounter++;
+			}
 		}
 		// END OF SEQUENCE: get execution time and movement time
 		if (seqCounter >= seqLength && released == NUMFINGERS) {
@@ -1290,11 +1281,9 @@ void MyTrial::control() {
 			audioStopReal = gTimer.getRealtime();
 		}
 
-
 		// Wait for the release of all keys, assign points
 		if (released == NUMFINGERS) {
 			if (isError == 0) {
-
 				if (isTrain) {
 					if (ET < estimated_ET_percentile_low) {
 						points = 3;
@@ -1345,6 +1334,14 @@ void MyTrial::control() {
 				gs.lineColor[1] = 2; // red
 				gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
 			}
+			else if (isError ==1 && fixed_dur == 1){
+				points = -1;
+				// PLAY SOUND 
+				PlaySound(TASKSOUNDS[5].c_str(), NULL, SND_ASYNC);
+				gs.clearCues(); sprintf(buffer, "Finger pressed");
+				gs.lineColor[2] = 2; // red
+				gs.line[2] = buffer; gs.lineYpos[2] = 5.4;
+			}
 			//else if (isError == 1 && timingError == 1) {
 			//	points = -1;
 			//	// PLAY SOUND 
@@ -1353,10 +1350,8 @@ void MyTrial::control() {
 			//	gs.lineColor[1] = 1; // white
 			//	gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
 			//}
-
 			gTimer.reset(2);
 			state = WAIT_FEEDBACK;
-
 		}
 		break;
 
@@ -1411,7 +1406,7 @@ void MyTrial::control() {
 			}
 			else {
 				if (numNewThresCross > 0) {
-					sprintf(buffer, "Please remain within the red area");
+					sprintf(buffer, "Remain within the red area");
 					gs.lineColor[0] = 1;
 					gs.line[0] = buffer;
 					gs.lineYpos[0] = 8;

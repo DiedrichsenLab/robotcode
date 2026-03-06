@@ -453,7 +453,7 @@ void MyBlock::giveFeedback() {
 
 	for (i = 0; i < trialNum; i++) { //check each trial
 		tpnr = (MyTrial*)trialVec.at(i);
-		if (tpnr->isError == 0) { //if correct go trial
+		if (tpnr->isError == 0 && tpnr->fixed_dur == 0) { //if correct go trial and 
 			ETarray[n] = tpnr->ET; //ET from the correct go trials and add them
 			n++; //remember number of correct trials
 		}

@@ -31,7 +31,7 @@ using namespace std;
 #define RECORDRATE 5
 #define UPDATE_TEXTDISP 60
 #define SCR_SCALE 1.84/72 //3/72 //2.54/72 // cm/pixel 
-#define MAX_PRESS 7 // max number of finger presses in a sequence
+#define MAX_PRESS 11 // max number of finger presses in a sequence
 
 ///////////////////////////////////////////////////////////////
 // Enumeration of Trial State 

@@ -67,7 +67,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	}
 
 	gTimer.init();					/// < On Cntr_1A , Cntr_1B 
-	gBox.init(BOX_RIGHT, "c:/robotcode/calib/flatbox2_lowforce_RIGHT_06-Jul-2017.txt");
+	gBox.init(BOX_RIGHT, "c:/robotcode/calib/Flatbox3_lowforce_RIGHT_22_Aug_2024.txt");
 
 	// initalize serial counter 
 	gCounter.init3(3, 0, sliceNumber); //serial 9600 19200

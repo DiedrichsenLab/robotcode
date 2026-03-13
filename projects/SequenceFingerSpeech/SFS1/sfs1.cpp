@@ -1242,6 +1242,7 @@ void MyTrial::control() {
 		}
 		else if (fixed_dur == 1){ // fixed trial duration: wait exeTime before moving on to wait release 
 			if (gTimer[2] >= execTime){
+				ET = execTime;
 				state = WAIT_RELEASE;
 			}
 		}

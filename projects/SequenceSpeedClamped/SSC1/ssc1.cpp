@@ -27,6 +27,7 @@ HapticState hs;					///< This is the haptic State as defined by the interrupt
 
 GraphicState gs;
 char buffer[300];					///< String buffer 
+char tDispBuffer[300];				///< String buffer for text display
 HINSTANCE gThisInst;				///< Instance of Windows application 
 Experiment* gExp;					///< Pointer to myExperiment 
 Trial* currentTrial;				///< Pointer to current Trial 
@@ -271,13 +272,13 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 			gBox[1].update();
 
 			// LEFT
-			sprintf(buffer, "Force : %2.2f %2.2f %2.2f %2.2f %2.2f",
+			sprintf(tDispBuffer, "Force : %2.2f %2.2f %2.2f %2.2f %2.2f",
 				gBox[0].getForce(4), gBox[0].getForce(3), gBox[0].getForce(2), gBox[0].getForce(1), gBox[0].getForce(0));
 			// RIGHT
-			sprintf(buffer, "Force : %2.2f %2.2f %2.2f %2.2f %2.2f",
+			sprintf(tDispBuffer, "Force : %2.2f %2.2f %2.2f %2.2f %2.2f",
 				gBox[1].getForce(0), gBox[1].getForce(1), gBox[1].getForce(2), gBox[1].getForce(3), gBox[1].getForce(4));
 
-			tDisp.setText(buffer, 5, 0);
+			tDisp.setText(tDispBuffer, 5, 0);
 			InvalidateRect(tDisp.windowHnd, NULL, TRUE);
 			UpdateWindow(tDisp.windowHnd);
 			Sleep(10);
@@ -729,34 +730,35 @@ void MyTrial::copyHaptics() {
 ///////////////////////////////////////////////////////////////
 void MyTrial::updateTextDisplay() {
 
-	sprintf(buffer, "est median: %.2f", estimated_medianET);
-	tDisp.setText(buffer, 2, 0);
+	sprintf(tDispBuffer, "est median: %.2f", estimated_medianET);
+	tDisp.setText(tDispBuffer, 2, 0);
 
-	// sprintf(buffer, "gTimer1: %2.2f   gTimer2: %2.2f   gTimer5: %2.2f", gTimer[1], gTimer[2], gTimer[5]);
-	// tDisp.setText(buffer, 3, 0);
+	// sprintf(tDispBuffer, "gTimer1: %2.2f   gTimer2: %2.2f   gTimer5: %2.2f", gTimer[1], gTimer[2], gTimer[5]);
+	// tDisp.setText(tDispBuffer, 3, 0);
 
-	// sprintf(buffer, "upper Threshold: %2.0f   lower Threshold: %2.0f", timeThreshold, timeThresholdSuper);
-	// tDisp.setText(buffer, 4, 0);
-	sprintf(buffer, "ET perc low: %.2f   ET perc high: %.2f", estimated_ET_percentile_low, estimated_ET_percentile_high);
-	tDisp.setText(buffer, 4, 0);
+	// sprintf(tDispBuffer, "upper Threshold: %2.0f   lower Threshold: %2.0f", timeThreshold, timeThresholdSuper);
+	// tDisp.setText(tDispBuffer, 4, 0);
 
-	sprintf(buffer, "trial: %d/%d   state: %d   seqNum: %lld", gExp->theBlock->trialNum + 1, gExp->theBlock->numTrials, state, std::stoll(cue));
-	tDisp.setText(buffer, 5, 0);
+	sprintf(tDispBuffer, "ET perc low: %.2f   ET perc high: %.2f", estimated_ET_percentile_low, estimated_ET_percentile_high);
+	tDisp.setText(tDispBuffer, 4, 0);
 
-	// sprintf(buffer, "press RH: %d %d %d %d %d    force RH: %2.2f %2.2f %2.2f %2.2f %2.2f", finger[5], finger[6], finger[7], finger[8], finger[9], gBox[1].getForce(0), gBox[1].getForce(1), gBox[1].getForce(2), gBox[1].getForce(3), gBox[1].getForce(4));
-	// tDisp.setText(buffer, 6, 0);
+	sprintf(tDispBuffer, "trial: %d/%d   state: %d   seqNum: %lld", gExp->theBlock->trialNum + 1, gExp->theBlock->numTrials, state, std::stoll(cue));
+	tDisp.setText(tDispBuffer, 5, 0);
 
-	// sprintf(buffer, "pressTime1: %2.0f   pressTime2: %2.0f   pressTime3: %2.0f   pressTime4: %2.0f   pressTime5: %2.0f", pressTime[0], pressTime[1], pressTime[2], pressTime[3], pressTime[4]);
-	// tDisp.setText(buffer, 7, 0);
+	// sprintf(tDispBuffer, "press RH: %d %d %d %d %d    force RH: %2.2f %2.2f %2.2f %2.2f %2.2f", finger[5], finger[6], finger[7], finger[8], finger[9], gBox[1].getForce(0), gBox[1].getForce(1), gBox[1].getForce(2), gBox[1].getForce(3), gBox[1].getForce(4));
+	// tDisp.setText(tDispBuffer, 6, 0);
 
-	// sprintf(buffer, "seqCounter: %d   seqLength: %d", seqCounter, seqLength);
-	// tDisp.setText(buffer, 11, 0);
+	// sprintf(tDispBuffer, "pressTime1: %2.0f   pressTime2: %2.0f   pressTime3: %2.0f   pressTime4: %2.0f   pressTime5: %2.0f", pressTime[0], pressTime[1], pressTime[2], pressTime[3], pressTime[4]);
+	// tDisp.setText(tDispBuffer, 7, 0);
 
-	sprintf(buffer, "isError: %d   errors block: %d   points block: %2.1f", isError, gNumErrorsBlock, gNumPointsBlock);
-	tDisp.setText(buffer, 12, 0);
+	// sprintf(tDispBuffer, "seqCounter: %d   seqLength: %d", seqCounter, seqLength);
+	// tDisp.setText(tDispBuffer, 11, 0);
 
-	// sprintf(buffer, "newPress: %d   released: %d", newPress, released);
-	// tDisp.setText(buffer, 14, 0);
+	sprintf(tDispBuffer, "isError: %d   errors block: %d   points block: %2.1f", isError, gNumErrorsBlock, gNumPointsBlock);
+	tDisp.setText(tDispBuffer, 12, 0);
+
+	// sprintf(tDispBuffer, "newPress: %d   released: %d", newPress, released);
+	// tDisp.setText(tDispBuffer, 14, 0);
 
 }
 
@@ -1433,15 +1435,6 @@ GraphicState::GraphicState() {
 	lineYpos[2] = 4;			// block points	
 	lineColor[2] = 1;			// white 
 	size[2] = 5;
-
-	// Ensure all leaderboard lines have positions and size
-    for (int i = 3; i < MAX_LEADERBOARD_LINE; ++i) {
-        lineXpos[i] = 0;
-        lineYpos[i] = 4 - (i - 2); // Stack downward, or adjust as needed
-        lineColor[i] = 1;
-        size[i] = 3; // Slightly smaller than main feedback
-    }
-
 
 	clearCues();
 

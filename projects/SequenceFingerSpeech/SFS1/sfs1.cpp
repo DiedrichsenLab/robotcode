@@ -28,6 +28,7 @@ AudioRecorder gAudio; 			///< Audio Recorder
 
 GraphicState gs;
 char buffer[300];					///< String buffer 
+char tDispBuffer[300];				///< String buffer for text display
 HINSTANCE gThisInst;				///< Instance of Windows application 
 Experiment* gExp;					///< Pointer to myExperiment 
 Trial* currentTrial;				///< Pointer to current Trial 
@@ -209,13 +210,13 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 			gBox[1].update();
 
 			// LEFT
-			sprintf(buffer, "Force : %2.2f %2.2f %2.2f %2.2f %2.2f",
+			sprintf(tDispBuffer, "Force : %2.2f %2.2f %2.2f %2.2f %2.2f",
 				gBox[0].getForce(4), gBox[0].getForce(3), gBox[0].getForce(2), gBox[0].getForce(1), gBox[0].getForce(0));
 			// RIGHT
-			sprintf(buffer, "Force : %2.2f %2.2f %2.2f %2.2f %2.2f",
+			sprintf(tDispBuffer, "Force : %2.2f %2.2f %2.2f %2.2f %2.2f",
 				gBox[1].getForce(0), gBox[1].getForce(1), gBox[1].getForce(2), gBox[1].getForce(3), gBox[1].getForce(4));
 
-			tDisp.setText(buffer, 5, 0);
+			tDisp.setText(tDispBuffer, 5, 0);
 			InvalidateRect(tDisp.windowHnd, NULL, TRUE);
 			UpdateWindow(tDisp.windowHnd);
 			Sleep(10);
@@ -537,7 +538,7 @@ MyTrial::MyTrial() {
 ///////////////////////////////////////////////////////////////
 void MyTrial::read(istream& in) {
 	// read from .tgt file
-	in >> subNum >> group >> hand >> symbol >> isTrain >> cue >> fixed_dur >> execTime >> iti >> precueTime;
+	in >> subNum >> group >> effector >> symbol >> isTrain >> cue >> fixed_dur >> execTime >> iti >> precueTime;
 	seqLength = cue.length(); //get seqLength
 }
 
@@ -546,7 +547,7 @@ void MyTrial::read(istream& in) {
 ///////////////////////////////////////////////////////////////
 void MyTrial::writeDat(ostream& out) {
 	// write to .dat file
-	out << subNum << "\t" << hand << "\t" << isTrain << "\t" << cue << "\t";
+	out << subNum << "\t" << effector << "\t" << isTrain << "\t" << cue << "\t";
 	int i;
 
 	for (i = 0; i < MAX_PRESS; i++) {
@@ -600,7 +601,7 @@ void MyTrial::writeDat(ostream& out) {
 void MyTrial::writeHeader(ostream& out) {
 	char header[200];
 
-	out << "SubNum" << "\t" << "hand" << "\t" << "isTrain" << "\t" << "cue" << "\t";
+	out << "SubNum" << "\t" << "effector" << "\t" << "isTrain" << "\t" << "cue" << "\t";
 
 	int i;
 
@@ -699,50 +700,39 @@ void MyTrial::copyHaptics() {
 /// updateTextDisp: called from TextDisplay 
 ///////////////////////////////////////////////////////////////
 void MyTrial::updateTextDisplay() {
-	// sprintf(buffer, "startTime: %d   TR: %2.0f", startTime, TR);
-	// tDisp.setText(buffer, 1, 0);
+	// sprintf(tDispBuffer, "startTime: %d   TR: %2.0f", startTime, TR);
+	// tDisp.setText(tDispBuffer, 1, 0);
 
-	// sprintf(buffer, "time: %2.2f   TRtime: %d   slice:%d   metronome: %d ", gCounter.readTotTime(), gCounter.readTR(), gCounter.readSlice(), timeMet);
-	// tDisp.setText(buffer, 2, 0);
+	// sprintf(tDispBuffer, "time: %2.2f   TRtime: %d   slice:%d   metronome: %d ", gCounter.readTotTime(), gCounter.readTR(), gCounter.readSlice(), timeMet);
+	// tDisp.setText(tDispBuffer, 2, 0);
 
-	// sprintf(buffer, "est mean ET: %d  est std ET: %d", estimated_ET_mean, estimated_ET_std);
-	// tDisp.setText(buffer, 2, 0);
+	sprintf(tDispBuffer, "est perc low: %.2f  est perc high: %.2f est perc low super: %.2f", estimated_ET_percentile_low, estimated_ET_percentile_high);
+	tDisp.setText(tDispBuffer, 1, 0);
 
-	sprintf(buffer, "est perc low: %.2f  est perc high: %.2f est perc low super: %.2f", estimated_ET_percentile_low, estimated_ET_percentile_high);
-	tDisp.setText(buffer, 2, 0);
+	// sprintf(tDispBuffer, "gTimer1: %2.2f   gTimer2: %2.2f   gTimer5: %2.2f", gTimer[1], gTimer[2], gTimer[5]);
+	// tDisp.setText(tDispBuffer, 2, 0);
 
-	sprintf(buffer, "gTimer1: %2.2f   gTimer2: %2.2f   gTimer5: %2.2f", gTimer[1], gTimer[2], gTimer[5]);
-	tDisp.setText(buffer, 3, 0);
-
-	sprintf(buffer, "upper Threshold: %2.0f   lower Threshold: %2.0f", timeThreshold, timeThresholdSuper);
-	tDisp.setText(buffer, 4, 0);
-
-	sprintf(buffer, "trial: %d/%d   state: %d   seqNum: %lld", gExp->theBlock->trialNum + 1, gExp->theBlock->numTrials, state, std::stoll(cue));
-	//sprintf(buffer, "trial: %d/%d   state: %d", gExp->theBlock->trialNum + 1, gExp->theBlock->numTrials, state);
-	tDisp.setText(buffer, 5, 0);
+	// sprintf(tDispBuffer, "trial: %d/%d   state: %d   seqNum: %lld", gExp->theBlock->trialNum + 1, gExp->theBlock->numTrials, state, std::stoll(cue));
+	sprintf(tDispBuffer, "trial: %d/%d   state: %d", gExp->theBlock->trialNum + 1, gExp->theBlock->numTrials, state);
+	tDisp.setText(tDispBuffer, 2, 0);
 
 
+	//sprintf(tDispBuffer, "press LH: %d %d %d %d %d    force LH: %2.2f %2.2f %2.2f %2.2f %2.2f", finger[0], finger[1], finger[2], finger[3], finger[4], gBox[0].getForce(0), gBox[0].getForce(1), gBox[0].getForce(2), gBox[0].getForce(3), gBox[0].getForce(4));
+	//tDisp.setText(tDispBuffer, 6, 0);
 
-	//sprintf(buffer, "press LH: %d %d %d %d %d    force LH: %2.2f %2.2f %2.2f %2.2f %2.2f", finger[0], finger[1], finger[2], finger[3], finger[4], gBox[0].getForce(0), gBox[0].getForce(1), gBox[0].getForce(2), gBox[0].getForce(3), gBox[0].getForce(4));
-	//tDisp.setText(buffer, 6, 0);
+	// sprintf(tDispBuffer, "press RH: %d %d %d %d %d    force RH: %2.2f %2.2f %2.2f %2.2f %2.2f", finger[5], finger[6], finger[7], finger[8], finger[9], gBox[1].getForce(0), gBox[1].getForce(1), gBox[1].getForce(2), gBox[1].getForce(3), gBox[1].getForce(4));
+	// tDisp.setText(tDispBuffer, 6, 0);
 
-	sprintf(buffer, "press RH: %d %d %d %d %d    force RH: %2.2f %2.2f %2.2f %2.2f %2.2f", finger[5], finger[6], finger[7], finger[8], finger[9], gBox[1].getForce(0), gBox[1].getForce(1), gBox[1].getForce(2), gBox[1].getForce(3), gBox[1].getForce(4));
-	tDisp.setText(buffer, 6, 0);
+	// sprintf(tDispBuffer, "seqCounter: %d   seqLength: %d", seqCounter, seqLength);
+	// tDisp.setText(tDispBuffer, 11, 0);
 
-	sprintf(buffer, "pressTime1: %2.0f   pressTime2: %2.0f   pressTime3: %2.0f   pressTime4: %2.0f   pressTime5: %2.0f", pressTime[0], pressTime[1], pressTime[2], pressTime[3], pressTime[4]);
-	tDisp.setText(buffer, 7, 0);
-
-
-	sprintf(buffer, "seqCounter: %d   seqLength: %d", seqCounter, seqLength);
-	tDisp.setText(buffer, 11, 0);
-
-	sprintf(buffer, "isError: %d   errors block: %d   points block: %2.1f", isError, gNumErrorsBlock, gNumPointsBlock);
-	tDisp.setText(buffer, 12, 0);
+	sprintf(tDispBuffer, "isError: %d   errors block: %d   points block: %2.1f", isError, gNumErrorsBlock, gNumPointsBlock);
+	tDisp.setText(tDispBuffer, 3, 0);
 
 
 
-	sprintf(buffer, "newPress: %d   released: %d", newPress, released);
-	tDisp.setText(buffer, 14, 0);
+	// sprintf(tDispBuffer, "newPress: %d   released: %d", newPress, released);
+	// tDisp.setText(tDispBuffer, 14, 0);
 
 }
 
@@ -1035,7 +1025,8 @@ void MyTrial::control() {
 					gTimer.reset(1); gTimer.reset(2); gTimer.reset(5);
 					dataman.startRecording();
 
-					audioFile = gExp->dataDir + gExp->subjectName + "_block" + to_string(gExp->theBlock->blockNumber) + "_trial" + to_string(gExp->theBlock->trialNum+1) + ".wav";
+					audioFile = gExp->dataDir + "sub" + gExp->subjectName + "_block" + to_string(gExp->theBlock->blockNumber) + "_trial" + to_string(gExp->theBlock->trialNum+1)
+					+ "_effector" + to_string(effector) + ".wav";
 					audioOn = gAudio.start(audioFile);
 					audioStartReal = gTimer.getRealtime();
 
@@ -1064,7 +1055,8 @@ void MyTrial::control() {
 					gTimer.reset(1); gTimer.reset(2); gTimer.reset(5);
 					dataman.startRecording();
 
-					audioFile = gExp->dataDir + gExp->subjectName + "_block" + to_string(gExp->theBlock->blockNumber) + "_trial" + to_string(gExp->theBlock->trialNum+1) + ".wav";
+					audioFile = gExp->dataDir + "sub" + gExp->subjectName + "_block" + to_string(gExp->theBlock->blockNumber) + "_trial" + to_string(gExp->theBlock->trialNum+1)
+					+ "_effector" + to_string(effector) + ".wav";
 					audioOn = gAudio.start(audioFile);
 					audioStartReal = gTimer.getRealtime();
 
@@ -1086,7 +1078,7 @@ void MyTrial::control() {
 				press[i] = cue.at(i) - '0';
 				gs.seq[i] = cue.at(i);
 				if (show == 1) {
-					if (hand == 2) {
+					if (effector == 2) {
 						responseArray[i] = 6; // orange for the right
 					}
 					else {
@@ -1212,7 +1204,7 @@ void MyTrial::control() {
 					RT = gTimer[2];
 					gTimer.reset(5);
 				}
-				if (response[seqCounter] == press[seqCounter] && handPressed[seqCounter] == hand) { // correct press	
+				if (response[seqCounter] == press[seqCounter] && handPressed[seqCounter] == effector) { // correct press	
 					responseArray[seqCounter] = 3; // green
 				}
 				else { // error: wrong key pressed

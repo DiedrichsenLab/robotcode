@@ -152,7 +152,7 @@ private:
 	int press[MAX_PRESS];					///< Which digit to press (in intrinsic coordinates 1:thumb 5: pinkie) 
 	int load;                               ///< How many keypresses to plan? (from 1 to 5)
 	int show;                               ///< Do you show hand information at ecoding (1) or at go cue (2)?
-	int hand;								///< Which board are we using left= 1 right= 2
+	int effector;							///< Which effector are we using left hand= 1 right hand= 2, speech = 0
 	int seqCounter;							///< Which position in the seq are we?
 	//int maskCounter;
 	int fixed_dur;							///< Is the trial duration fixed or not?

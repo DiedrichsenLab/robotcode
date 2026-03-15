@@ -520,8 +520,10 @@ MyTrial::MyTrial() {
 
 	audioOn = false;
 	audioFile = "";
-	audioStartReal = -1;
-	audioStopReal = -1;
+	beepStartReal = -1;
+	beepStopReal = -1;
+	// audioStartReal = -1;
+	// audioStopReal = -1;
 
 	for (int i = 0; i < MAX_PRESS; i++) {
 		response[i] = 0;					// finger response
@@ -590,8 +592,10 @@ void MyTrial::writeDat(ostream& out) {
 		<< isCross << "\t"			//whether pre-movement threshold has been crossed in this trial
 		<< timeStamp << "\t"
 		//<< audioFile << "\t"
-		<< audioStartReal << "\t"
-		<< audioStopReal << "\t"
+		// << audioStartReal << "\t"
+		// << audioStopReal << "\t"
+		<< beepStartReal << "\t"
+		<< beepStopReal << "\t"
 		<< endl;
 }
 
@@ -647,8 +651,10 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "isCross" << "\t"
 		<< "crossTime" << "\t"
 		//<< "audioFile" << "\t"
-		<< "audioStartReal" << "\t"
-		<< "audioStopReal" << "\t"
+		// << "audioStartReal" << "\t"
+		// << "audioStopReal" << "\t"
+		<< "beepStartReal" << "\t"
+		<< "beepStopReal" << "\t"
 		<< endl;
 }
 
@@ -676,7 +682,7 @@ void MyTrial::end() {
 	if (audioOn) {
 		gAudio.stop();
 		audioOn = false;
-		audioStopReal = gTimer.getRealtime();
+		// audioStopReal = gTimer.getRealtime();
 	}
 	gs.reset();
 }
@@ -1028,7 +1034,7 @@ void MyTrial::control() {
 					audioFile = gExp->dataDir + "sub" + gExp->subjectName + "_block" + to_string(gExp->theBlock->blockNumber) + "_trial" + to_string(gExp->theBlock->trialNum+1)
 					+ "_effector" + to_string(effector) + ".wav";
 					audioOn = gAudio.start(audioFile);
-					audioStartReal = gTimer.getRealtime();
+					// audioStartReal = gTimer.getRealtime();
 
 					state = WAIT_PREP;
 				}
@@ -1058,7 +1064,7 @@ void MyTrial::control() {
 					audioFile = gExp->dataDir + "sub" + gExp->subjectName + "_block" + to_string(gExp->theBlock->blockNumber) + "_trial" + to_string(gExp->theBlock->trialNum+1)
 					+ "_effector" + to_string(effector) + ".wav";
 					audioOn = gAudio.start(audioFile);
-					audioStartReal = gTimer.getRealtime();
+					// audioStartReal = gTimer.getRealtime();
 
 					state = WAIT_PREP;
 				}
@@ -1145,6 +1151,7 @@ void MyTrial::control() {
 					gs.seqMask[i] = 0;
 				}
 				PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
+				beepStartReal = gTimer.getRealtime();
 				gTimer.reset(2);
 				state = WAIT_PRESS;
 
@@ -1221,6 +1228,9 @@ void MyTrial::control() {
 				ET = (RT + MT);
 				complete = 1;
 				gTimer.reset(5);
+				state = WAIT_RELEASE;
+				PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
+				beepStopReal = gTimer.getRealtime();
 			}
 			// if (fixed_dur == 1) { // fixed trial duration: wait exeTime before moving on to wait release (same time for GO and NOGO trials)
 			// 	if (gTimer[2] >= execTime) {
@@ -1233,17 +1243,19 @@ void MyTrial::control() {
 			// 	}
 			// }
 
-			else {
-				if (gTimer[5] >= 200) {
-					state = WAIT_RELEASE;
-				}
-			}
+			// else {
+			// 	if (gTimer[5] >= 200) {
+			// 		state = WAIT_RELEASE;
+			// 	}
+			// }
 			// SEQUENCE TIME OUT
 		}
 		else if (fixed_dur == 1){ // fixed trial duration: wait exeTime before moving on to wait release 
 			if (gTimer[2] >= execTime){
 				ET = execTime;
 				state = WAIT_RELEASE;
+				PlaySound(TASKSOUNDS[6].c_str(), NULL, SND_ASYNC);
+				beepStopReal = gTimer.getRealtime();
 			}
 		}
 
@@ -1268,11 +1280,11 @@ void MyTrial::control() {
 
 	case WAIT_RELEASE: //5
 
-		if (audioOn) {
-			gAudio.stop();
-			audioOn = false;
-			audioStopReal = gTimer.getRealtime();
-		}
+		// if (audioOn) {
+		// 	gAudio.stop();
+		// 	audioOn = false;
+		// 	// audioStopReal = gTimer.getRealtime();
+		// }
 
 		// Wait for the release of all keys, assign points
 		if (released == NUMFINGERS) {
@@ -1296,11 +1308,11 @@ void MyTrial::control() {
 				sprintf(buffer, "+%d", points);
 
 				if (points == 3) {
-					PlaySound(TASKSOUNDS[8].c_str(), NULL, SND_ASYNC);
+					// PlaySound(TASKSOUNDS[8].c_str(), NULL, SND_ASYNC);
 					gs.lineColor[1] = 3; // Green
 				}
 				else if (points == 1) {
-					PlaySound(TASKSOUNDS[2].c_str(), NULL, SND_ASYNC);
+					// PlaySound(TASKSOUNDS[2].c_str(), NULL, SND_ASYNC);
 					gs.lineColor[1] = 7; // yellow
 
 				}
@@ -1313,7 +1325,7 @@ void MyTrial::control() {
 			}
 			else if (isError == 1 && isCross) {
 				points = -5;
-				PlaySound(TASKSOUNDS[5].c_str(), NULL, SND_ASYNC);
+				// PlaySound(TASKSOUNDS[5].c_str(), NULL, SND_ASYNC);
 				gs.clearCues(); sprintf(buffer, "%d", points);
 				gs.lineColor[1] = 2; // red
 				gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
@@ -1322,7 +1334,7 @@ void MyTrial::control() {
 			else if (isError == 1 && timingError == 0) {
 				points = -1;
 				// PLAY SOUND 
-				PlaySound(TASKSOUNDS[5].c_str(), NULL, SND_ASYNC);
+				// PlaySound(TASKSOUNDS[5].c_str(), NULL, SND_ASYNC);
 				gs.clearCues(); sprintf(buffer, "%d", points);
 				gs.lineColor[1] = 2; // red
 				gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
@@ -1330,7 +1342,7 @@ void MyTrial::control() {
 			else if (isError ==1 && fixed_dur == 1){
 				points = -1;
 				// PLAY SOUND 
-				PlaySound(TASKSOUNDS[5].c_str(), NULL, SND_ASYNC);
+				// PlaySound(TASKSOUNDS[5].c_str(), NULL, SND_ASYNC);
 				gs.clearCues(); sprintf(buffer, "Finger pressed");
 				gs.lineColor[2] = 2; // red
 				gs.line[2] = buffer; gs.lineYpos[2] = 5.4;
@@ -1380,7 +1392,7 @@ void MyTrial::control() {
 				if (audioOn) {
 					gAudio.stop();
 					audioOn = false;
-					audioStopReal = gTimer.getRealtime();
+					// audioStopReal = gTimer.getRealtime();
 				}
 				trialDur = gTimer[1];
 				state = END_TRIAL;
@@ -1389,11 +1401,11 @@ void MyTrial::control() {
 		else {
 			if (gTimer[2] > (iti - FEEDBACKTIME)) {
 				dataman.stopRecording();
-				//if (audioOn) {
-				//	gAudio.stop();
-				//	audioOn = false;
-				//	audioStopReal = gTimer.getRealtime();
-				//}
+				if (audioOn) {
+					gAudio.stop();
+					audioOn = false;
+					// audioStopReal = gTimer.getRealtime();
+				}
 				trialDur = gTimer[1];
 				state = END_TRIAL;
 			}

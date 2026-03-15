@@ -204,6 +204,8 @@ private:
 	string audioFile;
 	double audioStartReal;
 	double audioStopReal;
+	double beepStartReal;
+	double beepStopReal;
 
 
 

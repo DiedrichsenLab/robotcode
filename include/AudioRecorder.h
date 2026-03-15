@@ -10,6 +10,7 @@ public:
     ~AudioRecorder();
 
     bool start(const std::string& wavPath, int sampleRate = 16000, int channels = 1, int bitsPerSample = 16);
+    //bool start(const std::string& wavPath, int sampleRate = 8000, int channels = 1, int bitsPerSample = 16);
     //bool start(const std::string& wavPath, int sampleRate = 4000, int channels = 1, int bitsPerSample = 16);
 
     void stop();

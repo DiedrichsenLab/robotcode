@@ -1254,7 +1254,7 @@ void MyTrial::control() {
 			if (gTimer[2] >= execTime){
 				ET = execTime;
 				state = WAIT_RELEASE;
-				PlaySound(TASKSOUNDS[6].c_str(), NULL, SND_ASYNC);
+				PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
 				beepStopReal = gTimer.getRealtime();
 			}
 		}

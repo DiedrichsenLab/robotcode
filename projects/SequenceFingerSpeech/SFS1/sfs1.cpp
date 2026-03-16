@@ -549,7 +549,7 @@ void MyTrial::read(istream& in) {
 ///////////////////////////////////////////////////////////////
 void MyTrial::writeDat(ostream& out) {
 	// write to .dat file
-	out << subNum << "\t" << effector << "\t" << isTrain << "\t" << cue << "\t";
+	out << subNum << "\t" << group << "\t" << effector << "\t" << isTrain << "\t" << cue << "\t";
 	int i;
 
 	for (i = 0; i < MAX_PRESS; i++) {
@@ -575,12 +575,12 @@ void MyTrial::writeDat(ostream& out) {
 		out << pressTime[i] << "\t";
 	}
 
-	out << tempThres1 << "\t"
-		<< tempThres2 << "\t"
+	// out << tempThres1 << "\t"
+	// 	<< tempThres2 << "\t"
 
 		// << tempMean << "\t"
 		// << tempStd << "\t"
-		<< temp_ET_percentile_high << "\t"
+	out << temp_ET_percentile_high << "\t"
 		<< temp_ET_percentile_low << "\t"
 
 		<< startTime << "\t"
@@ -605,7 +605,7 @@ void MyTrial::writeDat(ostream& out) {
 void MyTrial::writeHeader(ostream& out) {
 	char header[200];
 
-	out << "SubNum" << "\t" << "effector" << "\t" << "isTrain" << "\t" << "cue" << "\t";
+	out << "SubNum" << "\t" << "group" << "\t" << "effector" << "\t" << "isTrain" << "\t" << "cue" << "\t";
 
 	int i;
 
@@ -638,9 +638,9 @@ void MyTrial::writeHeader(ostream& out) {
 		out << header << "\t";
 	}
 
-	out << "timeThreshold" << "\t"
-		<< "timeThresholdSuper" << "\t"
-		<< "estimatedPercentileHigh" << "\t"
+	// out << "timeThreshold" << "\t"
+	// 	<< "timeThresholdSuper" << "\t"
+	out << "estimatedPercentileHigh" << "\t"
 		<< "estimatedPercentileLow" << "\t"
 		<< "startTime" << "\t"
 		<< "startTimeReal" << "\t"

@@ -458,7 +458,7 @@ void MyBlock::giveFeedback() {
 			ETarray[n] = tpnr->ET; //ET from the correct go trials and add them
 			n++; //remember number of correct trials
 		}
-		nn++; //count total trials
+		// nn++; //count total trials
 	}
 
 	temp_ET_percentile_low = estimated_ET_percentile_low;
@@ -470,7 +470,8 @@ void MyBlock::giveFeedback() {
 	if (n > 0) { //if at least one correct trial
 		b = b++; //increase counter of block number
 		medianETarray[b] = median(ETarray, n); //median of movement times	
-		ERarray[b] = (((double)gNumErrorsBlock) / (double)(nn) * 100); //error rate
+		// ERarray[b] = (((double)gNumErrorsBlock) / (double)(nn) * 100); //error rate (previous version)
+		ERarray[b] = (((double)gNumErrorsBlock) / (double)(n + gNumErrorsBlock) * 100); //error rate (current version, calculated only for finger)
 
 		estimated_ET_percentile_high = percentile(ETarray, n, percentile_high); //upper percentile of ETs
 		estimated_ET_percentile_low = percentile(ETarray, n, percentile_low); //lower percentile of ETs

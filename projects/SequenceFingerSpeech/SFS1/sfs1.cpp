@@ -712,7 +712,7 @@ void MyTrial::updateTextDisplay() {
 	// sprintf(tDispBuffer, "time: %2.2f   TRtime: %d   slice:%d   metronome: %d ", gCounter.readTotTime(), gCounter.readTR(), gCounter.readSlice(), timeMet);
 	// tDisp.setText(tDispBuffer, 2, 0);
 
-	sprintf(tDispBuffer, "est perc low: %.2f  est perc high: %.2f est perc low super: %.2f", estimated_ET_percentile_low, estimated_ET_percentile_high);
+	sprintf(tDispBuffer, "est perc low: %.2f  est perc high: %.2f", estimated_ET_percentile_low, estimated_ET_percentile_high);
 	tDisp.setText(tDispBuffer, 1, 0);
 
 	// sprintf(tDispBuffer, "gTimer1: %2.2f   gTimer2: %2.2f   gTimer5: %2.2f", gTimer[1], gTimer[2], gTimer[5]);

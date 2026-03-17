@@ -1031,8 +1031,8 @@ void MyTrial::control() {
 					gTimer.reset(1); gTimer.reset(2); gTimer.reset(5);
 					dataman.startRecording();
 
-					audioFile = gExp->dataDir + "sub" + gExp->subjectName + "_block" + to_string(gExp->theBlock->blockNumber) + "_trial" + to_string(gExp->theBlock->trialNum+1)
-					+ "_effector" + to_string(effector) + ".wav";
+					audioFile = gExp->dataDir + "SN" + gExp->subjectName + "_BN" + to_string(gExp->theBlock->blockNumber) + "_TN" + to_string(gExp->theBlock->trialNum+1)
+					+ "_Eff" + to_string(effector) + ".wav";
 					audioOn = gAudio.start(audioFile);
 					// audioStartReal = gTimer.getRealtime();
 
@@ -1061,8 +1061,8 @@ void MyTrial::control() {
 					gTimer.reset(1); gTimer.reset(2); gTimer.reset(5);
 					dataman.startRecording();
 
-					audioFile = gExp->dataDir + "sub" + gExp->subjectName + "_block" + to_string(gExp->theBlock->blockNumber) + "_trial" + to_string(gExp->theBlock->trialNum+1)
-					+ "_effector" + to_string(effector) + ".wav";
+					audioFile = gExp->dataDir + "SN" + gExp->subjectName + "_BN" + to_string(gExp->theBlock->blockNumber) + "_TN" + to_string(gExp->theBlock->trialNum+1)
+					+ "_Eff" + to_string(effector) + ".wav";
 					audioOn = gAudio.start(audioFile);
 					// audioStartReal = gTimer.getRealtime();
 
@@ -1305,7 +1305,11 @@ void MyTrial::control() {
 				}
 				gs.clearCues();
 				gs.size[1] = 8; // size of feedback text
-				sprintf(buffer, "+%d", points);
+				if (isTrain) {
+				sprintf(buffer, "+%d", points); }
+				else {
+					sprintf(buffer, ""); // no points shown during test phase
+				}
 
 				if (points == 3) {
 					// PlaySound(TASKSOUNDS[8].c_str(), NULL, SND_ASYNC);

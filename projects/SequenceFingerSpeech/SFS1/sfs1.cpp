@@ -124,7 +124,11 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	s626.init("c:/robotcode/calib/s626_single.txt");
 
 	//low force Flatbox3
-	gBox[1].init(BOX_RIGHT, "c:/robotcode/calib/Flatbox3_lowforce_RIGHT_22_Aug_2024.txt");
+	//gBox[1].init(BOX_RIGHT, "c:/robotcode/calib/Flatbox3_lowforce_RIGHT_22_Aug_2024.txt");
+
+	// low force Flatbox2 (FBL-R)
+	gBox[1].init(BOX_RIGHT, "c:/robotcode/calib/flatbox2_highforce2_RIGHT_18-March-2026.txt");
+
 
 
 	gBox[0].filterconst = 0.8;
@@ -723,18 +727,19 @@ void MyTrial::updateTextDisplay() {
 	sprintf(tDispBuffer, "trial: %d/%d   state: %d", gExp->theBlock->trialNum + 1, gExp->theBlock->numTrials, state);
 	tDisp.setText(tDispBuffer, 2, 0);
 
+	sprintf(tDispBuffer, "isError: %d   errors block: %d   points block: %2.1f", isError, gNumErrorsBlock, gNumPointsBlock);
+	tDisp.setText(tDispBuffer, 3, 0);
+
 
 	//sprintf(tDispBuffer, "press LH: %d %d %d %d %d    force LH: %2.2f %2.2f %2.2f %2.2f %2.2f", finger[0], finger[1], finger[2], finger[3], finger[4], gBox[0].getForce(0), gBox[0].getForce(1), gBox[0].getForce(2), gBox[0].getForce(3), gBox[0].getForce(4));
 	//tDisp.setText(tDispBuffer, 6, 0);
 
-	// sprintf(tDispBuffer, "press RH: %d %d %d %d %d    force RH: %2.2f %2.2f %2.2f %2.2f %2.2f", finger[5], finger[6], finger[7], finger[8], finger[9], gBox[1].getForce(0), gBox[1].getForce(1), gBox[1].getForce(2), gBox[1].getForce(3), gBox[1].getForce(4));
-	// tDisp.setText(tDispBuffer, 6, 0);
+	 sprintf(tDispBuffer, "press RH: %d %d %d %d %d    force RH: %2.2f %2.2f %2.2f %2.2f %2.2f", finger[5], finger[6], finger[7], finger[8], finger[9], gBox[1].getForce(0), gBox[1].getForce(1), gBox[1].getForce(2), gBox[1].getForce(3), gBox[1].getForce(4));
+	 tDisp.setText(tDispBuffer, 4, 0);
 
 	// sprintf(tDispBuffer, "seqCounter: %d   seqLength: %d", seqCounter, seqLength);
 	// tDisp.setText(tDispBuffer, 11, 0);
 
-	sprintf(tDispBuffer, "isError: %d   errors block: %d   points block: %2.1f", isError, gNumErrorsBlock, gNumPointsBlock);
-	tDisp.setText(tDispBuffer, 3, 0);
 
 
 

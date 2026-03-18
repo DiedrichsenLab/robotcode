@@ -645,14 +645,14 @@ void MyTrial::read(istream& in) {
 		>> iti
 		>> trialLabel
 		//>> GoNogo
-		>> endTime
-		>> startTime
+		//>> endTime
 		>> TrigExec
 		>> TrigPlan
 		>> TrigBaseline
 		>> stimTrigExec
 		>> stimTrigPlan
-		>> stimTrigBaseline;
+		>> stimTrigBaseline
+		>> startTime;
 }
 
 ///////////////////////////////////////////////////////////////
@@ -691,6 +691,12 @@ void MyTrial::writeDat(ostream& out) {
 		<< points << "\t"
 		<< rewThresh1 << "\t"
 		<< rewThresh2 << "\t"
+		<< TrigExec << "\t"
+		<< TrigPlan << "\t"
+		<< TrigBaseline << "\t"
+		<< stimTrigExec << "\t"
+		<< stimTrigPlan << "\t"
+		<< stimTrigBaseline << "\t"
 		<< endl;
 }
 
@@ -729,6 +735,12 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "points" << "\t"
 		<< "rewThresh1" << "\t"
 		<< "rewThresh2" << "\t"
+		<< "TrigExec" << "\t"
+		<< "TrigPlan" << "\t"
+		<< "TrigBaseline" << "\t"
+		<< "stimTrigExec" << "\t"
+		<< "stimTrigPlan" << "\t"
+		<< "stimTrigBaseline" << "\t"
 		<< endl;
 }
 
@@ -785,7 +797,7 @@ void MyTrial::updateTextDisplay() {
 
 	tDisp.setText("Experiment: Smp3", 2, 1);
 
-	sprintf(buffer, "State : %d   Trial: %d   Block state: %d   GoNogo: %s", state, gExp->theBlock->trialNum, gExp->theBlock->state, GoNogo.c_str());
+	sprintf(buffer, "State : %d   Trial: %d   Block state: %d   Exec: %d  Plan: %d  Rest: %d", state, gExp->theBlock->trialNum, gExp->theBlock->state, TrigExec, TrigPlan, TrigBaseline);
 	tDisp.setText(buffer, 4, 0);
 
 	tDisp.setText("Fingers in task: " + fingerTask[0] + " " + fingerTask[1], 4, 1);
@@ -1105,7 +1117,7 @@ void MyTrial::updateGraphics(int what) {
 		}
 
 		gScreen.setColor(Screen::white);
-		gScreen.print(stateString, -21, 12, 5);
+		gScreen.print(stateString, -0, 0, 5);
 	}
 }
 
@@ -1176,7 +1188,7 @@ void MyTrial::control() {
 		gs.boxColor = 5;	// grey baseline box color
 		//planErrorFlag = 0;
 		//SetDacVoltage(0, 0);	// Ali EMG - gets ~200us to change digital to analog. Does it interrupt the ADC?
-		SetDIOState(0, 0xFFFF); // Ali EMG
+		SetDIOState(0, 0xFFFFFF); // Ali EMG
 
 		for (i = 0; i < NUMDISPLAYLINES; i++) {
 			if (!gs.line[i].empty()) {
@@ -1256,6 +1268,7 @@ void MyTrial::control() {
 			gTimer.reset(2);					//time for events in the trial			
 			gTimer.reset(3);
 			state = WAIT_PLAN;
+			TrigStart = 0;
 			n = 1;
 			//forceDiff = 0;
 		}
@@ -1269,14 +1282,25 @@ void MyTrial::control() {
 		gs.showForces = 1;
 		gs.showFxCross = 1;
 
-		if (gTimer[3] >= 500 + stimTrigPlan && TrigPlan == 1) {
+		if (gTimer[3] >= 0 && TrigStart == 0) {
 			//SetDacVoltage(0, emgTrigVolt);	// trigger to TMS
-			SetDIOState(0, 0x0000);
+			SetDIOState(0, 0xFFFFF0);
 		}
 
-		if (gTimer[3] >= 500 + stimTrigPlan + 100 && TrigPlan == 1) {
+		if (gTimer[3] >= 500 && TrigStart == 0) {
 			//SetDacVoltage(0, emgTrigVolt);	// trigger to TMS
-			SetDIOState(0, 0xFFFF);
+			SetDIOState(0, 0xFFFFFF);
+			TrigStart = 1;
+		}
+
+		if (gTimer[3] >= stimTrigPlan && TrigPlan == 1) {
+			//SetDacVoltage(0, emgTrigVolt);	// trigger to TMS
+			SetDIOState(0, 0xFFFF0F);
+		}
+
+		if (gTimer[3] >= stimTrigPlan + 100 && TrigPlan == 1) {
+			//SetDacVoltage(0, emgTrigVolt);	// trigger to TMS
+			SetDIOState(0, 0xFFFFFF);
 		}
 
 
@@ -1356,14 +1380,14 @@ void MyTrial::control() {
 
 	case WAIT_EXEC: //3
 
-		if (gTimer[3] >= 500 + stimTrigExec && TrigExec == 1) {
+		if (gTimer[3] >= stimTrigExec && TrigExec == 1) {
 			//SetDacVoltage(0, emgTrigVolt);	// trigger to TMS
-			SetDIOState(0, 0x0000);
+			SetDIOState(0, 0xFFFF0F);
 		}
 
-		if (gTimer[3] >= 500 + stimTrigExec + 100 && TrigExec == 1) {
+		if (gTimer[3] >= stimTrigExec + 100 && TrigExec == 1) {
 			//SetDacVoltage(0, emgTrigVolt);	// trigger to TMS
-			SetDIOState(0, 0xFFFF);
+			SetDIOState(0, 0xFFFFFF);
 		}
 
 
@@ -1526,10 +1550,18 @@ void MyTrial::control() {
 
 	case WAIT_ITI:
 
+		if (gTimer[2] >= stimTrigBaseline && TrigBaseline == 1) {
+			SetDIOState(0, 0xFFFF0F);
+		}
+
+		if (gTimer[2] >= stimTrigBaseline + 100 && TrigBaseline == 1) {
+			SetDIOState(0, 0xFFFFFF);
+		}
+
 		gs.showTgLines = 1;	// set screen lines/force bars to show
 		gs.showBsLines = 1;
 		gs.showFxCross = 1;
-		gs.showForces = 0;
+		gs.showForces = 1;
 		gs.showTarget = 0;
 		gs.showFeedback = 0;
 		if (gTimer[2] >= iti) {
@@ -1537,16 +1569,6 @@ void MyTrial::control() {
 			gTimer.reset(2);
 		}
 		break;
-
-		if (gTimer[3] >= 500 + stimTrigBaseline && TrigBaseline == 1) {
-			//SetDacVoltage(0, emgTrigVolt);	// trigger to TMS
-			SetDIOState(0, 0x0000);
-		}
-
-		if (gTimer[3] >= 500 + stimTrigBaseline + 100 && TrigBaseline == 1) {
-			//SetDacVoltage(0, emgTrigVolt);	// trigger to TMS
-			SetDIOState(0, 0xFFFF);
-		}
 
 	case ACQUIRE_HRF: //6
 

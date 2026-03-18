@@ -18,13 +18,14 @@ HapticState hs;					///< This is the haptic State as d by the interrupt
 GraphicState gs;				///< Graphic state
 char buffer[300];				///< String buffer 
 HINSTANCE gThisInst;			///< Instance of Windows application
-Experiment* gExp;				///< Pointer to myExperiment 
-Trial* currentTrial;			///< Pointer to current Trial 
+Experiment* gExp;				///< Pointer to myExperiment
+Trial* currentTrial;			///< Pointer to current Trial
 #define DAC_VSCALAR 819.1 // Binary-to-volts scalar for DAC.
 bool gTimerFlagFirst = 0;
 bool startTriggerEMG = 0; // Ali added this: experimental - under construction
 float emgTrigVolt = 2;	// Ali added this: experimental - under construction
 
+ForceCursor forceCursor[5];
 
 ///< Basic imaging parameters
 #define TRTIME 1000				///< timer for simulating timer
@@ -86,7 +87,7 @@ char gKey;
 bool gKeyPressed;
 double gTargetWidth = 0.25;
 double gErrors[2][5] = {{0,0,0,0,0},{0,0,0,0,0}};
-double execAccTime = 600;
+double execAccTime = 3000;
 
 
 ///////////
@@ -116,6 +117,11 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 		s626.initInterrupt(updateHaptics, UPDATERATE); // initialize at 200 Hz update rate 
 	}
 	gTimer.init(); // Ali Changed Here!!!!
+
+	for (size_t i = 0; i < 5; ++i) {
+		forceCursor[i].size = Vector2D(FINGWIDTH - FINGER_SPACING * 2, FINGWIDTH - FINGER_SPACING * 2);
+		forceCursor[i].setColor(SCR_RED);
+	}
 
 	// 3. stimulation box initialization and calibration
 	// high force 1
@@ -465,12 +471,17 @@ MyTrial::MyTrial() {
 ///////////////////////////////////////////////////////////////
 void MyTrial::read(istream& in) {
 	// read from .tgt file
-	in	>> subNum 
-		>> chordID 
-		>> planTime 
-		>> execMaxTime
-		>> feedbackTime 
-		>> iti;
+	in >> subNum
+		>> chordID
+		>> planTime
+		>> execMaxTime  // needs to be 13000 for coherence
+		>> feedbackTime
+		>> iti
+		>> stimTrigPlan // TMS timing
+		>> TrigPlan // do TMS or not
+		>> session
+		>> day
+		>> week;
 }
 
 ///////////////////////////////////////////////////////////////
@@ -583,7 +594,7 @@ void MyTrial::updateTextDisplay() {
 	sprintf(buffer, "Time : %2.2f", gTimer[1]);
 	tDisp.setText(buffer, 3, 0);
 
-	sprintf(buffer, "State : %d   Trial: %d", state, gExp->theBlock->trialNum);
+	sprintf(buffer, "State : %d   Trial: %d    TMS: %d", state, gExp->theBlock->trialNum, TrigPlan);
 	tDisp.setText(buffer, 4, 0);
 
 	// display forces
@@ -703,14 +714,14 @@ void MyTrial::updateGraphics(int what) {
 		}
 		*/
 
-		for (i = 0; i < 5; i++) {
-			diffForce[i] = fGain[i] * (gBox[0].getForce(i) - gBox[1].getForce(i));
-		}
-		// Finger forces (difference -> force = f_ext - f_flex)
-		for (i = 0; i < 5; i++) {
-			gScreen.setColor(Screen::red);
-			gScreen.drawLine(((i * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) + FINGER_SPACING, VERT_SHIFT + forceGain * diffForce[i], (((i + 1) * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) - FINGER_SPACING, VERT_SHIFT + forceGain * diffForce[i]);
-		}
+		//for (i = 0; i < 5; i++) {
+		//	diffForce[i] = fGain[i] * (gBox[0].getForce(i) - gBox[1].getForce(i));
+		//}
+		//// Finger forces (difference -> force = f_ext - f_flex)
+		//for (i = 0; i < 5; i++) {
+		//	gScreen.setColor(Screen::red);
+		//	gScreen.drawLine(((i * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) + FINGER_SPACING, VERT_SHIFT + forceGain * diffForce[i], (((i + 1) * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) - FINGER_SPACING, VERT_SHIFT + forceGain * diffForce[i]);
+		//}
 
 		if (gs.showTimer5) {
 			gScreen.setColor(Screen::white);
@@ -725,6 +736,21 @@ void MyTrial::updateGraphics(int what) {
 		if (!gs.line[i].empty()) {
 			gScreen.setColor(gs.lineColor[i]);
 			gScreen.print(gs.line[i].c_str(), gs.lineXpos[i], gs.lineYpos[i], gs.size[i] * 1.5);
+		}
+	}
+
+	if (gs.showForces) {
+		for (i = 0; i < 5; i++) {
+			diffForce[i] = fGain[i] * (gBox[0].getForce(i) - gBox[1].getForce(i));
+		}
+
+		for (i = 0; i < 5; i++) {
+
+			forceCursor[i].position[0] = (((2 * i + 1) * FINGWIDTH) - (FINGWIDTH * N_FINGERS)) / 2.0;;
+			forceCursor[i].position[1] = VERT_SHIFT + forceGain * diffForce[i];
+
+			forceCursor[i].draw();
+
 		}
 	}
 
@@ -817,6 +843,8 @@ void MyTrial::control() {
 		gs.showFeedback = 0;
 		gs.showTarget = 0;
 		gs.showTimer5 = 0;
+		gs.showForces = 1;
+		gs.showDiagnostics = 1;
 		// gs.showForceBars = 1;
 		gs.rewardTrial = 0;
 		trialPoint = 0;
@@ -838,6 +866,7 @@ void MyTrial::control() {
 		gs.showLines = 1;	// set screen lines/force bars to show
 		gs.showFeedback = 0;
 		gs.showTimer5 = 0;
+		gs.showForces = 1;
 		// gs.showForceBars = 1;
 		gs.boxColor = 5;	// grey baseline box color
 		gs.planError = 0;
@@ -869,6 +898,16 @@ void MyTrial::control() {
 	case WAIT_PLAN: //2
 		//gs.planCue = 1;
 		gs.showTimer5 = 0;
+
+		//if (gTimer[3] >= stimTrigPlan && TrigPlan == 1) {
+		//	//SetDacVoltage(0, emgTrigVolt);	// trigger to TMS
+		//	SetDIOState(0, 0x0000);
+		//}
+
+		//if (gTimer[3] >= stimTrigPlan + 100 && TrigPlan == 1) {
+		//	//SetDacVoltage(0, emgTrigVolt);	// trigger to TMS
+		//	SetDIOState(0, 0xFFFF);
+		//}
 
 		// if wait baseline zone is off, we have limited planning time and subjects might make planning error:
 		if (wait_baseline_zone == 0) {
@@ -956,6 +995,16 @@ void MyTrial::control() {
 		gs.showTimer5 = 1;		// show timer 4 value on screen (duration of holding a chord)
 		gs.boxColor = 5;		// grey baseline box color
 		
+		//if (gTimer[3] >= stimTrigPlan && TrigPlan == 1) {
+		//	//SetDacVoltage(0, emgTrigVolt);	// trigger to TMS
+		//	SetDIOState(0, 0x0000);
+		//}
+
+		//if (gTimer[3] >= stimTrigPlan + 500 && TrigPlan == 1) {
+		//	//SetDacVoltage(0, emgTrigVolt);	// trigger to TMS
+		//	SetDIOState(0, 0xFFFF);
+		//}
+
 		// checking state of each finger
 		for (i = 0; i < 5; i++) {
 			tmpChord = chordID[i];	// required state of finger i -> 0:relaxed , 1:extended , 2:flexed -- chordID comes from the target file

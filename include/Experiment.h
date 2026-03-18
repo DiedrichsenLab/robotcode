@@ -31,6 +31,7 @@ enum BlockState  {
 }; 
 
 double median (double array[],int num_val);  ///< Calculates the median of an array of values 
+void quartiles(double array[], int num_val, double& q1, double& q2, double& q3); ///< Calcualtes quartiles of an array of values
 
 ///////////////////////////////////////////////////////////
 /// \brief Abstract Class that specifies the basic functions of a trial

@@ -1,0 +1,33 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.33530.505
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ModifiedDigitInterference", "ModifiedDigitInterference.vcxproj", "{3E4FCA9F-3B48-4A6A-9470-0C187A7D9A30}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{834F77F3-468E-41C5-837C-0BF7E8289E98}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3E4FCA9F-3B48-4A6A-9470-0C187A7D9A30}.Debug|x64.ActiveCfg = Debug|x64
+		{3E4FCA9F-3B48-4A6A-9470-0C187A7D9A30}.Debug|x64.Build.0 = Debug|x64
+		{3E4FCA9F-3B48-4A6A-9470-0C187A7D9A30}.Debug|x86.ActiveCfg = Debug|Win32
+		{3E4FCA9F-3B48-4A6A-9470-0C187A7D9A30}.Debug|x86.Build.0 = Debug|Win32
+		{3E4FCA9F-3B48-4A6A-9470-0C187A7D9A30}.Release|x64.ActiveCfg = Release|x64
+		{3E4FCA9F-3B48-4A6A-9470-0C187A7D9A30}.Release|x64.Build.0 = Release|x64
+		{3E4FCA9F-3B48-4A6A-9470-0C187A7D9A30}.Release|x86.ActiveCfg = Release|Win32
+		{3E4FCA9F-3B48-4A6A-9470-0C187A7D9A30}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {40BF83A4-C6AA-4E79-9B8B-CFB2BD098431}
+	EndGlobalSection
+EndGlobal

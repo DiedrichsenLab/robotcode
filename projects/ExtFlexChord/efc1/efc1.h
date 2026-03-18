@@ -9,6 +9,7 @@
 //#include "Vector2d.h"
 
 //#include "Matrix2d.h"
+#include "Target.h"
 #include "DataManager.h" 
 #include "S626sManager.h"
 #include "Experiment.h" 
@@ -67,6 +68,7 @@ public:
 	bool showBoxes;
 	bool showLines;
 	bool showTarget;
+	bool showForces;
 	bool planCue;
 	bool planError;
 	bool chordError;
@@ -139,6 +141,13 @@ private:
 	int execMaxTime;						///< Maximum duration for execution of the chord
 	int feedbackTime;						///< The duration between giveFeedback and giveScore
 	int iti;								///< inter trial interval
+	double stimTrigPlan;
+	double stimTrigBaseline;
+	bool TrigPlan;
+	bool TrigBaseline;
+	string session;
+	int week;
+	int day;
 	string chordID;							///< Chord identifier. 0: neutral , 1: flexion , 2: extension
 	bool trialCorr;							///< 1: trial is correct , 2: trial is not correct
 	int trialErrorType;						///< 0: no error , 1: movement during planning , 2: could not execute
@@ -164,3 +173,14 @@ public:
 
 void SetDacVoltage(WORD channel, DOUBLE volts);
 void SetDIOState(WORD group, WORD states);
+
+
+class ForceCursor : public Target {
+public:
+	void draw();
+};
+void ForceCursor::draw() {
+	//setColor(1);
+	gScreen.setColor(color);
+	gScreen.drawBox(Vector2D(size[0], 0.3), Vector2D(position[0], position[1]));
+}

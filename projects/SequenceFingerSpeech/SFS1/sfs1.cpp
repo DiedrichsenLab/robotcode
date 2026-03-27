@@ -972,6 +972,13 @@ void MyTrial::control() {
 		}
 	}
 
+
+	////// checking space press to terminate trial 
+	if (gKeyPressed && gKey == ' '){
+		gKeyPressed = false;  // reset so that it doesn't keep terminating trials
+		state = WAIT_RELEASE; // move to the state where we wait for finger release and then end the trial
+	}
+
 	switch (state) {
 
 	case WAIT_TRIAL: //0

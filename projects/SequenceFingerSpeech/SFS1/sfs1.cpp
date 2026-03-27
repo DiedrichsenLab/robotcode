@@ -124,10 +124,10 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	s626.init("c:/robotcode/calib/s626_single.txt");
 
 	//low force Flatbox3
-	//gBox[1].init(BOX_RIGHT, "c:/robotcode/calib/Flatbox3_lowforce_RIGHT_22_Aug_2024.txt");
+	gBox[1].init(BOX_RIGHT, "c:/robotcode/calib/Flatbox3_lowforce_RIGHT_22_Aug_2024.txt");
 
 	// low force Flatbox2 (FBL-R)
-	gBox[1].init(BOX_RIGHT, "c:/robotcode/calib/flatbox2_highforce2_RIGHT_18-March-2026.txt");
+	//gBox[1].init(BOX_RIGHT, "c:/robotcode/calib/flatbox2_highforce2_RIGHT_18-March-2026.txt");
 
 
 
@@ -973,12 +973,6 @@ void MyTrial::control() {
 	}
 
 
-	////// checking space press to terminate trial 
-	if (TextDisplay::keyPressed && TextDisplay::key == ' '){
-		TextDisplay::keyPressed = false;  // reset so that it doesn't keep terminating trials
-		state = WAIT_RELEASE; // move to the state where we wait for finger release and then end the trial
-	}
-
 	switch (state) {
 
 	case WAIT_TRIAL: //0
@@ -994,11 +988,15 @@ void MyTrial::control() {
 			}
 		}
 		gs.clearCues();
+
 		break;
 
 	case START_TRIAL: //1		
 		//cout << "in start trial";
 		trialDur = 0;
+
+		////// resetting TextDisplay::keyPressed
+		TextDisplay::keyPressed = false;
 
 		for (i = 0; i < MAX_PRESS; i++) {
 			response[i] = 0;
@@ -1267,6 +1265,14 @@ void MyTrial::control() {
 			if (gTimer[2] >= execTime){
 				ET = execTime;
 				state = WAIT_RELEASE;
+				PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
+				beepStopReal = gTimer.getRealtime();
+			}
+
+			////// checking space press to terminate trial 
+			else if (TextDisplay::keyPressed && TextDisplay::key == ' ') {
+				TextDisplay::keyPressed = false;  // reset so that it doesn't keep terminating trials
+				state = WAIT_RELEASE; // move to the state where we wait for finger release and then end the trial
 				PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
 				beepStopReal = gTimer.getRealtime();
 			}

@@ -124,10 +124,10 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	s626.init("c:/robotcode/calib/s626_single.txt");
 
 	//low force Flatbox3
-	gBox[1].init(BOX_RIGHT, "c:/robotcode/calib/Flatbox3_lowforce_RIGHT_22_Aug_2024.txt");
+	//gBox[1].init(BOX_RIGHT, "c:/robotcode/calib/Flatbox3_lowforce_RIGHT_22_Aug_2024.txt");
 
 	// low force Flatbox2 (FBL-R)
-	//gBox[1].init(BOX_RIGHT, "c:/robotcode/calib/flatbox2_highforce2_RIGHT_18-March-2026.txt");
+	gBox[1].init(BOX_RIGHT, "c:/robotcode/calib/flatbox2_highforce2_RIGHT_18-March-2026.txt");
 
 
 

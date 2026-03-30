@@ -479,7 +479,7 @@ void MyBlock::giveFeedback() {
 			n++; //remember number of correct trials
 			if (tpnr->effector == 2){
 				ETarrayFinger[finger_n] = tpnr->ET; //ET from the correct finger go trials and add them
-				finger_n++;
+				finger_n++; 
 			}
 			else if (tpnr->effector == 0){
 				ETarraySpeech[speech_n] = tpnr->ET; //ET from the correct speech go trials and add them
@@ -1311,6 +1311,14 @@ void MyTrial::control() {
 				state = WAIT_RELEASE; // move to the state where we wait for finger release and then end the trial
 				PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
 				beepStopReal = gTimer.getRealtime();
+			}
+
+
+			////// checking E press to terminate trial (error)
+			else if (TextDisplay::keyPressed && TextDisplay::key == 'e') {
+				TextDisplay::keyPressed = false;  // reset so that it doesn't keep terminating trials
+				isError = 1;
+				state = WAIT_RELEASE; // move to the state where we wait for finger release and then end the trial
 			}
 		}
 

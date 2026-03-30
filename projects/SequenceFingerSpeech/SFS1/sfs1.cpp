@@ -115,7 +115,9 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	tDisp.init(gThisInst, 0, 0, 400, 20, 9, 2, &(::parseCommand));
 
 	tDisp.setText("Subj", 0, 0);
-	gScreen.init(gThisInst, 1920, 0, 1680, 1050, &(::updateGraphics)); ///< Display for subject
+	//gScreen.init(gThisInst, 1920, 0, 1680, 1050, &(::updateGraphics)); ///< Display for subject (for setups at 3128 and sensorimotor room, by the window)
+
+	gScreen.init(gThisInst, 1920, 0, 1440, 900, &(::updateGraphics));	// Display for sensorimotor room, the other (not by the window)
 
 
 	gScreen.setCenter(Vector2D(0, 0));    // In cm //0,2

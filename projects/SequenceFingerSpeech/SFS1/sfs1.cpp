@@ -56,12 +56,9 @@ double tempThres2 = timeThresholdSuper;
 int percentile_low = 25;	///< Lower percentile for ETs
 int percentile_high = 75;	///< Upper percentile for ETs
 
-double estimated_ET_percentile_low = 0;	///< Estimated lower percentile of ETs
-double estimated_ET_percentile_high = 0;	///< Estimated upper percentile of ETs
-
-double temp_ET_percentile_low = estimated_ET_percentile_low;	///< Estimated lower percentile of ETs
-double temp_ET_percentile_high = estimated_ET_percentile_high;	///< Estimated upper percentile of ETs
-
+/// array of estimated percentiles low and high for finger and speech
+double estimated_ET_percentiles[3][2] = { {0,0}, {0,0}, {0,0} };	///< Estimated lower and upper percentiles of ETs for finger and speech
+double temp_ET_percentiles[3][2] = { {0,0}, {0,0}, {0,0} };	///< Temporary variables to hold estimated percentiles of ETs for finger and speech 
 
 double responseArray[11] = { 1,1,1,1,1,1,1,1,1,1,1 };
 int symbolColor = 1;
@@ -313,15 +310,28 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 	}
 
 	///update estimated ET percentile thresholds
-	else if (arguments[0] == "ET_percentile") {
+	else if (arguments[0] == "Finger ET_percentile") {
 		if (numArgs != 3) {
-			tDisp.print("USAGE: ET_percentile low high");
+			tDisp.print("USAGE: Finger ET_percentile low high");
 		}
 		else {
 			sscanf(arguments[1].c_str(), "%f", &arg[0]);
 			sscanf(arguments[2].c_str(), "%f", &arg[1]);
-			estimated_ET_percentile_low = arg[0];
-			estimated_ET_percentile_high = arg[1];
+			estimated_ET_percentiles[2][0] = arg[0];
+			estimated_ET_percentiles[2][1] = arg[1];
+		}
+	}
+
+	///update estimated ET percentile thresholds
+	else if (arguments[0] == "Speech ET_percentile") {
+		if (numArgs != 3) {
+			tDisp.print("USAGE: Speech ET_percentile low high");
+		}
+		else {
+			sscanf(arguments[1].c_str(), "%f", &arg[0]);
+			sscanf(arguments[2].c_str(), "%f", &arg[1]);
+			estimated_ET_percentiles[0][0] = arg[0];
+			estimated_ET_percentiles[0][1] = arg[1];
 		}
 	}
 
@@ -448,7 +458,11 @@ void MyBlock::giveFeedback() {
 	int i;
 	int n = 0; //number of correct trials
 	int nn = 0; //number of total trials
+	int finger_n = 0; //number of correct finger trials
+	int speech_n = 0; //number of correct speech trials
 	double ETarray[65];  //60 trials per block		///< preallocate array to keep track of ETs within session
+	double ETarrayFinger[65];  //60 trials per block		///< preallocate array to keep track of finger ETs within session
+	double ETarraySpeech[65];  //60 trials per block		///< preallocate array to keep track of speech ETs within session
 	MyTrial* tpnr;
 
 	medianETarray[0] = 20000;	//initialize ET array for the 0th block to be 20000 (impossible value, we have no median ET before that)
@@ -458,34 +472,46 @@ void MyBlock::giveFeedback() {
 
 	for (i = 0; i < trialNum; i++) { //check each trial
 		tpnr = (MyTrial*)trialVec.at(i);
-		if (tpnr->isError == 0 && tpnr->fixed_dur == 0) { //if correct go trial and 
+		if (tpnr->isError == 0) { //if correct go trial
 			ETarray[n] = tpnr->ET; //ET from the correct go trials and add them
 			n++; //remember number of correct trials
+			if (tpnr->effector == 2){
+				ETarrayFinger[finger_n] = tpnr->ET; //ET from the correct finger go trials and add them
+				finger_n++;
+			}
+			else if (tpnr->effector == 0){
+				ETarraySpeech[speech_n] = tpnr->ET; //ET from the correct speech go trials and add them
+				speech_n++;
+			}
 		}
-		// nn++; //count total trials
+		nn++; //count total trials
 	}
 
-	temp_ET_percentile_low = estimated_ET_percentile_low;
-	temp_ET_percentile_high = estimated_ET_percentile_high;
-
-
+	temp_ET_percentiles[0][0] = estimated_ET_percentiles[0][0];
+	temp_ET_percentiles[0][1] = estimated_ET_percentiles[0][1];
+	temp_ET_percentiles[2][0] = estimated_ET_percentiles[2][0];
+	temp_ET_percentiles[2][1] = estimated_ET_percentiles[2][1];
 
 
 	if (n > 0) { //if at least one correct trial
 		b = b++; //increase counter of block number
 		medianETarray[b] = median(ETarray, n); //median of movement times	
 		// ERarray[b] = (((double)gNumErrorsBlock) / (double)(nn) * 100); //error rate (previous version)
-		ERarray[b] = (((double)gNumErrorsBlock) / (double)(n + gNumErrorsBlock) * 100); //error rate (current version, calculated only for finger)
+		ERarray[b] = (((double)gNumErrorsBlock) / (double)(finger_n + gNumErrorsBlock) * 100); //error rate (current version, calculated only for finger)
 
-		estimated_ET_percentile_high = percentile(ETarray, n, percentile_high); //upper percentile of ETs
-		estimated_ET_percentile_low = percentile(ETarray, n, percentile_low); //lower percentile of ETs
+		estimated_ET_percentiles[0][0] = percentile(ETarraySpeech, speech_n, percentile_low); //estimated lower percentile of ETs for speech
+		estimated_ET_percentiles[0][1] = percentile(ETarraySpeech, speech_n, percentile_high); //estimated upper percentile of ETs for speech
+		estimated_ET_percentiles[2][0] = percentile(ETarrayFinger, finger_n, percentile_low); //estimated lower percentile of ETs for finger
+		estimated_ET_percentiles[2][1] = percentile(ETarrayFinger, finger_n, percentile_high); //estimated upper percentile of ETs for finger
 	}
 	else {
 		b = b++;
 		medianETarray[b] = 0;
 		ERarray[b] = 100;
-		estimated_ET_percentile_high = 0; //upper percentile of ETs
-		estimated_ET_percentile_low = 0; //lower percentile of ETs
+		estimated_ET_percentiles[0][0] = 0;
+		estimated_ET_percentiles[0][1] = 0;
+		estimated_ET_percentiles[2][0] = 0;
+		estimated_ET_percentiles[2][1] = 0;
 	}
 
 	// print FEEDBACK on the screen 
@@ -585,8 +611,10 @@ void MyTrial::writeDat(ostream& out) {
 
 		// << tempMean << "\t"
 		// << tempStd << "\t"
-	out << temp_ET_percentile_high << "\t"
-		<< temp_ET_percentile_low << "\t"
+	out << temp_ET_percentiles[2][1] << "\t"
+		<< temp_ET_percentiles[2][0] << "\t"
+		<< temp_ET_percentiles[0][1] << "\t"
+		<< temp_ET_percentiles[0][0] << "\t"
 
 		<< startTime << "\t"
 		<< startTimeReal << "\t"
@@ -645,8 +673,10 @@ void MyTrial::writeHeader(ostream& out) {
 
 	// out << "timeThreshold" << "\t"
 	// 	<< "timeThresholdSuper" << "\t"
-	out << "estimatedPercentileHigh" << "\t"
-		<< "estimatedPercentileLow" << "\t"
+	out << "FingerestimatedPercentileHigh" << "\t"
+		<< "FingerestimatedPercentileLow" << "\t"
+		<< "SpeechestimatedPercentileHigh" << "\t"
+		<< "SpeechestimatedPercentileLow" << "\t"
 		<< "startTime" << "\t"
 		<< "startTimeReal" << "\t"
 		<< "trialDur" << "\t"
@@ -717,25 +747,28 @@ void MyTrial::updateTextDisplay() {
 	// sprintf(tDispBuffer, "time: %2.2f   TRtime: %d   slice:%d   metronome: %d ", gCounter.readTotTime(), gCounter.readTR(), gCounter.readSlice(), timeMet);
 	// tDisp.setText(tDispBuffer, 2, 0);
 
-	sprintf(tDispBuffer, "est perc low: %.2f  est perc high: %.2f", estimated_ET_percentile_low, estimated_ET_percentile_high);
+	sprintf(tDispBuffer, "FINGER: est perc low: %.2f  est perc high: %.2f", estimated_ET_percentiles[2][0], estimated_ET_percentiles[2][1]);
 	tDisp.setText(tDispBuffer, 1, 0);
+
+		sprintf(tDispBuffer, "SPEECH: est perc low: %.2f  est perc high: %.2f", estimated_ET_percentiles[0][0], estimated_ET_percentiles[0][1]);
+	tDisp.setText(tDispBuffer, 2, 0);
 
 	// sprintf(tDispBuffer, "gTimer1: %2.2f   gTimer2: %2.2f   gTimer5: %2.2f", gTimer[1], gTimer[2], gTimer[5]);
 	// tDisp.setText(tDispBuffer, 2, 0);
 
 	// sprintf(tDispBuffer, "trial: %d/%d   state: %d   seqNum: %lld", gExp->theBlock->trialNum + 1, gExp->theBlock->numTrials, state, std::stoll(cue));
 	sprintf(tDispBuffer, "trial: %d/%d   state: %d", gExp->theBlock->trialNum + 1, gExp->theBlock->numTrials, state);
-	tDisp.setText(tDispBuffer, 2, 0);
+	tDisp.setText(tDispBuffer, 3, 0);
 
 	sprintf(tDispBuffer, "isError: %d   errors block: %d   points block: %2.1f", isError, gNumErrorsBlock, gNumPointsBlock);
-	tDisp.setText(tDispBuffer, 3, 0);
+	tDisp.setText(tDispBuffer, 4, 0);
 
 
 	//sprintf(tDispBuffer, "press LH: %d %d %d %d %d    force LH: %2.2f %2.2f %2.2f %2.2f %2.2f", finger[0], finger[1], finger[2], finger[3], finger[4], gBox[0].getForce(0), gBox[0].getForce(1), gBox[0].getForce(2), gBox[0].getForce(3), gBox[0].getForce(4));
 	//tDisp.setText(tDispBuffer, 6, 0);
 
 	 sprintf(tDispBuffer, "press RH: %d %d %d %d %d    force RH: %2.2f %2.2f %2.2f %2.2f %2.2f", finger[5], finger[6], finger[7], finger[8], finger[9], gBox[1].getForce(0), gBox[1].getForce(1), gBox[1].getForce(2), gBox[1].getForce(3), gBox[1].getForce(4));
-	 tDisp.setText(tDispBuffer, 4, 0);
+	 tDisp.setText(tDispBuffer, 5, 0);
 
 	// sprintf(tDispBuffer, "seqCounter: %d   seqLength: %d", seqCounter, seqLength);
 	// tDisp.setText(tDispBuffer, 11, 0);
@@ -1272,6 +1305,7 @@ void MyTrial::control() {
 			////// checking space press to terminate trial 
 			else if (TextDisplay::keyPressed && TextDisplay::key == ' ') {
 				TextDisplay::keyPressed = false;  // reset so that it doesn't keep terminating trials
+				ET = gTimer[2];
 				state = WAIT_RELEASE; // move to the state where we wait for finger release and then end the trial
 				PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
 				beepStopReal = gTimer.getRealtime();
@@ -1309,14 +1343,28 @@ void MyTrial::control() {
 		if (released == NUMFINGERS) {
 			if (isError == 0) {
 				if (isTrain) {
-					if (ET < estimated_ET_percentile_low) {
-						points = 3;
+					if (effector == 0){ // speech
+						if (ET < estimated_ET_percentiles[0][0]) {
+							points = 3;
+						}
+						else if (ET > estimated_ET_percentiles[0][1]) {
+							points = 0;
+						}
+						else {
+							points = 1;
+						}
 					}
-					else if (ET > estimated_ET_percentile_high) {
-						points = 0;
-					}
-					else {
-						points = 1;
+					else if (effector == 2){ // finger
+						if (ET < estimated_ET_percentiles[2][0]) {
+							points = 3;
+						}
+						else if (ET > estimated_ET_percentiles[2][1]) {
+							points = 0;
+						}
+						else {
+							points = 1;
+						}
+
 					}
 				}
 				else {

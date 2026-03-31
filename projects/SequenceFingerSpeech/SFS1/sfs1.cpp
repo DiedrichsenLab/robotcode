@@ -1323,6 +1323,9 @@ void MyTrial::control() {
 			else if (TextDisplay::keyPressed && TextDisplay::key == 'e') {
 				TextDisplay::keyPressed = false;  // reset so that it doesn't keep terminating trials
 				isError = 1;
+				for (i = 0; i < MAX_PRESS; i++) {
+					responseArray[i] = 2; // red
+				}
 			}
 		}
 

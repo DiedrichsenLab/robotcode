@@ -1413,7 +1413,7 @@ void MyTrial::control() {
 			}
 			else if (isError == 1 && isCross) {
 				points = -5;
-				PlaySound(TASKSOUNDS[5].c_str(), NULL, SND_ASYNC);
+				PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
 				beepStopReal = gTimer.getRealtime();
 				gs.clearCues(); sprintf(buffer, "%d", points);
 				gs.lineColor[1] = 2; // red
@@ -1423,7 +1423,7 @@ void MyTrial::control() {
 			else if (isError == 1 && timingError == 0) {
 				points = -1;
 				// PLAY SOUND 
-				PlaySound(TASKSOUNDS[5].c_str(), NULL, SND_ASYNC);
+				PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
 				beepStopReal = gTimer.getRealtime();
 				gs.clearCues(); sprintf(buffer, "%d", points);
 				gs.lineColor[1] = 2; // red
@@ -1432,7 +1432,7 @@ void MyTrial::control() {
 			else if (isError ==1 && fixed_dur == 1){
 				points = -1;
 				// PLAY SOUND 
-				PlaySound(TASKSOUNDS[5].c_str(), NULL, SND_ASYNC);
+				PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
 				beepStopReal = gTimer.getRealtime();
 				gs.clearCues(); sprintf(buffer, "Finger pressed");
 				gs.lineColor[2] = 2; // red

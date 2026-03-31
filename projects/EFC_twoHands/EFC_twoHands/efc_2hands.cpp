@@ -22,6 +22,9 @@ Trial* currentTrial;			///< Pointer to current Trial
 #define DAC_VSCALAR 819.1		///< Binary-to-volts scalar for DAC.
 bool startTriggerEMG = 0;		///< Ali added this: experimental - under construction
 int hand = 2;					///< Left hand = 1, Right hand = 2
+string mapping = "intrinsic";
+
+Matrix2D 	TransforMatrix(1, 0, 0, 1);	///< adjusts for the fact that subject screen is flipped. used in angles (0,1,1,0)
 
 ///< Screen graphics defenitions
 #define baseTHhi  1.2 //0.8//1.0			// Baseline threshold
@@ -213,6 +216,20 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 			hand = arg[0];
 			if ((hand != 2) && (hand != 1)) { // if a wrong number was given, default to right hand:
 				hand = 2;
+			}
+		}
+	}
+
+	/// choose which mapping:
+	else if (arguments[0] == "mapping") {
+		if (numArgs != 2) {
+			tDisp.print("USAGE: hand 1/2 (left/right)");
+		}
+		else {
+			sscanf(arguments[1].c_str(), "%f", &arg[0]);
+			mapping = arg[0];
+			if ((mapping != "intrinsic") && (mapping != "extrinsic")) { // if a wrong mapping was given, default to intrinsic:
+				mapping = "intrinsic";
 			}
 		}
 	}
@@ -608,14 +625,51 @@ void MyTrial::updateGraphics(int what) {
 	double x1, x2, xPos, yPos, xSize, ySize;
 	double diffForce[5] = { 0,0,0,0,0 };
 
+	//if (blockFeedbackFlag) {
+	//	gScreen.setCenter(Vector2D(0, 0));    // In cm //0,2
+	//	gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));
+	//}
+
 	if (blockFeedbackFlag) {
 		gScreen.setCenter(Vector2D(0, 0));    // In cm //0,2
+		if (gs.flipscreen == 1) {
+			TransforMatrix = Matrix2D(0, 1, 1, 0);
+			gScreen.setScale(Vector2D(-SCR_SCALE, SCR_SCALE)); // this is the flipped
+			//flipscreen = true;
+		}
+
+		else { // flipscreen is true, is in mri mode, going to training mode
+			TransforMatrix = Matrix2D(1, 0, 0, 1);
+			gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));
+			//flipscreen = false;
+		}
+
+	}
+
+	if (gs.flipscreen == 1) {
+		TransforMatrix = Matrix2D(0, 1, 1, 0);
+		gScreen.setScale(Vector2D(-SCR_SCALE, SCR_SCALE)); // this is the flipped
+		//flipscreen = true;
+	}
+
+	else { // flipscreen is true, is in mri mode, going to training mode
+		TransforMatrix = Matrix2D(1, 0, 0, 1);
 		gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));
+		//flipscreen = false;
 	}
 
 	if (gs.showTarget == 1) {
 		for (i = 0; i < 5; i++) {
-			tmpChord = chordID[i];
+			if (hand == 2) {
+				tmpChord = chordID[i];
+			}
+			if (hand == 1 && mapping=="extrinsic") {
+				tmpChord = chordID[i];
+			}
+			if (hand == 1 && mapping == "intrinsic") {
+				tmpChord = chordID[4 - i];
+			}
+			
 			x1 = ((i * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) + FINGER_SPACING;
 			x2 = (((i + 1) * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) - FINGER_SPACING;
 			xPos = (x1 + x2) * 0.5;
@@ -794,7 +848,7 @@ bool chordErrorFlag = 0;	// flag for checking if the chord was correct or not.
 bool fingerCorrect[5] = { 0,0,0,0,0 };
 bool chordCorrect = 0;
 void MyTrial::control() {
-	int i;
+	int i, j;
 	double fingerForceTmp;
 	char tmpChord;
 	bool check_baseline_hold = 0;
@@ -959,7 +1013,16 @@ void MyTrial::control() {
 
 		// checking state of each finger
 		for (i = 0; i < 5; i++) {
-			tmpChord = chordID[i];	// required state of finger i -> 0:relaxed , 1:extended , 2:flexed -- chordID comes from the target file
+			if (hand == 2) {
+				j = i;
+			}
+			if (hand == 1 && mapping == "extrinsic") {
+				j = i;
+			}
+			if (hand == 1 && mapping == "intrinsic") {
+				j = 4 - i;
+			}
+			tmpChord = chordID[j];	// required state of finger i -> 0:relaxed , 1:extended , 2:flexed -- chordID comes from the target file
 			fingerForceTmp = diff_force[i];
 			switch (tmpChord) {
 			case '9':	// finger i should be in the baseline zone (relaxed)

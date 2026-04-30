@@ -502,7 +502,6 @@ MyTrial::MyTrial() {
 	complete = 0;                       // end sequence flag
 	isError = 0;							// init error flag
 	isCross = 0;							// init threshold cross flag
-	isPresshard = 0;					// init press hard flag
 	numCrosses = 0;						// init how many times pre-mov threshold has been crossed in this trial
 	timingError = 0;						// init timing error flag
 	seqCounter = 0;						// init the sequence index variable
@@ -577,7 +576,6 @@ void MyTrial::writeDat(ostream& out) {
 		<< useMetronome << "\t"
 		<< isCross << "\t"			//whether pre-movement threshold has been crossed in this trial
 		<< timeStamp << "\t"
-		<< isPresshard << "\t"		//whether a hard press in the trial
 		<< endl;
 }
 
@@ -630,7 +628,6 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "useMetronome" << "\t"
 		<< "isCross" << "\t"
 		<< "crossTime" << "\t"
-		<< "isPresshard" << "\t"
 		<< endl;
 }
 
@@ -716,13 +713,12 @@ void MyTrial::updateTextDisplay() {
 // force thresholds 
 #define preTH 1//1.5				// Press threshold
 #define relTH 0.8//1.0//1.0		// Release threshold
-#define hardTH 3				// Hard press threshold
 #define baseTHhi  0.5 //0.8//1.0		// Baseline higher threshold (to check for premature movements)
 //#define baseTHlow 0 //0.8//1.0		// Baseline lower threshold (to check for premature movements during sequence planning phase)
 #define baseTHlow -0.2 //0.8//1.0		// Baseline lower threshold (to check for premature movements)
 
 
-double THRESHOLD[3][5] = { {preTH, preTH, preTH, preTH, preTH}, {relTH, relTH, relTH, relTH, relTH}, {hardTH, hardTH, hardTH, hardTH, hardTH} };
+double THRESHOLD[2][5] = { {preTH, preTH, preTH, preTH, preTH}, {relTH, relTH, relTH, relTH, relTH} };
 double BASE_THRESHOLD_HI[2][5] = { {baseTHhi, baseTHhi, baseTHhi, baseTHhi, baseTHhi}, {baseTHhi - 0.1, baseTHhi - 0.1, baseTHhi - 0.1, baseTHhi - 0.1, baseTHhi - 0.1} };
 double BASE_THRESHOLD_LOW[2][5] = { {baseTHlow, baseTHlow, baseTHlow, baseTHlow, baseTHlow}, {baseTHlow + 0.1, baseTHlow + 0.1, baseTHlow + 0.1, baseTHlow + 0.1, baseTHlow + 0.1} };
 double fGain[5] = { 1.0,1.0,1.0,1.0,1.0 };
@@ -785,14 +781,6 @@ void MyTrial::updateGraphics(int what) {
 			gScreen.setColor(Screen::grey);
 			gScreen.drawLine(1. * BASELINE_X1, preTH * FORCESCALE + BASELINE_Y1, 1. * BASELINE_X2, preTH * FORCESCALE + BASELINE_Y2);
 
-			// press zone box
-			gScreen.setColor(Screen::pale);
-			// right
-			gScreen.drawBox(FINGWIDTH * N_FINGERS, (hardTH - preTH) * FORCESCALE, -0 * FINGWIDTH * N_FINGERS, (preTH * FORCESCALE) + ((hardTH - preTH) * FORCESCALE) / 2 + BASELINE_Y2);
-
-			// Hard press threshold
-			gScreen.setColor(Screen::grey);
-			gScreen.drawLine(1. * BASELINE_X1, hardTH * FORCESCALE + BASELINE_Y1, 1. * BASELINE_X2, hardTH * FORCESCALE + BASELINE_Y2);
 
 			// Finger forces (right)
 			for (i = 0; i < 5; i++) {
@@ -925,7 +913,6 @@ void MyTrial::control() {
 
 	int crossedFinger = 0;
 	int numNewThresCross = 0;			// has the pre-movement trheshold been crossed?
-	int numHardPress = 0;				// has a finger been pressed hard
 	int withinThres = 1;
 
 	for (f = 5; f < 10; f++) {
@@ -945,10 +932,6 @@ void MyTrial::control() {
 
 		if (force >= BASE_THRESHOLD_HI[0][f - 5] || force <= BASE_THRESHOLD_LOW[0][f-5]) {
 			numNewThresCross++;
-		}
-
-		if (force > THRESHOLD[2][f - 5]) { // hard press
-			numHardPress++;
 		}
 	}
 
@@ -1067,14 +1050,6 @@ void MyTrial::control() {
 		break;
 
 	case WAIT_PRESS: //4
-
-		// CHECK FOR HARD PRESS
-		if (numHardPress > 0) {
-			// isError = 1;
-			isPresshard = 1;
-			// state = WAIT_RELEASE;
-			// break;
-		}
 
 		// START OF SEQUENCE
 		if (newPress > 0 && seqCounter < seqLength) { // correct timing

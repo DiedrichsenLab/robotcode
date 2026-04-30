@@ -1,10 +1,10 @@
 ///////////////////////////////////////////////////////////////
-/// SequenceLearningReward Project - ....
+/// ADHDOnlinePlanning Project - AOP1
 ///////////////////////////////////////////////////////////////
 
-#include "sfs1.h" 
+#include "aop1.h" 
 #include "StimulatorBox.h"
-#include "AudioRecorder.h"
+
 #include <string>
 #include <chrono>
 
@@ -19,8 +19,7 @@ Screen gScreen;					///< Screen
 StimulatorBox gBox[2];			///< Stimulator Box
 TRCounter gCounter;				///< TR Counter 
 Timer gTimer(UPDATERATE);		///< Timer from S626 board experiments 
-HapticState hs;					///< This is the haptic State as d by the interrupt 
-AudioRecorder gAudio; 			///< Audio Recorder
+HapticState hs;					///< This is the haptic State as defined by the interrupt 
 
 ///< For Thread safety this SHOULD NOT be assessed While 
 ///< the interrupt is running. Use Thread-safe copy to 
@@ -28,13 +27,12 @@ AudioRecorder gAudio; 			///< Audio Recorder
 
 GraphicState gs;
 char buffer[300];					///< String buffer 
-char tDispBuffer[300];				///< String buffer for text display
 HINSTANCE gThisInst;				///< Instance of Windows application 
 Experiment* gExp;					///< Pointer to myExperiment 
 Trial* currentTrial;				///< Pointer to current Trial 
 bool gKeyPressed;					///< Key pressed? 
 char gKey;							///< Which key?
-int gNumErrorsBlock = 0;				///< How many erros did you make during a block
+int gNumErrorsBlock = 0;			///< How many erros did you make during a block
 int gNumErrors = 0;					///< How many erros did you make in a session
 int finger[10];						///< State of each finger
 int finger_cross[10];				///< State of each finger with respect to pre-movement threshold
@@ -45,26 +43,28 @@ double gNumPointsBlock = 0;			///< How many points in this block?
 double gNumPoints = 0;				///< How many points so far in the entire session? 
 int timeMet = 0;						///< Initialize time for metronome
 int showLine = 0;					///< Show force lines or not
-float timeThresPercent = 105;		///< 105% of current median MT (best block)
-float superThresPercent = 98;		///< 98% of current median MT (best block)
 float ERthreshold = 20;				///< Threshold of 20% of error rate in order to lower MT thresholds
 double timeThreshold = 3500; 			///< Time threshold for normal points (+0)
 double timeThresholdSuper = 2940;		///< Time threshold for super points (+3)
 double tempThres1 = timeThreshold;
 double tempThres2 = timeThresholdSuper;
 
-int percentile_low = 25;	///< Lower percentile for ETs
-int percentile_high = 75;	///< Upper percentile for ETs
+int percnetile_low = 25; ///< Lower percentile for ETs
+int percentile_high = 75; ///< Upper percentile for ETs
 
-/// array of estimated percentiles low and high for finger and speech
-double estimated_ET_percentiles[3][2] = { {0,0}, {0,0}, {0,0} };	///< Estimated lower and upper percentiles of ETs for finger and speech
-double temp_ET_percentiles[3][2] = { {0,0}, {0,0}, {0,0} };	///< Temporary variables to hold estimated percentiles of ETs for finger and speech 
+double estimated_ET_percentile_low = 0; ///< Estimated lower percentile of ETs
+double estimated_ET_percentile_high = 0; ///< Estimated upper percentile of ETs
+
+double temp_ET_percentile_low = estimated_ET_percentile_low;
+double temp_ET_percentile_high = estimated_ET_percentile_high;
+
+double estimated_medianET = 0; 		///< Estimated median ET of previous block
 
 double responseArray[11] = { 1,1,1,1,1,1,1,1,1,1,1 };
-int symbolColor = 1;
+//int symbolColor = 1;
+
 
 double medianETarray[50];			///< blocks per subject, preallocate array to keep track of ETs within session
-double stdETarray[50];				///< blocks per subject, preallocate array to keep track of ETs within session
 double ERarray[50];					///< blocks per subject, preallocate array to keep track of ERs within session
 
 
@@ -106,28 +106,76 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	LPSTR kposzArgs, int nWinMode)
 {
 	gThisInst = hThisInst;
-	gExp = new MyExperiment("SequenceFingerSpeech", "SequenceFingerSpeech", "C:/data/SequenceFingerSpeech/SFS1/");
+	gExp = new MyExperiment("ADHDOnlinePlanning", "ADHDOnlinePlanning", "C:/data/ADHDOnlinePlanning/AOP1/");
 
 	gExp->redirectIOToConsole();
+
+
+
+	//tDisp.init(gThisInst,100,200,600,30,9,2,&(::parseCommand)); // STARK
 	tDisp.init(gThisInst, 0, 0, 400, 20, 9, 2, &(::parseCommand));
 
 	tDisp.setText("Subj", 0, 0);
-	//gScreen.init(gThisInst, 1920, 0, 1680, 1050, &(::updateGraphics)); ///< Display for subject (for setups at 3128 and sensorimotor room, by the window)
 
-	gScreen.init(gThisInst, 1920, 0, 1440, 900, &(::updateGraphics));	// Display for sensorimotor room, the other (not by the window)
+	//gScreen.init(gThisInst, -1024, 0, 1920, 1024, &(::updateGraphics)); // CHOMSKY
+	//gScreen.init(gThisInst, 1920, 0, 1920, 1080, &(::updateGraphics)); // Windows 10 PC
+	//gScreen.init(gThisInst, 1920, 0, 1440, 900, &(::updateGraphics)); // Windows 10 PC Ali
+	//gScreen.init(gThisInst, 2200, 0, 1366, 768, &(::updateGraphics)); // Windows 10 PC
+	//gScreen.init(gThisInst,1280,0,1280,1024,&(::updateGraphics)); // STARK
+	gScreen.init(gThisInst, 1920, 0, 1680, 1050, &(::updateGraphics)); ///< Display for subject
 
 
 	gScreen.setCenter(Vector2D(0, 0));    // In cm //0,2
 	gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE)); // cm/pixel
+
+
+
+
+
+
 	// initialize s626cards 
 	s626.init("c:/robotcode/calib/s626_single.txt");
 
+
+	// high force 1
+//gBox[0].init(BOX_LEFT,"c:/robotcode/calib/Flatbox1_highforce_LEFT_07-Jun-2017.txt");
+ //gBox[1].init(BOX_RIGHT,"c:/robotcode/calib/Flatbox1_highforce_RIGHT_31-July-2017.txt"); //todo: check this with Jorn
+
+// high force 2
+//gBox[0].init(BOX_LEFT,"c:/robotcode/calib/Flatbox1_highforce2_LEFT_03-Dec-2021.txt");
+
+
+//high force 3
+//gBox[0].init(BOX_LEFT,"c:/robotcode/calib/flatbox2_highforce2_LEFT_27-May-2018.txt");
+//gBox[1].init(BOX_RIGHT,"c:/robotcode/calib/flatbox2_highforce2_RIGHT_27-May-2018.txt");
+
+//high force 4
+//gBox[0].init(BOX_LEFT,"c:/robotcode/calib/flatbox2_highforce_LEFT_02-Mar-2017.txt");
+//gBox[1].init(BOX_RIGHT, "c:/robotcode/calib/flatbox2_highforce_RIGHT_07-Feb-2017.txt");
+
+
+
+// STARK
+//gBox[0].init(BOX_LEFT,"c:/robot/calib/Flatbox1_highforce2_LEFT_12-Feb-2022.txt");
+//gBox[1].init(BOX_RIGHT,"c:/robot/calib/Flatbox1_highforce2_RIGHT_03-Dec-2021.txt");
+
+
+// CHOMSKY
+//auto start = std::chrono::high_resolution_clock::now();
+	//gBox[0].init(BOX_LEFT, "c:/robotcode/calib/LEFT_lowForce_FlatBox2_24-Jan-2018.txt");
+	//gBox[1].init(BOX_RIGHT, "c:/robotcode/calib/flatbox2_lowforce_RIGHT_06-Jul-2017.txt");
+	//auto end = std::chrono::high_resolution_clock::now();
+	//auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+
+	//std::cout << "Process time: " << duration.count() << " microseconds" << std::endl;
+
+	// low force
+	//gBox[0].init(BOX_LEFT,"c:/robot/calib/flatbox2_lowforce_LEFT_03-Mar-2017.txt");
+	//gBox[1].init(BOX_RIGHT,"c:/robotcode/calib/flatbox2_lowforce_RIGHT_06-Jul-2017.txt");
+
+
 	//low force Flatbox3
-	//gBox[1].init(BOX_RIGHT, "c:/robotcode/calib/Flatbox3_lowforce_RIGHT_22_Aug_2024.txt");
-
-	// low force Flatbox2 (FBL-R)
-	gBox[1].init(BOX_RIGHT, "c:/robotcode/calib/flatbox2_highforce2_RIGHT_18-March-2026.txt");
-
+	gBox[1].init(BOX_RIGHT, "c:/robotcode/calib/Flatbox3_lowforce_RIGHT_22_Aug_2024.txt");
 
 
 	gBox[0].filterconst = 0.8;
@@ -140,7 +188,9 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 		s626.initInterrupt(updateHaptics, UPDATERATE); // initialize at 200 Hz update rate 
 	}
 
+
 	gTimer.init();
+
 	// initialize TR counter 
 	gCounter.init3();
 	gCounter.simulate(TR);
@@ -148,6 +198,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 
 	// Seed the random number generator
 	srand(time(NULL));
+
 	return 0;
 }
 
@@ -213,13 +264,13 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 			gBox[1].update();
 
 			// LEFT
-			sprintf(tDispBuffer, "Force : %2.2f %2.2f %2.2f %2.2f %2.2f",
+			sprintf(buffer, "Force : %2.2f %2.2f %2.2f %2.2f %2.2f",
 				gBox[0].getForce(4), gBox[0].getForce(3), gBox[0].getForce(2), gBox[0].getForce(1), gBox[0].getForce(0));
 			// RIGHT
-			sprintf(tDispBuffer, "Force : %2.2f %2.2f %2.2f %2.2f %2.2f",
+			sprintf(buffer, "Force : %2.2f %2.2f %2.2f %2.2f %2.2f",
 				gBox[1].getForce(0), gBox[1].getForce(1), gBox[1].getForce(2), gBox[1].getForce(3), gBox[1].getForce(4));
 
-			tDisp.setText(tDispBuffer, 5, 0);
+			tDisp.setText(buffer, 5, 0);
 			InvalidateRect(tDisp.windowHnd, NULL, TRUE);
 			UpdateWindow(tDisp.windowHnd);
 			Sleep(10);
@@ -299,57 +350,18 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 		}
 	}
 
-	/// Compute/update MT thresholds
-	else if (arguments[0] == "thresh") {
-		if (numArgs != 2) {
-			tDisp.print("USAGE: thresh ET");
-		}
-		else {
-			sscanf(arguments[1].c_str(), "%f", &arg[0]);
-			timeThreshold = (arg[0] * (timeThresPercent / 100));
-			timeThresholdSuper = (arg[0] * (superThresPercent / 100));
-		}
-	}
-
 	///update estimated ET percentile thresholds
-	else if (arguments[0] == "Finger ET_percentile") {
+	else if (arguments[0] == "ET_percentile") {
 		if (numArgs != 3) {
-			tDisp.print("USAGE: Finger ET_percentile low high");
+			tDisp.print("USAGE: ET_percentile low high");
 		}
 		else {
 			sscanf(arguments[1].c_str(), "%f", &arg[0]);
 			sscanf(arguments[2].c_str(), "%f", &arg[1]);
-			estimated_ET_percentiles[2][0] = arg[0];
-			estimated_ET_percentiles[2][1] = arg[1];
+			estimated_ET_percentile_low = arg[0];
+			estimated_ET_percentile_high = arg[1];
 		}
-	}
-
-	///update estimated ET percentile thresholds
-	else if (arguments[0] == "Speech ET_percentile") {
-		if (numArgs != 3) {
-			tDisp.print("USAGE: Speech ET_percentile low high");
 		}
-		else {
-			sscanf(arguments[1].c_str(), "%f", &arg[0]);
-			sscanf(arguments[2].c_str(), "%f", &arg[1]);
-			estimated_ET_percentiles[0][0] = arg[0];
-			estimated_ET_percentiles[0][1] = arg[1];
-		}
-	}
-
-
-	else if (arguments[0] == "mean") {
-		if (numArgs != 2) {
-			tDisp.print("USAGE: mean ET");
-		}
-		else {
-			//todo: fix this 
-		}
-	}
-
-	else if (arguments[0] == "std") {
-		//todo: fix this
-	}
 
 	else {
 		return false; /// Command not recognized
@@ -395,40 +407,11 @@ void MyBlock::start() {
 	gs.clearCues();
 }
 
-///////////////////////////////////////////////////////////////
-/// Calculating ET mean of the block 
-///////////////////////////////////////////////////////////////
-double MyBlock::mean(double array[], int num_val) {
-	double sum = 0;
-	for (int i = 0; i < num_val; i++) {
-		sum += array[i];
-	}
-	return(sum / num_val);
-}
-
-
-///////////////////////////////////////////////////////////////
-/// Calculating ET standard deviation of the block 
-///////////////////////////////////////////////////////////////
-double MyBlock::std(double array[], int num_val) {
-	double sum = 0;
-	double mean = 0;
-	for (int i = 0; i < num_val; i++) {
-		sum += array[i];
-	}
-	mean = sum / num_val;
-	sum = 0;
-	for (int i = 0; i < num_val; i++) {
-		sum += pow(array[i] - mean, 2);
-	}
-	return(sqrt(sum / (num_val - 1))); // sample std
-}
-
 
 ///////////////////////////////////////////////////////////////
 /// Calculating ET percentile of the block 
 ///////////////////////////////////////////////////////////////
-double MyBlock::percentile(double array[], int num_val, int percent) {
+double MyBlock::percentile(double array[],int num_val, int percent) { 
 	// sort the array
 	double temp;
 	for (int i = 0; i < num_val; i++) {
@@ -447,8 +430,7 @@ double MyBlock::percentile(double array[], int num_val, int percent) {
 	}
 	return array[index];
 
-}
-
+} 
 
 
 ///////////////////////////////////////////////////////////////
@@ -460,15 +442,11 @@ void MyBlock::giveFeedback() {
 	int i;
 	int n = 0; //number of correct trials
 	int nn = 0; //number of total trials
-	int finger_n = 0; //number of correct finger trials
-	int speech_n = 0; //number of correct speech trials
-	double ETarray[65];  //60 trials per block		///< preallocate array to keep track of ETs within session
-	double ETarrayFinger[65];  //60 trials per block		///< preallocate array to keep track of finger ETs within session
-	double ETarraySpeech[65];  //60 trials per block		///< preallocate array to keep track of speech ETs within session
+	double ETarray[65];  ///< preallocate array to keep track of ETs within session
+	double ER;
 	MyTrial* tpnr;
 
 	medianETarray[0] = 20000;	//initialize ET array for the 0th block to be 20000 (impossible value, we have no median ET before that)
-	stdETarray[0] = 0;			//initialize std array for the 0th block to be 0
 	ERarray[0] = 0;			//initialize ER array for the 0th block to be 0 
 
 
@@ -477,52 +455,39 @@ void MyBlock::giveFeedback() {
 		if (tpnr->isError == 0) { //if correct go trial
 			ETarray[n] = tpnr->ET; //ET from the correct go trials and add them
 			n++; //remember number of correct trials
-			if (tpnr->effector == 2){
-				ETarrayFinger[finger_n] = tpnr->ET; //ET from the correct finger go trials and add them
-				finger_n++; 
-			}
-			else if (tpnr->effector == 0){
-				ETarraySpeech[speech_n] = tpnr->ET; //ET from the correct speech go trials and add them
-				speech_n++;
-			}
 		}
 		nn++; //count total trials
 	}
 
-	temp_ET_percentiles[0][0] = estimated_ET_percentiles[0][0];
-	temp_ET_percentiles[0][1] = estimated_ET_percentiles[0][1];
-	temp_ET_percentiles[2][0] = estimated_ET_percentiles[2][0];
-	temp_ET_percentiles[2][1] = estimated_ET_percentiles[2][1];
+	// before eventual thres update, store the previous thres for writing in the .dat file
+	// tempThres1 = timeThreshold;
+	// tempThres2 = timeThresholdSuper;
 
+	temp_ET_percentile_high = estimated_ET_percentile_high;
+	temp_ET_percentile_low = estimated_ET_percentile_low;
 
 	if (n > 0) { //if at least one correct trial
 		b = b++; //increase counter of block number
 		medianETarray[b] = median(ETarray, n); //median of movement times	
-		// ERarray[b] = (((double)gNumErrorsBlock) / (double)(nn) * 100); //error rate (previous version)
-		ERarray[b] = (((double)gNumErrorsBlock) / (double)(finger_n + gNumErrorsBlock) * 100); //error rate (current version, calculated only for finger)
+		ERarray[b] = (((double)gNumErrorsBlock) / (double)(nn) * 100); //error rate
 
-		estimated_ET_percentiles[0][0] = percentile(ETarraySpeech, speech_n, percentile_low); //estimated lower percentile of ETs for speech
-		estimated_ET_percentiles[0][1] = percentile(ETarraySpeech, speech_n, percentile_high); //estimated upper percentile of ETs for speech
-		estimated_ET_percentiles[2][0] = percentile(ETarrayFinger, finger_n, percentile_low); //estimated lower percentile of ETs for finger
-		estimated_ET_percentiles[2][1] = percentile(ETarrayFinger, finger_n, percentile_high); //estimated upper percentile of ETs for finger
+		estimated_ET_percentile_low = percentile(ETarray, n, percnetile_low); //estimated lower percentile of ETs
+		estimated_ET_percentile_high = percentile(ETarray, n, percentile_high); //estimated upper percentile of ETs
 	}
 	else {
 		b = b++;
 		medianETarray[b] = 0;
 		ERarray[b] = 100;
-		estimated_ET_percentiles[0][0] = 0;
-		estimated_ET_percentiles[0][1] = 0;
-		estimated_ET_percentiles[2][0] = 0;
-		estimated_ET_percentiles[2][1] = 0;
+		estimated_medianET = 0;
+		estimated_ET_percentile_high = 0;
+		estimated_ET_percentile_low = 0;
+
 	}
 
 	// print FEEDBACK on the screen 
 	sprintf(buffer, "Acc %3.1f%%     ET %2.0fms     PTS %2.1f", 100 - ERarray[b], medianETarray[b], gNumPointsBlock);
 	gs.line[1] = buffer;
 	gs.lineColor[1] = 1;
-
-	//gScreen.setCenter(Vector2D(0, 0));    // In cm //0,2
-	//gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE)); // cm/pixel
 }
 
 ///////////////////////////////////////////////////////////////
@@ -537,6 +502,7 @@ MyTrial::MyTrial() {
 	complete = 0;                       // end sequence flag
 	isError = 0;							// init error flag
 	isCross = 0;							// init threshold cross flag
+	isPresshard = 0;					// init press hard flag
 	numCrosses = 0;						// init how many times pre-mov threshold has been crossed in this trial
 	timingError = 0;						// init timing error flag
 	seqCounter = 0;						// init the sequence index variable
@@ -550,21 +516,12 @@ MyTrial::MyTrial() {
 	useMetronome = 0;//1;
 	startTime = 0;
 	cue = "0";
-
-	audioOn = false;
-	audioFile = "";
-	beepStartReal = -1;
-	beepStopReal = -1;
-	// audioStartReal = -1;
-	// audioStopReal = -1;
-
 	for (int i = 0; i < MAX_PRESS; i++) {
 		response[i] = 0;					// finger response
 		pressTime[i] = 0;					// press time	
 		releaseTime[i] = 0;				// release time
 		press[i] = 0;                     // fingers needed to be pressed
 		handPressed[i] = 0;               // which hand
-
 	}
 }
 
@@ -573,7 +530,7 @@ MyTrial::MyTrial() {
 ///////////////////////////////////////////////////////////////
 void MyTrial::read(istream& in) {
 	// read from .tgt file
-	in >> subNum >> group >> effector >> symbol >> isTrain >> cue >> fixed_dur >> execTime >> iti >> precueTime;
+	in >> subNum >> hand >> cue >> windowSize >> group >> iti;
 	seqLength = cue.length(); //get seqLength
 }
 
@@ -582,7 +539,7 @@ void MyTrial::read(istream& in) {
 ///////////////////////////////////////////////////////////////
 void MyTrial::writeDat(ostream& out) {
 	// write to .dat file
-	out << subNum << "\t" << group << "\t" << effector << "\t" << isTrain << "\t" << cue << "\t";
+	out << subNum << "\t" << hand << "\t" << cue << "\t" << windowSize << "\t" << group << "\t" << iti << "\t";
 	int i;
 
 	for (i = 0; i < MAX_PRESS; i++) {
@@ -610,14 +567,8 @@ void MyTrial::writeDat(ostream& out) {
 
 	// out << tempThres1 << "\t"
 	// 	<< tempThres2 << "\t"
-
-		// << tempMean << "\t"
-		// << tempStd << "\t"
-	out << temp_ET_percentiles[2][1] << "\t"
-		<< temp_ET_percentiles[2][0] << "\t"
-		<< temp_ET_percentiles[0][1] << "\t"
-		<< temp_ET_percentiles[0][0] << "\t"
-
+	out << temp_ET_percentile_high << "\t"
+		<< temp_ET_percentile_low << "\t"
 		<< startTime << "\t"
 		<< startTimeReal << "\t"
 		<< trialDur << "\t"
@@ -626,11 +577,7 @@ void MyTrial::writeDat(ostream& out) {
 		<< useMetronome << "\t"
 		<< isCross << "\t"			//whether pre-movement threshold has been crossed in this trial
 		<< timeStamp << "\t"
-		//<< audioFile << "\t"
-		// << audioStartReal << "\t"
-		// << audioStopReal << "\t"
-		<< beepStartReal << "\t"
-		<< beepStopReal << "\t"
+		<< isPresshard << "\t"		//whether a hard press in the trial
 		<< endl;
 }
 
@@ -640,11 +587,9 @@ void MyTrial::writeDat(ostream& out) {
 void MyTrial::writeHeader(ostream& out) {
 	char header[200];
 
-	out << "SubNum" << "\t" << "group" << "\t" << "effector" << "\t" << "isTrain" << "\t" << "cue" << "\t";
+	out << "SubNum" << "\t" << "hand" << "\t" << "cue" << "\t" << "windowSize" << "\t" << "group" << "\t" << "iti" << "\t";
 
 	int i;
-
-
 	for (i = 0; i < MAX_PRESS; i++) {
 		sprintf(header, "press%d", i + 1);
 		out << header << "\t";
@@ -675,10 +620,8 @@ void MyTrial::writeHeader(ostream& out) {
 
 	// out << "timeThreshold" << "\t"
 	// 	<< "timeThresholdSuper" << "\t"
-	out << "FingerestimatedPercentileHigh" << "\t"
-		<< "FingerestimatedPercentileLow" << "\t"
-		<< "SpeechestimatedPercentileHigh" << "\t"
-		<< "SpeechestimatedPercentileLow" << "\t"
+	out << "estimatedPercentileHigh" << "\t"
+		<< "estimatedPercentileLow" << "\t"
 		<< "startTime" << "\t"
 		<< "startTimeReal" << "\t"
 		<< "trialDur" << "\t"
@@ -687,11 +630,7 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "useMetronome" << "\t"
 		<< "isCross" << "\t"
 		<< "crossTime" << "\t"
-		//<< "audioFile" << "\t"
-		// << "audioStartReal" << "\t"
-		// << "audioStopReal" << "\t"
-		<< "beepStartReal" << "\t"
-		<< "beepStopReal" << "\t"
+		<< "isPresshard" << "\t"
 		<< endl;
 }
 
@@ -716,11 +655,6 @@ void MyTrial::start() {
 void MyTrial::end() {
 	state = END_TRIAL;
 	dataman.stopRecording();
-	if (audioOn) {
-		gAudio.stop();
-		audioOn = false;
-		// audioStopReal = gTimer.getRealtime();
-	}
 	gs.reset();
 }
 
@@ -743,43 +677,35 @@ void MyTrial::copyHaptics() {
 /// updateTextDisp: called from TextDisplay 
 ///////////////////////////////////////////////////////////////
 void MyTrial::updateTextDisplay() {
-	// sprintf(tDispBuffer, "startTime: %d   TR: %2.0f", startTime, TR);
-	// tDisp.setText(tDispBuffer, 1, 0);
 
-	// sprintf(tDispBuffer, "time: %2.2f   TRtime: %d   slice:%d   metronome: %d ", gCounter.readTotTime(), gCounter.readTR(), gCounter.readSlice(), timeMet);
-	// tDisp.setText(tDispBuffer, 2, 0);
+	sprintf(buffer, "est median: %.2f", estimated_medianET);
+	tDisp.setText(buffer, 2, 0);
 
-	sprintf(tDispBuffer, "FINGER: est perc low: %.2f  est perc high: %.2f", estimated_ET_percentiles[2][0], estimated_ET_percentiles[2][1]);
-	tDisp.setText(tDispBuffer, 1, 0);
+	// sprintf(buffer, "gTimer1: %2.2f   gTimer2: %2.2f   gTimer5: %2.2f", gTimer[1], gTimer[2], gTimer[5]);
+	// tDisp.setText(buffer, 3, 0);
 
-		sprintf(tDispBuffer, "SPEECH: est perc low: %.2f  est perc high: %.2f", estimated_ET_percentiles[0][0], estimated_ET_percentiles[0][1]);
-	tDisp.setText(tDispBuffer, 2, 0);
+	// sprintf(buffer, "upper Threshold: %2.0f   lower Threshold: %2.0f", timeThreshold, timeThresholdSuper);
+	// tDisp.setText(buffer, 4, 0);
+	sprintf(buffer, "ET perc low: %.2f   ET perc high: %.2f", estimated_ET_percentile_low, estimated_ET_percentile_high);
+	tDisp.setText(buffer, 4, 0);
 
-	// sprintf(tDispBuffer, "gTimer1: %2.2f   gTimer2: %2.2f   gTimer5: %2.2f", gTimer[1], gTimer[2], gTimer[5]);
-	// tDisp.setText(tDispBuffer, 2, 0);
+	sprintf(buffer, "trial: %d/%d   state: %d   seqNum: %lld", gExp->theBlock->trialNum + 1, gExp->theBlock->numTrials, state, std::stoll(cue));
+	tDisp.setText(buffer, 5, 0);
 
-	// sprintf(tDispBuffer, "trial: %d/%d   state: %d   seqNum: %lld", gExp->theBlock->trialNum + 1, gExp->theBlock->numTrials, state, std::stoll(cue));
-	sprintf(tDispBuffer, "trial: %d/%d   state: %d", gExp->theBlock->trialNum + 1, gExp->theBlock->numTrials, state);
-	tDisp.setText(tDispBuffer, 3, 0);
+	// sprintf(buffer, "press RH: %d %d %d %d %d    force RH: %2.2f %2.2f %2.2f %2.2f %2.2f", finger[5], finger[6], finger[7], finger[8], finger[9], gBox[1].getForce(0), gBox[1].getForce(1), gBox[1].getForce(2), gBox[1].getForce(3), gBox[1].getForce(4));
+	// tDisp.setText(buffer, 6, 0);
 
-	sprintf(tDispBuffer, "isError: %d   errors block: %d   points block: %2.1f", isError, gNumErrorsBlock, gNumPointsBlock);
-	tDisp.setText(tDispBuffer, 4, 0);
+	// sprintf(buffer, "pressTime1: %2.0f   pressTime2: %2.0f   pressTime3: %2.0f   pressTime4: %2.0f   pressTime5: %2.0f", pressTime[0], pressTime[1], pressTime[2], pressTime[3], pressTime[4]);
+	// tDisp.setText(buffer, 7, 0);
 
+	// sprintf(buffer, "seqCounter: %d   seqLength: %d", seqCounter, seqLength);
+	// tDisp.setText(buffer, 11, 0);
 
-	//sprintf(tDispBuffer, "press LH: %d %d %d %d %d    force LH: %2.2f %2.2f %2.2f %2.2f %2.2f", finger[0], finger[1], finger[2], finger[3], finger[4], gBox[0].getForce(0), gBox[0].getForce(1), gBox[0].getForce(2), gBox[0].getForce(3), gBox[0].getForce(4));
-	//tDisp.setText(tDispBuffer, 6, 0);
+	sprintf(buffer, "isError: %d   errors block: %d   points block: %2.1f", isError, gNumErrorsBlock, gNumPointsBlock);
+	tDisp.setText(buffer, 12, 0);
 
-	 sprintf(tDispBuffer, "press RH: %d %d %d %d %d    force RH: %2.2f %2.2f %2.2f %2.2f %2.2f", finger[5], finger[6], finger[7], finger[8], finger[9], gBox[1].getForce(0), gBox[1].getForce(1), gBox[1].getForce(2), gBox[1].getForce(3), gBox[1].getForce(4));
-	 tDisp.setText(tDispBuffer, 5, 0);
-
-	// sprintf(tDispBuffer, "seqCounter: %d   seqLength: %d", seqCounter, seqLength);
-	// tDisp.setText(tDispBuffer, 11, 0);
-
-
-
-
-	// sprintf(tDispBuffer, "newPress: %d   released: %d", newPress, released);
-	// tDisp.setText(tDispBuffer, 14, 0);
+	// sprintf(buffer, "newPress: %d   released: %d", newPress, released);
+	// tDisp.setText(buffer, 14, 0);
 
 }
 
@@ -788,14 +714,15 @@ void MyTrial::updateTextDisplay() {
 ///////////////////////////////////////////////////////////////
 
 // force thresholds 
-#define preTH 1.5//1.5				// Press threshold
+#define preTH 1//1.5				// Press threshold
 #define relTH 0.8//1.0//1.0		// Release threshold
-#define baseTHhi  0.5 //0.8//1.0		// Baseline higher threshold (to check for premature movements during sequence planning phase)
+#define hardTH 3				// Hard press threshold
+#define baseTHhi  0.5 //0.8//1.0		// Baseline higher threshold (to check for premature movements)
 //#define baseTHlow 0 //0.8//1.0		// Baseline lower threshold (to check for premature movements during sequence planning phase)
-#define baseTHlow -0.2 //0.8//1.0		// Baseline lower threshold (to check for premature movements during sequence planning phase)
+#define baseTHlow -0.2 //0.8//1.0		// Baseline lower threshold (to check for premature movements)
 
 
-double THRESHOLD[2][5] = { {preTH, preTH, preTH, preTH, preTH}, {relTH, relTH, relTH, relTH, relTH} };
+double THRESHOLD[3][5] = { {preTH, preTH, preTH, preTH, preTH}, {relTH, relTH, relTH, relTH, relTH}, {hardTH, hardTH, hardTH, hardTH, hardTH} };
 double BASE_THRESHOLD_HI[2][5] = { {baseTHhi, baseTHhi, baseTHhi, baseTHhi, baseTHhi}, {baseTHhi - 0.1, baseTHhi - 0.1, baseTHhi - 0.1, baseTHhi - 0.1, baseTHhi - 0.1} };
 double BASE_THRESHOLD_LOW[2][5] = { {baseTHlow, baseTHlow, baseTHlow, baseTHlow, baseTHlow}, {baseTHlow + 0.1, baseTHlow + 0.1, baseTHlow + 0.1, baseTHlow + 0.1, baseTHlow + 0.1} };
 double fGain[5] = { 1.0,1.0,1.0,1.0,1.0 };
@@ -858,6 +785,15 @@ void MyTrial::updateGraphics(int what) {
 			gScreen.setColor(Screen::grey);
 			gScreen.drawLine(1. * BASELINE_X1, preTH * FORCESCALE + BASELINE_Y1, 1. * BASELINE_X2, preTH * FORCESCALE + BASELINE_Y2);
 
+			// press zone box
+			gScreen.setColor(Screen::pale);
+			// right
+			gScreen.drawBox(FINGWIDTH * N_FINGERS, (hardTH - preTH) * FORCESCALE, -0 * FINGWIDTH * N_FINGERS, (preTH * FORCESCALE) + ((hardTH - preTH) * FORCESCALE) / 2 + BASELINE_Y2);
+
+			// Hard press threshold
+			gScreen.setColor(Screen::grey);
+			gScreen.drawLine(1. * BASELINE_X1, hardTH * FORCESCALE + BASELINE_Y1, 1. * BASELINE_X2, hardTH * FORCESCALE + BASELINE_Y2);
+
 			// Finger forces (right)
 			for (i = 0; i < 5; i++) {
 				gScreen.setColor(Screen::white);
@@ -878,13 +814,16 @@ void MyTrial::updateGraphics(int what) {
 	// Press Cue
 	gScreen.setColor(1);		// White
 	for (i = 0; i < MAX_PRESS; i++) {
-		gScreen.setColor(responseArray[i]);
-		gScreen.printChar(gs.seq[i], (i - ((double)((MAX_PRESS) / 2))) * WIDTH_CHAR_CUE + WIDTH_CHAR_CUE * ((double)(MAX_PRESS - seqLength) / 2), CUE_PRESS_yPOS, SIZE_CUE);
-	}
+		if (gs.seqMask[i] > 0) { // Mask (asterisk)
+			gScreen.setColor(responseArray[i]);
+			gScreen.printChar(gs.seqMask[i], (i - ((double)((MAX_PRESS) / 2))) * WIDTH_CHAR_CUE + WIDTH_CHAR_CUE * ((double)(MAX_PRESS - seqLength) / 2), CUE_PRESS_yPOS, SIZE_CUE);
+		}
 
-	// Symbol Cue
-	gScreen.setColor(symbolColor);
-	gScreen.printChar(gs.symbol, (seqLength/2 + 1 - ((double)((MAX_PRESS + 1) / 2 ))) * WIDTH_CHAR_CUE + WIDTH_CHAR_CUE * ((double)(MAX_PRESS - seqLength) / 2), CUE_PRESS_yPOS + RECWIDTH_Y + 0.5, SIZE_CUE);
+		else if (gs.seq[i] > 0) { // Numbers
+			gScreen.setColor(responseArray[i]);
+			gScreen.printChar(gs.seq[i], (i - ((double)((MAX_PRESS) / 2))) * WIDTH_CHAR_CUE + WIDTH_CHAR_CUE * ((double)(MAX_PRESS - seqLength) / 2), CUE_PRESS_yPOS, SIZE_CUE);
+		}
+	}
 
 	Vector2D recSize, recPos;
 	// press rectangle
@@ -986,6 +925,7 @@ void MyTrial::control() {
 
 	int crossedFinger = 0;
 	int numNewThresCross = 0;			// has the pre-movement trheshold been crossed?
+	int numHardPress = 0;				// has a finger been pressed hard
 	int withinThres = 1;
 
 	for (f = 5; f < 10; f++) {
@@ -997,16 +937,20 @@ void MyTrial::control() {
 			finger[f] = 1;
 			released = 0;
 		}
+		//todo: Should I add release fingers? Ask Jorn
 		if (force <= THRESHOLD[1][f - 5]) { // Release threshold comparison
 			finger[f] = 0;
 			released++;
 		}
 
-		if (force >= BASE_THRESHOLD_HI[0][f - 5] || force <= BASE_THRESHOLD_LOW[0][f - 5]) {
+		if (force >= BASE_THRESHOLD_HI[0][f - 5] || force <= BASE_THRESHOLD_LOW[0][f-5]) {
 			numNewThresCross++;
 		}
-	}
 
+		if (force > THRESHOLD[2][f - 5]) { // hard press
+			numHardPress++;
+		}
+	}
 
 	switch (state) {
 
@@ -1023,15 +967,11 @@ void MyTrial::control() {
 			}
 		}
 		gs.clearCues();
-
 		break;
 
 	case START_TRIAL: //1		
 		//cout << "in start trial";
 		trialDur = 0;
-
-		////// resetting TextDisplay::keyPressed
-		TextDisplay::keyPressed = false;
 
 		for (i = 0; i < MAX_PRESS; i++) {
 			response[i] = 0;
@@ -1059,29 +999,10 @@ void MyTrial::control() {
 						press[i] = cue.at(i) - '0';
 						gs.seq[i] = cue.at(i);
 						gs.seqMask[i] = ' ';
-
-
-						//cout << "hand" << hand << '\n';
-						// if (show == 1) {
-						// 	if (hand == 2) {
-						// 		responseArray[i] = 6; // orange for the right
-						// 	}
-						// 	else {
-						// 		responseArray[i] = 9; // light blue for the left
-						// 	}
-						// }
 					}
-
-					gs.symbol = symbol;
 
 					gTimer.reset(1); gTimer.reset(2); gTimer.reset(5);
 					dataman.startRecording();
-
-					audioFile = gExp->dataDir + "SN" + gExp->subjectName + "_BN" + to_string(gExp->theBlock->blockNumber) + "_TN" + to_string(gExp->theBlock->trialNum+1)
-					+ "_Eff" + to_string(effector) + ".wav";
-					audioOn = gAudio.start(audioFile);
-					// audioStartReal = gTimer.getRealtime();
-
 					state = WAIT_PREP;
 				}
 			}
@@ -1091,33 +1012,13 @@ void MyTrial::control() {
 						press[i] = cue.at(i) - '0';
 						gs.seq[i] = cue.at(i);
 						gs.seqMask[i] = ' ';
-
-
-						// if (show == 1) {
-						// 	if (hand == 2) {
-						// 		responseArray[i] = 6; // orange for the right
-						// 	}
-						// 	else {
-						// 		responseArray[i] = 9; // light blue for the left
-						// 	}
-						// }
 					}
-
-					gs.symbol = symbol;
 					gTimer.reset(1); gTimer.reset(2); gTimer.reset(5);
 					dataman.startRecording();
-
-					audioFile = gExp->dataDir + "SN" + gExp->subjectName + "_BN" + to_string(gExp->theBlock->blockNumber) + "_TN" + to_string(gExp->theBlock->trialNum+1)
-					+ "_Eff" + to_string(effector) + ".wav";
-					audioOn = gAudio.start(audioFile);
-					// audioStartReal = gTimer.getRealtime();
-
 					state = WAIT_PREP;
 				}
 			}
 		}
-
-
 		break;
 
 	case WAIT_TR: //2
@@ -1129,14 +1030,6 @@ void MyTrial::control() {
 			for (i = 0; i < seqLength; i++) {
 				press[i] = cue.at(i) - '0';
 				gs.seq[i] = cue.at(i);
-				if (show == 1) {
-					if (effector == 2) {
-						responseArray[i] = 6; // orange for the right
-					}
-					else {
-						responseArray[i] = 9; // light blue for the left
-					}
-				}
 			}
 			gTimer.reset(1); gTimer.reset(2); gTimer.reset(5);
 			dataman.startRecording();
@@ -1146,127 +1039,68 @@ void MyTrial::control() {
 
 	case WAIT_PREP: //3  
 		//---------------------------------- todo: double check line corssing conditions
-
 		sprintf(buffer, "");
 		gs.lineColor[0] = 1;
 		gs.line[0] = buffer;
 		gs.lineYpos[0] = 8;
 
-		// // CHECK FOR BASELINE FINGER FORCES
-		// if (numNewThresCross > 0) { // check for pre-movement finger presses
-		// 	timeStamp = gTimer[1];
-		// 	isError = 1;
-		// 	isCross = 1;
-		// 	state = WAIT_RELEASE;
-		// }
-		// else {
-		// 	for (i = 0; i < seqLength; i++) {
-		// 		gs.seqMask[i] = 0;
-		// 	}
-		// 	PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
-		// 	gTimer.reset(2);
-		// 	state = WAIT_PRESS;
-		// }
-
-
 		// CHECK FOR BASELINE FINGER FORCES
-		if (numNewThresCross > 0 && gTimer[1] < precueTime) { // check for pre-movement finger presses
+		if (numNewThresCross > 0) { // check for pre-movement finger presses
 			timeStamp = gTimer[1];
 			isError = 1;
 			isCross = 1;
-
-			if (startTime == 0) { // display warning message (practice blocks only)
-				sprintf(buffer, "Please remain within the red area");
-				gs.lineColor[0] = 1;
-				gs.line[0] = buffer;
-				gs.lineYpos[0] = 8;
-			}
+			state = WAIT_RELEASE;
 		}
-
-		if (gTimer[1] >= precueTime) { // give go/nogo signal
-			sprintf(buffer, "");
-			gs.lineColor[0] = 1;
-			gs.line[0] = buffer;
-			gs.lineYpos[0] = 8;
-
-			if (isCross) {
-				state = WAIT_RELEASE;
-			}
-			else {
-				for (i = 0; i < seqLength; i++) {
+		else {
+			for (i = 0; i < seqLength; i++) {
+				if (i < seqCounter + windowSize){
 					gs.seqMask[i] = 0;
 				}
-				PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
-				beepStartReal = gTimer.getRealtime();
-				gTimer.reset(2);
-				state = WAIT_PRESS;
-
+				else {
+					gs.seqMask[i] = '*';
+				}
 			}
+			PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
+			gTimer.reset(2);
+			state = WAIT_PRESS;
 		}
-
-		//sprintf(buffer, "");
-		//gs.lineColor[0] = 1;
-		//gs.line[0] = buffer;
-		//gs.lineYpos[0] = 8;
-		//else {
-		//	PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
-		//	gTimer.reset(2);
-		//	state = WAIT_PRESS;
-
-		//}
-
-
-		//if (gTimer[1] > timeStamp + 500) {
-		//	sprintf(buffer, "");
-		//	gs.lineColor[0] = 1;
-		//	gs.line[0] = buffer;
-		//	gs.lineYpos[0] = 8;
-		//}
 		break;
 
 	case WAIT_PRESS: //4
-		//----------------------------------
-		// REVEAL HAND AT GO CUE ONLY
-		// for (i = 0; i < seqLength; i++) {
-		// 	if (show == 2) {
-		// 		if (hand == 2) {
-		// 			responseArray[i] = 6; // orange for the right
-		// 		}
-		// 		else {
-		// 			responseArray[i] = 9; // light blue for the left
-		// 		}
-		// 	}
-		// }
-		//if (useMetronome > 0 && gTimer[2] > timeMet * (execTime / MAX_PRESS) && timeMet < MAX_PRESS + 1) {
-		//	timeMet++;	// update counter
-		//};
 
-
+		// CHECK FOR HARD PRESS
+		if (numHardPress > 0) {
+			// isError = 1;
+			isPresshard = 1;
+			// state = WAIT_RELEASE;
+			// break;
+		}
 
 		// START OF SEQUENCE
 		if (newPress > 0 && seqCounter < seqLength) { // correct timing
-			if (fixed_dur == 1){
+			response[seqCounter] = pressedFinger;
+			handPressed[seqCounter] = pressedHand;
+			pressTime[seqCounter] = gTimer[1];
+			if (seqCounter == 0) {			// if first press 
+				RT = gTimer[2];
+				gTimer.reset(5);
+			}
+			if (response[seqCounter] == press[seqCounter] && handPressed[seqCounter] == hand) { // correct press	
+				responseArray[seqCounter] = 3; // green
+			}
+			else { // error: wrong key pressed
+				responseArray[seqCounter] = 2; // red
 				isError = 1;
-				state = WAIT_RELEASE;
 			}
-			else{
-				response[seqCounter] = pressedFinger;
-				handPressed[seqCounter] = pressedHand;
-				pressTime[seqCounter] = gTimer[1];
-				if (seqCounter == 0) {			// if first press 
-					RT = gTimer[2];
-					gTimer.reset(5);
-				}
-				if (response[seqCounter] == press[seqCounter] && handPressed[seqCounter] == effector) { // correct press	
-					responseArray[seqCounter] = 3; // green
-				}
-				else { // error: wrong key pressed
-					responseArray[seqCounter] = 2; // red
-					isError = 1;
-				}
-				seqCounter++;
+
+			if (seqCounter + windowSize < seqLength) {
+				gs.seqMask[seqCounter + windowSize] = 0;
 			}
+
+			seqCounter++;
 		}
+
+
 		// END OF SEQUENCE: get execution time and movement time
 		if (seqCounter >= seqLength && released == NUMFINGERS) {
 			if (complete == 0) {
@@ -1274,170 +1108,128 @@ void MyTrial::control() {
 				ET = (RT + MT);
 				complete = 1;
 				gTimer.reset(5);
-				state = WAIT_RELEASE;
-				// PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
-				// beepStopReal = gTimer.getRealtime();
 			}
-			// if (fixed_dur == 1) { // fixed trial duration: wait exeTime before moving on to wait release (same time for GO and NOGO trials)
-			// 	if (gTimer[2] >= execTime) {
-			// 		state = WAIT_RELEASE;
-			// 	}
-			// }
-			// else { // flexible trial duration: move on to next trial, just wait an extra 200ms to make color feedback visible
-			// 	if (gTimer[5] >= 200) {
-			// 		state = WAIT_RELEASE;
-			// 	}
-			// }
+			//if (fixed_dur == 1) { // fixed trial duration: wait exeTime before moving on to wait release (same time for GO and NOGO trials)
+			//	if (gTimer[2] >= execTime) {
+			//		state = WAIT_RELEASE;
+			//	}
+			//}
+			//else { // flexible trial duration: move on to next trial, just wait an extra 200ms to make color feedback visible
+			//	if (gTimer[5] >= 200) {
+			//		state = WAIT_RELEASE;
+			//	}
+			//}
 
-			// else {
-			// 	if (gTimer[5] >= 200) {
-			// 		state = WAIT_RELEASE;
-			// 	}
-			// }
-			// SEQUENCE TIME OUT
-		}
-		else if (fixed_dur == 1){ // fixed trial duration: wait exeTime before moving on to wait release 
-			if (gTimer[2] >= execTime){
-				ET = execTime;
-				state = WAIT_RELEASE;
-				// PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
-				// beepStopReal = gTimer.getRealtime();
-			}
-
-			////// checking space press to terminate trial 
-			else if (TextDisplay::keyPressed && TextDisplay::key == ' ') {
-				TextDisplay::keyPressed = false;  // reset so that it doesn't keep terminating trials
-				ET = gTimer[2];
-				state = WAIT_RELEASE; // move to the state where we wait for finger release and then end the trial
-				// if (isError == 0){
-				// 	PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
-				// }
-				// else{
-				// 	PlaySound(TASKSOUNDS[5].c_str(), NULL, SND_ASYNC);
-				// }
-				// beepStopReal = gTimer.getRealtime();
-			}
-
-
-			////// checking E press to terminate trial (error)
-			else if (TextDisplay::keyPressed && TextDisplay::key == 'e') {
-				TextDisplay::keyPressed = false;  // reset so that it doesn't keep terminating trials
-				isError = 1;
-				for (i = 0; i < MAX_PRESS; i++) {
-					responseArray[i] = 2; // red
+			else {
+				if (gTimer[5] >= 200) {
+					state = WAIT_RELEASE;
 				}
 			}
-		}
 
-		// else if (gTimer[2] >= execTime) { // time out (if sequence not completed in time)
-		// 	RT = RT;				// reaction time
-		// 	ET = execTime;	// execution time
-		// 	MT = ET - RT;
-		// 	isError = 1;
-		// 	timingError = 1;
-		// 	// PLAY SOUND 
-		// 	PlaySound(TASKSOUNDS[6].c_str(), NULL, SND_ASYNC);
-		// 	gs.clearCues(); sprintf(buffer, "TOO SLOW");
-		// 	gs.lineColor[0] = 1;
-		// 	gs.line[0] = buffer;
-		// 	gs.lineYpos[0] = 8;
-		// 	gTimer.reset(5);
-		// 	state = WAIT_RELEASE;
-		// }
+			// SEQUENCE TIME OUT
+		}
+		//else if (gTimer[2] >= execTime) { // time out (if sequence not completed in time)
+		//	RT = RT;				// reaction time
+		//	ET = execTime;	// execution time
+		//	MT = ET - RT;
+		//	isError = 1;
+		//	timingError = 1;
+		//	// PLAY SOUND 
+		//	PlaySound(TASKSOUNDS[6].c_str(), NULL, SND_ASYNC);
+		//	gs.clearCues(); sprintf(buffer, "TOO SLOW");
+		//	gs.lineColor[0] = 1;
+		//	gs.line[0] = buffer;
+		//	gs.lineYpos[0] = 8;
+		//	gTimer.reset(5);
+		//	state = WAIT_RELEASE;
+		//}
 
 		break;
 
 
 	case WAIT_RELEASE: //5
-
-		// if (audioOn) {
-		// 	gAudio.stop();
-		// 	audioOn = false;
-		// 	// audioStopReal = gTimer.getRealtime();
-		// }
-
 		// Wait for the release of all keys, assign points
 		if (released == NUMFINGERS) {
 			if (isError == 0) {
-				if (isTrain) {
-					if (effector == 0){ // speech
-						if (ET < estimated_ET_percentiles[0][0]) {
-							points = 3;
-						}
-						else if (ET > estimated_ET_percentiles[0][1]) {
-							points = 0;
-						}
-						else {
-							points = 1;
-						}
-					}
-					else if (effector == 2){ // finger
-						if (ET < estimated_ET_percentiles[2][0]) {
-							points = 3;
-						}
-						else if (ET > estimated_ET_percentiles[2][1]) {
-							points = 0;
-						}
-						else {
-							points = 1;
-						}
-
-					}
+				if (ET < estimated_ET_percentile_low) {
+					points = 3;
+				}
+				else if (ET < estimated_ET_percentile_high) {
+					points = 1;
 				}
 				else {
 					points = 0;
 				}
+
+				//if (isTrain){
+				//	// if (ET < timeThresholdSuper) {
+				//	// 	points = 3;
+				//	// }
+				//	// else if (ET < timeThreshold) {
+				//	// 	points = 1;
+				//	// }
+				//	if (ET < estimated_ET_percentile_low) {
+				//		points = 3;
+				//	}
+				//	else if (ET < estimated_ET_percentile_high) {
+				//		points = 1;
+				//	}
+				//	else {
+				//		points = 0;
+				//	}
+				//}
+				//else {
+				//	points = 0; // no points in familiarization/random trials
+				//}
 				gs.clearCues();
 				gs.size[1] = 8; // size of feedback text
-				if (isTrain) {
-				sprintf(buffer, "+%d", points); }
-				else {
-					sprintf(buffer, ""); // no points shown during test phase
-				}
-				PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
-				beepStopReal = gTimer.getRealtime();
+				sprintf(buffer, "+%d", points);
 
-				if (points == 3) {
+				if (points == 3){
+					PlaySound(TASKSOUNDS[8].c_str(), NULL, SND_ASYNC);
 					gs.lineColor[1] = 3; // Green
 				}
 				else if (points == 1) {
-					gs.lineColor[1] = 7; // yellow
+					PlaySound(TASKSOUNDS[2].c_str(), NULL, SND_ASYNC);
+					gs.lineColor[1] = 1; // white
 
 				}
-				else {
+				else{
 					gs.lineColor[1] = 1; //white
-				}
+				}				
 
 				gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
 
 			}
+
 			else if (isError == 1 && isCross) {
-				points = -5;
-				PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
-				beepStopReal = gTimer.getRealtime();
-				gs.clearCues(); sprintf(buffer, "%d", points);
+				points = -1;
+				PlaySound(TASKSOUNDS[5].c_str(), NULL, SND_ASYNC);
+				gs.clearCues(); sprintf(buffer, "Remain within the red area");
+				gs.lineColor[0] = 2; // red
+				gs.line[0] = buffer; gs.lineYpos[0] = 8;
+				sprintf(buffer, "%d", points);
 				gs.lineColor[1] = 2; // red
 				gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
 			}
+
+			// else if (isError == 1 && isPresshard) {
+			// 	points = -1;
+			// 	PlaySound(TASKSOUNDS[5].c_str(), NULL, SND_ASYNC);
+			// 	gs.clearCues(); sprintf(buffer, "Hard press");
+			// 	gs.lineColor[1] = 2; // red
+			// 	gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
+			// }
 
 			else if (isError == 1 && timingError == 0) {
 				points = -1;
 				// PLAY SOUND 
-				PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
-				beepStopReal = gTimer.getRealtime();
+				PlaySound(TASKSOUNDS[5].c_str(), NULL, SND_ASYNC);
 				gs.clearCues(); sprintf(buffer, "%d", points);
 				gs.lineColor[1] = 2; // red
 				gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
 			}
-			else if (isError ==1 && fixed_dur == 1){
-				points = -1;
-				// PLAY SOUND 
-				PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
-				beepStopReal = gTimer.getRealtime();
-				gs.clearCues(); sprintf(buffer, "Finger pressed");
-				gs.lineColor[2] = 2; // red
-				gs.line[2] = buffer; gs.lineYpos[2] = 5.4;
-			}
+
 			//else if (isError == 1 && timingError == 1) {
 			//	points = -1;
 			//	// PLAY SOUND 
@@ -1446,8 +1238,10 @@ void MyTrial::control() {
 			//	gs.lineColor[1] = 1; // white
 			//	gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
 			//}
+
 			gTimer.reset(2);
 			state = WAIT_FEEDBACK;
+
 		}
 		break;
 
@@ -1480,11 +1274,6 @@ void MyTrial::control() {
 		if (startTime > 0 && (gExp->theBlock->trialNum + 1) >= (gExp->theBlock->numTrials)) {
 			if (gTimer[2] > (iti - FEEDBACKTIME + endOfRunRest)) { // for scanner only (wait rest periord before presenting block results)
 				dataman.stopRecording();
-				if (audioOn) {
-					gAudio.stop();
-					audioOn = false;
-					// audioStopReal = gTimer.getRealtime();
-				}
 				trialDur = gTimer[1];
 				state = END_TRIAL;
 			}
@@ -1492,11 +1281,6 @@ void MyTrial::control() {
 		else {
 			if (gTimer[2] > (iti - FEEDBACKTIME)) {
 				dataman.stopRecording();
-				if (audioOn) {
-					gAudio.stop();
-					audioOn = false;
-					// audioStopReal = gTimer.getRealtime();
-				}
 				trialDur = gTimer[1];
 				state = END_TRIAL;
 			}
@@ -1568,6 +1352,15 @@ GraphicState::GraphicState() {
 	lineColor[2] = 1;			// white 
 	size[2] = 5;
 
+	// Ensure all leaderboard lines have positions and size
+    for (int i = 3; i < MAX_LEADERBOARD_LINE; ++i) {
+        lineXpos[i] = 0;
+        lineYpos[i] = 4 - (i - 2); // Stack downward, or adjust as needed
+        lineColor[i] = 1;
+        size[i] = 3; // Slightly smaller than main feedback
+    }
+
+
 	clearCues();
 
 	boxOn = false;
@@ -1580,7 +1373,6 @@ void GraphicState::clearCues(void) {
 		seq[i] = 0;
 		seqMask[i] = 0;
 	}
-	symbol = 0;
 }
 
 void GraphicState::reset(void) {

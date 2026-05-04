@@ -498,8 +498,8 @@ void MyBlock::giveFeedback() {
 	if (n > 0) { //if at least one correct trial
 		b = b++; //increase counter of block number
 		medianETarray[b] = median(ETarray, n); //median of movement times	
-		// ERarray[b] = (((double)gNumErrorsBlock) / (double)(nn) * 100); //error rate (previous version)
-		ERarray[b] = (((double)gNumErrorsBlock) / (double)(finger_n + gNumErrorsBlock) * 100); //error rate (current version, calculated only for finger)
+		 ERarray[b] = (((double)gNumErrorsBlock) / (double)(nn) * 100); //error rate (previous version)
+		//ERarray[b] = (((double)gNumErrorsBlock) / (double)(finger_n + gNumErrorsBlock) * 100); //error rate (current version, calculated only for finger)
 
 		estimated_ET_percentiles[0][0] = percentile(ETarraySpeech, speech_n, percentile_low); //estimated lower percentile of ETs for speech
 		estimated_ET_percentiles[0][1] = percentile(ETarraySpeech, speech_n, percentile_high); //estimated upper percentile of ETs for speech

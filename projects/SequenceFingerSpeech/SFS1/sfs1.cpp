@@ -312,7 +312,7 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 	}
 
 	///update estimated ET percentile thresholds
-	else if (arguments[0] == "Finger ET_percentile") {
+	else if (arguments[0] == "Finger_ET_percentile") {
 		if (numArgs != 3) {
 			tDisp.print("USAGE: Finger ET_percentile low high");
 		}
@@ -325,7 +325,7 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 	}
 
 	///update estimated ET percentile thresholds
-	else if (arguments[0] == "Speech ET_percentile") {
+	else if (arguments[0] == "Speech_ET_percentile") {
 		if (numArgs != 3) {
 			tDisp.print("USAGE: Speech ET_percentile low high");
 		}

@@ -28,7 +28,7 @@ ForceCursor forceCursor[5];
 #define TRTIME 1000				///< timer for simulating timer
 #define FEEDBACKTIME 1000;		///< duration of n points feedback on screen
 
-#define SAMPLING_DURATION 50;  /// duration of the window for sampling generated forces
+double SAMPLING_DURATION = 50;  /// duration of the window for sampling generated forces
 
 ///< Screen graphics defenitions
 #define baseTH  0.5 //0.8//1.0			// Baseline threshold (to check for premature movements during sequence planning phase)
@@ -392,7 +392,7 @@ void MyBlock::giveFeedback() {
 	for (i = 0; i < trialNum; i++) { //check each trial
 		tpnr = (MyTrial*)trialVec.at(i);
 		if (tpnr->trialCorr == 1) { //if trial was correct
-			vecPoints[i] = tpnr->trialPoints; 
+			vecPoints[i] = tpnr->trialPoint; 
 			n++;	//count correct trials
 		}
 	}
@@ -741,9 +741,9 @@ void MyTrial::updateGraphics(int what) {
 		sprintf(buffer, "+%.2f", gs.rewardTrial);
 		gScreen.print(buffer, 0, 7, 4);
 
-		if (gs.planError) //todo: fix
+		if (gs.earlyMovError) //todo: fix
 			gScreen.print("Early!", 0, 3, 7);
-		if (gs.chordError)
+		if (gs.lateMovError)
 			gScreen.print("Late!", 0, 3, 7);
 	}
 
@@ -827,10 +827,14 @@ double forceTemps[5] = { 0,0,0,0,0 }; // temporary variable to store the force v
 double extForceTemps[5] = { 0,0,0,0,0 }; // temporary variable to store the extension force values for smoothing.
 double flexForceTemps[5] = { 0,0,0,0,0 }; // temporary variable to store the flexion force values for smoothing.
 
+int i;
+int b;
+int j;
+
+int zeroFCounter; // counter for zeroing the force boxes
+int samplingCounter; // counter for sampling the generated force in trial
+
 void MyTrial::control() {
-	int i;
-	int zeroFCounter; // counter for zeroing the force boxes
-	int samplingCounter; // counter for sampling the generated force in trial
 	double fingerForceTmp;
 	double targetForceTmp;
 	char tmpChord;
@@ -849,10 +853,12 @@ void MyTrial::control() {
 		// gs.showForceBars = 1;
 		gs.rewardTrial = 0;
 		trialPoint = 0;
-		gs.planError = 0;
+		gs.earlyMovError = 0;
+		gs.lateMovError = 0;
 		gs.boxColor = 5;	// grey baseline box color
-		planErrorFlag = 0;
-		initErrorFlag = 0;
+		earlyMovFlag = 0;
+		lateMovFlag = 0;
+
 
 
 		for (i = 0; i < NUMDISPLAYLINES; i++) {
@@ -887,7 +893,8 @@ void MyTrial::control() {
 		// gs.showTimer5 = 0;
 		gs.showForces = 1;
 		gs.boxColor = 5;	// grey baseline box color
-		gs.planError = 0;
+		gs.earlyMovError = 0;
+		gs.lateMovError = 0;
 		earlyMovFlag = 0;	// initialize earlyMovFlag variable in the begining of each trial
 		lateMovFlag = 0; // initialize lateMovFlag variable in the begining of each trial
 
@@ -942,7 +949,7 @@ void MyTrial::control() {
 		}
 
 		if (gTimer[1] >= (500 * 4 - execAccTime/2 )) {
-			if (planErrorFlag == 1) {
+			if (earlyMovFlag == 1) {
 				state = GIVE_FEEDBACK;
 			}
 			else {
@@ -987,8 +994,8 @@ void MyTrial::control() {
 		if ((500 * 4 + execSampleTime - SAMPLING_DURATION/2) <= gTimer[1] && gTimer[1] < (500 * 4 + execSampleTime + SAMPLING_DURATION/2)) { 
 			for (i = 0; i < 5; i++){
 				forceTemps[i] += VERT_SHIFT + forceGain * fGain[i] * (gBox[0].getForce(i) - gBox[1].getForce(i));
-				extForcesTemps[i] += gBox[0].getForce(i);
-				flxForcesTemps[i] += gBox[1].getForce(i);
+				extForceTemps[i] += gBox[0].getForce(i);
+				flexForceTemps[i] += gBox[1].getForce(i);
 			}
 			samplingCounter++;
 		}
@@ -1000,8 +1007,8 @@ void MyTrial::control() {
 				targetForceTmp = targetForces[i]; // target force for each finger based on the .tgt file
 
 				fingerForceTmp = forceTemps[i] / samplingCounter; // average generated force for each finger during the sampling window
-				FinalExtForces[i] = extForcesTemps[i] / samplingCounter;
-				FinalFlexForces[i] = flxForcesTemps[i] / samplingCounter;
+				FinalExtForces[i] = extForceTemps[i] / samplingCounter;
+				FinalFlexForces[i] = flexForceTemps[i] / samplingCounter;
 
 				gs.isFrozenForces = 1;
 				gs.frozenExtForces[i] = FinalExtForces[i];
@@ -1040,7 +1047,7 @@ void MyTrial::control() {
 			trialCorr = 0;
 			trialErrorType = 1;		// trial error type saved in the .dat file to know this was an early movement error
 			}
-		elif (lateMovFlag) {	// if movement didn't initiate on time
+		else if (lateMovFlag) {	// if movement didn't initiate on time
 			gs.lateMovError = 1;		// flag to show "moved late" message in the feedback
 			gs.rewardTrial = -1;	// set reward to -1
 			trialPoint = -1;		// reward variable to save in .dat file

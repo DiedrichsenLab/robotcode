@@ -75,6 +75,7 @@ public:
 	bool lateMovError;
 	bool showForceBars;
 	bool showFeedback;
+	bool showRelax;
 	bool fingerCorrectGraphic[5];
 	bool showTimer5;
 	int boxColor;

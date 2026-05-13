@@ -166,6 +166,7 @@ private:
 	double FinalExtForces[5];					///< The final forces of the 5 fingers at the end of the trial for checking execution error
 	double FinalFlexForces[5];					///< The final forces of the 5 fingers at the end of the trial for checking execution error
 	bool check_last_beep_done = 0;
+	bool check_mov_initiation = 0;
 	double targetForces[5];					///< The target forces for the 5 fingers (in N) - this is used for calculating points and giving feedback.
 
 	DataManager<DataRecord, 30000 / 2> dataman;///< For data recording for MOV file 

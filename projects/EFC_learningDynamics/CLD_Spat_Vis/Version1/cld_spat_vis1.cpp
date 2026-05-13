@@ -20,7 +20,6 @@ char buffer[300];				///< String buffer
 HINSTANCE gThisInst;			///< Instance of Windows application
 Experiment* gExp;				///< Pointer to myExperiment
 Trial* currentTrial;			///< Pointer to current Trial
-#define DAC_VSCALAR 819.1 // Binary-to-volts scalar for DAC.
 
 ForceCursor forceCursor[5];
 
@@ -30,12 +29,10 @@ ForceCursor forceCursor[5];
 
 
 ///< Screen graphics defenitions
-#define baseTH  0.5 //0.8//1.0			// Baseline threshold (to check for premature movements during sequence planning phase)
-// #define targetForce 2.5 			// Target force for the execution phase (in N) - this is used for calculating points and giving feedback.
+#define baseTH  0.5		// Baseline threshold (to check for premature movements during sequence planning phase)
 double fGain[5] = { 1.0,1.0,1.0,1.0, 1.0 };	// finger specific force gains -> applied on each finger
 double forceGain = 1;						// universal force gain -> applied on all the fingers
 bool blockFeedbackFlag = 0;
-bool wait_baseline_zone = 1;				// if 1, waits until the subject's fingers are all in the baseline zone. MARCO CHANGED TO 1
 
 #define FINGWIDTH 1.3
 #define N_FINGERS 5
@@ -44,10 +41,7 @@ bool wait_baseline_zone = 1;				// if 1, waits until the subject's fingers are a
 #define BASELINE_X2 +(FINGWIDTH*N_FINGERS/2)
 
 #define FLX_ZONE_WIDTH 0.5
-// #define FLX_BOT_Y1 2
-// #define FLX_TOP_Y1 FLX_BOT_Y1+FLX_ZONE_WIDTH
-// #define FLX_BOT_Y2 FLX_BOT_Y1
-// #define FLX_TOP_Y2 FLX_TOP_Y1
+
 
 #define VERT_SHIFT 0	// vertical shift of the screen graphics
 
@@ -79,9 +73,11 @@ char gKey;
 bool gKeyPressed;
 double gTargetWidth = 0.25;
 double gErrors[2][5] = {{0,0,0,0,0},{0,0,0,0,0}};
-double execAccTime = 300; // in ms, window around the fourth tone
+double execAccTime = 400; // in ms, window around the fourth tone
 double execSampleTime = 500; // time point at which the execution is sampled after the go cue (for calculating points and giving feedback)
 double SAMPLING_DURATION = 50;  /// duration of the window for sampling generated forces
+double beepInterval = 800; // interval between the beeps
+double relaxTime = 2000; // time after execution to relax and zero the forces before next trial starts
 
 
 ///////////
@@ -310,16 +306,6 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 		}
 	}
 
-	else if (arguments[0] == "wait_baseline_hold") {
-		if (numArgs != 2) {
-			tDisp.print("USAGE: wait_baseline_hold 0|1");
-		}
-		else {
-			sscanf(arguments[1].c_str(), "%f", &arg[0]);
-			wait_baseline_zone = arg[0];
-		}
-	}
-
 	else if (arguments[0] == "execAccTime") {
 		if (numArgs != 2) {
 			tDisp.print("USAGE: execAccTime <time in milliseconds>");
@@ -385,7 +371,7 @@ void MyBlock::giveFeedback() {
 	double vecPoints[100];
 	blockFeedbackFlag = 1;
 
-	// putting RT values in an array
+	// putting point values in an array
 	for (i = 0; i < 100; i++) {
 		vecPoints[i] = 0;
 	}
@@ -451,7 +437,6 @@ MyTrial::MyTrial() {
 	///< INIT TRIAL VARIABLE
 	trialCorr = 0;		// flag for tiral being correct or incorrect -> 0: trial error , 1: trial correct
 	trialErrorType = 0;	// flag for the type of trial error -> 0: no error , 1: planning error , 2: execution error
-	RT = 0;
 }
 
 ///////////////////////////////////////////////////////////////
@@ -482,12 +467,6 @@ void MyTrial::writeDat(ostream& out) {
 		<< fGain[3] << "\t"
 		<< fGain[4] << "\t"
 		<< forceGain << "\t"					// Global force gain for all fingers
-		// << VERT_SHIFT << "\t"					// vertical shift applied to the screen
-		// << VERT_SHIFT + baseTH << "\t"		// baseline top thresh
-		// << VERT_SHIFT + FLX_TOP_Y1 << "\t"		// ext top threshold
-		// << VERT_SHIFT + FLX_BOT_Y1 << "\t"		// ext bottom threshold
-		// << VERT_SHIFT - (FLX_TOP_Y1) << "\t"	// flex top threshold
-		// << VERT_SHIFT - FLX_BOT_Y1 << "\t"		// flex bot threshold
 		<< targetForces[0] << "\t"				// target force for each finger
 		<< targetForces[1] << "\t"
 		<< targetForces[2] << "\t"
@@ -495,7 +474,6 @@ void MyTrial::writeDat(ostream& out) {
 		<< targetForces[4] << "\t"
 		<< trialCorr << "\t"					// trial is correct or not
 		<< trialErrorType << "\t"				// trial error type
-		<< RT << "\t"							// reaction time of each trial. 
 		<< trialPoint << "\t"					// points received in each trial
 		<< endl;
 }
@@ -528,7 +506,6 @@ void MyTrial::writeHeader(ostream& out) {
 		// << "flexBotThresh" << '\t'
 		<< "trialCorr" << "\t"
 		<< "trialErrorType" << "\t"
-		<< "RT" << "\t"
 		<< "trialPoint" << "\t"
 		<< endl;
 }
@@ -615,11 +592,10 @@ void MyTrial::updateTextDisplay() {
 
 void MyTrial::updateGraphics(int what) {
 	int i;
-	char tmpChord;
 	double x1,x2,xPos,yPos,xSize,ySize;
 	double diffForce[5] = { 0,0,0,0,0 };
 	
-	if (0) {
+	if (blockFeedbackFlag) {
 		gScreen.setCenter(Vector2D(0, 0));    // In cm //0,2
 		gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));
 	}
@@ -692,16 +668,17 @@ void MyTrial::updateGraphics(int what) {
 			xSize = x2 - x1;
 			ySize = FLX_ZONE_WIDTH;
 			yPos = gs.targetForces[i] + VERT_SHIFT;
-			gScreen.setColor(Screen::green);
+			gScreen.setColor(Screen::grey);
+			gScreen.drawBox(xSize, ySize, xPos, yPos);
 
-			if (gs.fingerCorrectGraphic[i]) {
-				//gScreen.setColor(Screen::green);
-				gScreen.drawBox(xSize, ySize, xPos, yPos);
-			}
-			else {
-				//gScreen.setColor(Screen::grey);
-				gScreen.drawBox(xSize, ySize, xPos, yPos);
-			}
+			// if (gs.fingerCorrectGraphic[i]) {
+			// 	//gScreen.setColor(Screen::green);
+			// 	gScreen.drawBox(xSize, ySize, xPos, yPos);
+			// }
+			// else {
+			// 	//gScreen.setColor(Screen::grey);
+			// 	gScreen.drawBox(xSize, ySize, xPos, yPos);
+			// }
 		}
 	}
 
@@ -736,13 +713,14 @@ void MyTrial::updateGraphics(int what) {
 
 	if (gs.showFeedback) {
 		gScreen.setColor(Screen::white);
-		sprintf(buffer, "+%.2f", gs.rewardTrial);
-		gScreen.print(buffer, 0, 7, 4);
 
-		if (gs.earlyMovError) //todo: fix
+		if (gs.earlyMovError)
 			gScreen.print("Early!", 0, 3, 7);
-		if (gs.lateMovError)
+		else if (gs.lateMovError)
 			gScreen.print("Late!", 0, 3, 7);
+		else 
+			sprintf(buffer, "+%.2f", gs.rewardTrial);
+			gScreen.print(buffer, 0, 3, 7);
 	}
 
 	if (gs.showRelax) {
@@ -786,7 +764,7 @@ void MyTrial::updateGraphics(int what) {
 			break;
 		}
 		gScreen.setColor(Screen::white);
-		gScreen.print(stateString, -21, 12, 5);
+		gScreen.print(stateString, 0, 12, 5);
 	}
 
 }
@@ -825,6 +803,7 @@ double forceTemps[5] = { 0,0,0,0,0 }; // temporary variable to store the force v
 double extForceTemps[5] = { 0,0,0,0,0 }; // temporary variable to store the extension force values for smoothing.
 double flexForceTemps[5] = { 0,0,0,0,0 }; // temporary variable to store the flexion force values for smoothing.
 
+// counter for fingers and box
 int i;
 int b;
 int j;
@@ -835,9 +814,6 @@ int samplingCounter; // counter for sampling the generated force in trial
 void MyTrial::control() {
 	double fingerForceTmp;
 	double targetForceTmp;
-	char tmpChord;
-	bool check_baseline_hold = 0;
-	bool check_mov_initiation;
 	// PROBLEM WAS HERE: YOU CAN'T SET VARIABLES TO 0 HERE. THEY WILL ALWAYS REMAIN 0. THE CONTROL() IS CALLED EVERY SINGLE UPDATE RATE.
 	// boold check_last_beep_done = 0; MOVED TO .h file. IT'S BETTER THERE.
 
@@ -952,13 +928,13 @@ void MyTrial::control() {
 		gs.showTimer5 = 0;
 
 		// gTimer[2] is used to time the rings
-		if (gTimer[2] >= 700){
+		if (gTimer[2] >= beepInterval){
 			cout << "sound" << endl;
 			PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
 			gTimer.reset(2);
 		}
 		
-		if (gTimer[3] >= 700 * 3 - planTime) {	// turn on visual target //Amin: check
+		if (gTimer[3] >= beepInterval * 3 - planTime) {	// turn on visual target //Amin: check
 			gs.showTarget = 1;	// show visual target	
 		}
 		else {
@@ -970,21 +946,18 @@ void MyTrial::control() {
 			if (fingerForceTmp >= (VERT_SHIFT + baseTH) || fingerForceTmp <= (VERT_SHIFT - (baseTH))) {
 				earlyMovFlag = 1; //early movement
 				// gs.showForceBars = 0;
+				gs.showForces = 0; // hide forces if subject goes out of baseline zone
+				state = GIVE_FEEDBACK;
 				break; // Amin: check
 			}
 		}
-		if (earlyMovFlag) {
-			gs.boxColor = 3;	// baseline box becomes red
-			state = GIVE_FEEDBACK;
-		}
+		// if (earlyMovFlag) {
+		// 	gs.boxColor = 3;	// baseline box becomes red
+		// 	state = GIVE_FEEDBACK;
+		// }
 
-		if (gTimer[1] >= (700 * 3 - execAccTime/2 )) {
-			if (earlyMovFlag == 1) {
-				state = GIVE_FEEDBACK;
-			}
-			else {
-				state = WAIT_EXEC;
-			}
+		if (gTimer[1] >= (beepInterval * 3 - execAccTime/2 )) {
+			state = WAIT_EXEC;
 			// gTimer.reset(2);	// resetting timer 2 to use in next state
 			gTimer.reset(3);	// resetting timer 3 to use in next state
 			gTimer.reset(5);	// resetting timer 5 to use in next state
@@ -992,17 +965,11 @@ void MyTrial::control() {
 		break;
 		
 	case WAIT_EXEC:
-		gs.showLines = 1;		// show force bars and thresholds
-		gs.showTarget = 1;		// show the targets on the screen (grey bars)
-		gs.showTimer5 = 0;		// show timer 5 value on screen (duration of holding a chord)
-		gs.boxColor = 5;		// grey baseline box color
 		
 		// gTimer[2] is used to time the rings
-		if ((gTimer[2] >= 700) && (check_last_beep_done == 0)){
+		if ((gTimer[2] >= beepInterval) && (check_last_beep_done == 0)){
 			check_last_beep_done = 1;
-			cout << gTimer[2] << ", " << check_last_beep_done << ", last" << endl;
 			PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
-			//gTimer.reset(2);
 		}
 
 		for (i = 0; i < 5; i++) {	// check fingers' states
@@ -1013,7 +980,7 @@ void MyTrial::control() {
 			}
 		}
 
-		if (gTimer[1] >= (500 * 4 + execAccTime/2)) { // NEEDS FIXING
+		if (gTimer[1] >= (beepInterval * 3 + execAccTime/2)) { // NEEDS FIXING
 			if (check_mov_initiation == 0) {	// if movement was not initiated until the time of the last beep, consider it as an execution error
 				lateMovFlag = 1;
 				state = GIVE_FEEDBACK;
@@ -1021,7 +988,7 @@ void MyTrial::control() {
 		}
 
 		// time window for sampling the generated forces to give feedback based on them
-		if ((500 * 4 + execSampleTime - SAMPLING_DURATION/2) <= gTimer[1] && gTimer[1] < (500 * 4 + execSampleTime + SAMPLING_DURATION/2)) { // NEEDS FIXING
+		if ((beepInterval * 3 + execSampleTime - SAMPLING_DURATION/2) <= gTimer[1] && gTimer[1] < (beepInterval * 3 + execSampleTime + SAMPLING_DURATION/2)) { // NEEDS FIXING
 			for (i = 0; i < 5; i++){
 				forceTemps[i] += VERT_SHIFT + forceGain * fGain[i] * (gBox[0].getForce(i) - gBox[1].getForce(i));
 				extForceTemps[i] += gBox[0].getForce(i);
@@ -1031,7 +998,7 @@ void MyTrial::control() {
 		}
 
 		// Calculating points based on the sampled forces during the smoothing window
-		if (gTimer[1] >= (500 * 4 + execSampleTime + SAMPLING_DURATION/2)) { // NEEDS FIXING
+		if (gTimer[1] >= (beepInterval * 3 + execSampleTime + SAMPLING_DURATION/2)) { // NEEDS FIXING
 			for (i = 0; i < 5; i++) {	// check fingers' states
 
 				targetForceTmp = targetForces[i]; // target force for each finger based on the .tgt file
@@ -1104,7 +1071,7 @@ void MyTrial::control() {
 		gs.showRelax = 1;
 		gs.isFrozenForces = 0;
 
-		if (gTimer[2] >= 500){
+		if (gTimer[2] >= relaxTime/2){
 			
 			for (b = 0; b < 2; b++){
 				for (j = 0; j < 5; j++){
@@ -1113,7 +1080,7 @@ void MyTrial::control() {
 			}
 			zeroFCounter += 1;
 
-			if (gTimer[2] >= 1000) { // zero the force boxes after 1 second of relax time
+			if (gTimer[2] >= relaxTime) { // zero the force boxes after 1 second of relax time
 				for (b = 0; b < 2; b++) {
 					for (j = 0; j < 5; j++) {
 						volts[b][j] /= zeroFCounter;

@@ -28,7 +28,6 @@ ForceCursor forceCursor[5];
 #define TRTIME 1000				///< timer for simulating timer
 #define FEEDBACKTIME 1000;		///< duration of n points feedback on screen
 
-double SAMPLING_DURATION = 50;  /// duration of the window for sampling generated forces
 
 ///< Screen graphics defenitions
 #define baseTH  0.5 //0.8//1.0			// Baseline threshold (to check for premature movements during sequence planning phase)
@@ -82,6 +81,7 @@ double gTargetWidth = 0.25;
 double gErrors[2][5] = {{0,0,0,0,0},{0,0,0,0,0}};
 double execAccTime = 200; // 200 ms window around the fourth tone
 double execSampleTime = 500; // time point at which the execution is sampled after the go cue (for calculating points and giving feedback)
+double SAMPLING_DURATION = 50;  /// duration of the window for sampling generated forces
 
 
 ///////////
@@ -93,7 +93,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 {
 	// 1. initialization window, text display and screen
 	gThisInst = hThisInst;
-	gExp = new MyExperiment("cld_spat_vis1", "cld_spat_vis1", "C:/data/EFC_learning_Dynamics/CLD_Spat_Vis/Version1/"); 
+	gExp = new MyExperiment("cld_spat_vis1", "cld_spat_vis1", "C:/data/EFC_learningDynamics/CLD_Spat_Vis/Version1/"); 
 	gExp->redirectIOToConsole();
 	
 	// gExp->redirectIOToConsole();		// I uncommented this!!!
@@ -869,11 +869,7 @@ void MyTrial::control() {
 		}
 
 
-		for (b = 0; b < 2; b++){
-			for (j = 0; j < 5; j++){
-				volts[b][j] = 0;
-			}
-		}
+		
 
 		for (i = 0; i < 5; i++) {
 			forceTemps[i] = 0;
@@ -897,6 +893,40 @@ void MyTrial::control() {
 		gs.lateMovError = 0;
 		earlyMovFlag = 0;	// initialize earlyMovFlag variable in the begining of each trial
 		lateMovFlag = 0; // initialize lateMovFlag variable in the begining of each trial
+
+		//Amin
+		gs.showLines = 1;	// set screen lines/force bars to show
+		gs.showFeedback = 0;
+		gs.showTarget = 0;
+		// gs.showTimer5 = 0; // Amin: remove
+		gs.showForces = 1;
+		gs.showDiagnostics = 1;
+		// gs.showForceBars = 1;
+		gs.rewardTrial = 0;
+		trialPoint = 0;
+		gs.earlyMovError = 0;
+		gs.lateMovError = 0;
+		gs.boxColor = 5;	// grey baseline box color
+		earlyMovFlag = 0;
+		lateMovFlag = 0;
+
+		for (i = 0; i < 5; i++) {
+			forceTemps[i] = 0;
+			extForceTemps[i] = 0;
+			flexForceTemps[i] = 0;
+		}
+
+		zeroFCounter = 0; // counter for zeroing the force boxes
+
+		samplingCounter = 0; // counter for sampling the generated force in trial
+
+
+
+		for (b = 0; b < 2; b++) {
+			for (j = 0; j < 5; j++) {
+				volts[b][j] = 0;
+			}
+		}
 
 		for (i = 0; i < 5; i++) {
 			gs.fingerCorrectGraphic[i] = 0; // Amin: check
@@ -923,12 +953,12 @@ void MyTrial::control() {
 		gs.showTimer5 = 0;
 
 		// gTimer[2] is used to time the rings
-		if (gTimer[2] >= 500){
+		if (gTimer[2] >= 700){
 			PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
 			gTimer.reset(2);
 		}
 		
-		if (gTimer[3] >= 500 * 4 - planTime) {	// turn on visual target //Amin: check
+		if (gTimer[3] >= 700 * 3 - planTime) {	// turn on visual target //Amin: check
 			gs.showTarget = 1;	// show visual target	
 		}
 		else {
@@ -948,7 +978,7 @@ void MyTrial::control() {
 			state = GIVE_FEEDBACK;
 		}
 
-		if (gTimer[1] >= (500 * 4 - execAccTime/2 )) {
+		if (gTimer[1] >= (700 * 3 - execAccTime/2 )) {
 			if (earlyMovFlag == 1) {
 				state = GIVE_FEEDBACK;
 			}
@@ -968,10 +998,10 @@ void MyTrial::control() {
 		gs.boxColor = 5;		// grey baseline box color
 		
 		// gTimer[2] is used to time the rings
-		if (gTimer[2] >= 500 && !check_last_beep_done){
+		if (gTimer[2] >= 700 && !check_last_beep_done){
 			check_last_beep_done = 1;
 			PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
-			gTimer.reset(2);
+			//gTimer.reset(2);
 		}
 
 		for (i = 0; i < 5; i++) {	// check fingers' states
@@ -1036,7 +1066,7 @@ void MyTrial::control() {
 	case GIVE_FEEDBACK:
 	
 		gs.showLines = 1;			// no force lines/thresholds
-		// gs.showTarget = 1;			// no visual targets
+		gs.showTarget = 1;			// no visual targets
 		gs.showTimer5 = 0;
 		gs.showFeedback = 1;		// showing feedback (refer to MyTrial::updateGraphics() for details)
 
@@ -1071,6 +1101,8 @@ void MyTrial::control() {
 		gs.showForces = 0;
 		gs.showTarget = 0;
 		gs.showFeedback = 0;
+		gs.showRelax = 1;
+		gs.isFrozenForces = 0;
 
 		if (gTimer[2] >= 500){
 			
@@ -1079,12 +1111,12 @@ void MyTrial::control() {
 					volts[b][j] += gBox[b].getVolts(j);
 				}
 			}
-			zeroFCounter += 0;
+			zeroFCounter += 1;
 
 			if (gTimer[2] >= 1000) { // zero the force boxes after 1 second of relax time
 				for (b = 0; b < 2; b++) {
 					for (j = 0; j < 5; j++) {
-						volts[b][j] /= 100;
+						volts[b][j] /= zeroFCounter;
 					}
 					gBox[b].zeroForce(volts[b]);
 				}
@@ -1097,6 +1129,8 @@ void MyTrial::control() {
 	case WAIT_ITI:
 		gs.showLines = 1;
 		gs.showForces = 1;
+		gs.showRelax = 0;
+
 		if (gTimer[2] >= iti) {
 			state = END_TRIAL;
 			dataman.stopRecording();

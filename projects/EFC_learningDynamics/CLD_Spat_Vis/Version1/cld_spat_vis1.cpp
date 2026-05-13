@@ -79,7 +79,7 @@ char gKey;
 bool gKeyPressed;
 double gTargetWidth = 0.25;
 double gErrors[2][5] = {{0,0,0,0,0},{0,0,0,0,0}};
-double execAccTime = 200; // 200 ms window around the fourth tone
+double execAccTime = 300; // in ms, window around the fourth tone
 double execSampleTime = 500; // time point at which the execution is sampled after the go cue (for calculating points and giving feedback)
 double SAMPLING_DURATION = 50;  /// duration of the window for sampling generated forces
 
@@ -465,11 +465,6 @@ void MyTrial::read(istream& in) {
 		>> iti
 		>> session
 		>> targetForces[0] >> targetForces[1] >> targetForces[2] >> targetForces[3] >> targetForces[4];
-		gs.targetForces[0] = targetForces[0];
-		gs.targetForces[1] = targetForces[1];
-		gs.targetForces[2] = targetForces[2];
-		gs.targetForces[3] = targetForces[3];
-		gs.targetForces[4] = targetForces[4];
 }
 
 ///////////////////////////////////////////////////////////////
@@ -624,29 +619,11 @@ void MyTrial::updateGraphics(int what) {
 	double x1,x2,xPos,yPos,xSize,ySize;
 	double diffForce[5] = { 0,0,0,0,0 };
 	
-	if (blockFeedbackFlag) {
+	if (0) {
 		gScreen.setCenter(Vector2D(0, 0));    // In cm //0,2
 		gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));
 	}
 
-	if (gs.showTarget == 1) {
-		for (i = 0; i < 5; i++) {
-			x1 = ((i * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) + FINGER_SPACING;
-			x2 = (((i + 1) * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) - FINGER_SPACING;
-			xPos = (x1 + x2) * 0.5;
-			xSize = x2 - x1;
-			ySize = FLX_ZONE_WIDTH;
-			yPos = gs.targetForces[i] + VERT_SHIFT;
-			if (gs.fingerCorrectGraphic[i]) {
-				gScreen.setColor(Screen::green);
-				gScreen.drawBox(xSize, ySize, xPos, yPos);
-			}
-			else {
-				gScreen.setColor(Screen::grey);
-				gScreen.drawBox(xSize, ySize, xPos, yPos);
-			}
-		}
-	}
 
 	if (gs.showLines == 1) {
 		// Baseline box
@@ -704,6 +681,27 @@ void MyTrial::updateGraphics(int what) {
 			gScreen.setColor(Screen::white);
 			gScreen.print("Hold Time: ", 6, 3, 4);
 			gScreen.print(to_string(gTimer[5]), 10, 3, 4);
+		}
+	}
+
+	if (gs.showTarget == 1) {
+		for (i = 0; i < 5; i++) {
+			x1 = ((i * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) + FINGER_SPACING;
+			x2 = (((i + 1) * FINGWIDTH) - 0.5 * (FINGWIDTH * N_FINGERS)) - FINGER_SPACING;
+			xPos = (x1 + x2) * 0.5;
+			xSize = x2 - x1;
+			ySize = FLX_ZONE_WIDTH;
+			yPos = gs.targetForces[i] + VERT_SHIFT;
+			gScreen.setColor(Screen::green);
+
+			if (gs.fingerCorrectGraphic[i]) {
+				//gScreen.setColor(Screen::green);
+				gScreen.drawBox(xSize, ySize, xPos, yPos);
+			}
+			else {
+				//gScreen.setColor(Screen::grey);
+				gScreen.drawBox(xSize, ySize, xPos, yPos);
+			}
 		}
 	}
 
@@ -839,8 +837,9 @@ void MyTrial::control() {
 	double targetForceTmp;
 	char tmpChord;
 	bool check_baseline_hold = 0;
-	bool check_last_beep_done = 0;
-	bool check_mov_initiation = 0;
+	bool check_mov_initiation;
+	// PROBLEM WAS HERE: YOU CAN'T SET VARIABLES TO 0 HERE. THEY WILL ALWAYS REMAIN 0. THE CONTROL() IS CALLED EVERY SINGLE UPDATE RATE.
+	// boold check_last_beep_done = 0; MOVED TO .h file. IT'S BETTER THERE.
 
 	switch (state) {
 	case WAIT_TRIAL: //0
@@ -859,17 +858,12 @@ void MyTrial::control() {
 		earlyMovFlag = 0;
 		lateMovFlag = 0;
 
-
-
 		for (i = 0; i < NUMDISPLAYLINES; i++) {
 			if (!gs.line[i].empty()) {
 				gs.lineColor[i] = 0;
 				gs.line[i] = "";
 			}
 		}
-
-
-		
 
 		for (i = 0; i < 5; i++) {
 			forceTemps[i] = 0;
@@ -884,6 +878,13 @@ void MyTrial::control() {
 		break;
 
 	case START_TRIAL: //1
+		gs.targetForces[0] = targetForces[0];
+		gs.targetForces[1] = targetForces[1];
+		gs.targetForces[2] = targetForces[2];
+		gs.targetForces[3] = targetForces[3];
+		gs.targetForces[4] = targetForces[4];
+		check_last_beep_done = 0;
+
 		gs.showLines = 1;	// set screen lines/force bars to show
 		gs.showFeedback = 0;
 		// gs.showTimer5 = 0;
@@ -897,7 +898,7 @@ void MyTrial::control() {
 		//Amin
 		gs.showLines = 1;	// set screen lines/force bars to show
 		gs.showFeedback = 0;
-		gs.showTarget = 0;
+		gs.showTarget = 1;
 		// gs.showTimer5 = 0; // Amin: remove
 		gs.showForces = 1;
 		gs.showDiagnostics = 1;
@@ -919,8 +920,6 @@ void MyTrial::control() {
 		zeroFCounter = 0; // counter for zeroing the force boxes
 
 		samplingCounter = 0; // counter for sampling the generated force in trial
-
-
 
 		for (b = 0; b < 2; b++) {
 			for (j = 0; j < 5; j++) {
@@ -954,6 +953,7 @@ void MyTrial::control() {
 
 		// gTimer[2] is used to time the rings
 		if (gTimer[2] >= 700){
+			cout << "sound" << endl;
 			PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
 			gTimer.reset(2);
 		}
@@ -962,7 +962,7 @@ void MyTrial::control() {
 			gs.showTarget = 1;	// show visual target	
 		}
 		else {
-			gs.showTarget = 0;	// dont show visual target
+			gs.showTarget = 1;	// dont show visual target
 		}
 
 		for (i = 0; i < 5; i++) {	// check fingers' states -> fingers should stay in the baseline during planing
@@ -994,12 +994,13 @@ void MyTrial::control() {
 	case WAIT_EXEC:
 		gs.showLines = 1;		// show force bars and thresholds
 		gs.showTarget = 1;		// show the targets on the screen (grey bars)
-		gs.showTimer5 = 1;		// show timer 5 value on screen (duration of holding a chord)
+		gs.showTimer5 = 0;		// show timer 5 value on screen (duration of holding a chord)
 		gs.boxColor = 5;		// grey baseline box color
 		
 		// gTimer[2] is used to time the rings
-		if (gTimer[2] >= 700 && !check_last_beep_done){
+		if ((gTimer[2] >= 700) && (check_last_beep_done == 0)){
 			check_last_beep_done = 1;
+			cout << gTimer[2] << ", " << check_last_beep_done << ", last" << endl;
 			PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
 			//gTimer.reset(2);
 		}
@@ -1012,16 +1013,15 @@ void MyTrial::control() {
 			}
 		}
 
-
-		if (gTimer[1] >= (500 * 4 + execAccTime/2)) {
-			if (!check_mov_initiation) {	// if movement was not initiated until the time of the last beep, consider it as an execution error
+		if (gTimer[1] >= (500 * 4 + execAccTime/2)) { // NEEDS FIXING
+			if (check_mov_initiation == 0) {	// if movement was not initiated until the time of the last beep, consider it as an execution error
 				lateMovFlag = 1;
 				state = GIVE_FEEDBACK;
 			}
 		}
 
 		// time window for sampling the generated forces to give feedback based on them
-		if ((500 * 4 + execSampleTime - SAMPLING_DURATION/2) <= gTimer[1] && gTimer[1] < (500 * 4 + execSampleTime + SAMPLING_DURATION/2)) { 
+		if ((500 * 4 + execSampleTime - SAMPLING_DURATION/2) <= gTimer[1] && gTimer[1] < (500 * 4 + execSampleTime + SAMPLING_DURATION/2)) { // NEEDS FIXING
 			for (i = 0; i < 5; i++){
 				forceTemps[i] += VERT_SHIFT + forceGain * fGain[i] * (gBox[0].getForce(i) - gBox[1].getForce(i));
 				extForceTemps[i] += gBox[0].getForce(i);
@@ -1031,7 +1031,7 @@ void MyTrial::control() {
 		}
 
 		// Calculating points based on the sampled forces during the smoothing window
-		if (gTimer[1] >= (500 * 4 + execSampleTime + SAMPLING_DURATION/2)) {
+		if (gTimer[1] >= (500 * 4 + execSampleTime + SAMPLING_DURATION/2)) { // NEEDS FIXING
 			for (i = 0; i < 5; i++) {	// check fingers' states
 
 				targetForceTmp = targetForces[i]; // target force for each finger based on the .tgt file
@@ -1051,7 +1051,7 @@ void MyTrial::control() {
 				// trialPoint += pow((fingerForceTmp - targetForceTmp), 2);
 
 				//veresion 3: exponential scoring
-				trialPoint += exp(-1 * pow(fingerForceTmp - targetForceTmp, 2));
+				trialPoint += exp(-1 * pow(fingerForceTmp - targetForceTmp, 2)); // ALI: NICE!
 
 			}
 			// trialPoint /= 5;	// average across fingers

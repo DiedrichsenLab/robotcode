@@ -162,8 +162,8 @@ private:
 	int trialErrorType;						///< 0: no error , 1: early movement , 2: late movement
 	double RT;								///< Reaction time: time from go cue to full execution of chord
 	double trialPoint;							///< point received in each trial
-	// double FinalExtForces[5];					///< The final forces of the 5 fingers at the end of the trial for checking execution error
-	// double FinalFlexForces[5];					///< The final forces of the 5 fingers at the end of the trial for checking execution error
+	 double FinalExtForces[5];					///< The final forces of the 5 fingers at the end of the trial for checking execution error
+	 double FinalFlexForces[5];					///< The final forces of the 5 fingers at the end of the trial for checking execution error
 	bool check_last_beep_done = 0;
 	bool check_mov_initiation = 0;
 	// double targetForces[5];					///< The target forces for the 5 fingers (in N) - this is used for calculating points and giving feedback.

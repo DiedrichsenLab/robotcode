@@ -275,18 +275,18 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 		}
 	}
 
-	/// set individual finger force gain. You can set any arbitrary force gain for every participant if they cant do the chord.
-	else if (arguments[0] == "setFingerGain") {
-		if (numArgs != 6) {
-			tDisp.print("USAGE: setFingerGain <gain1> <gain2> ... <gain5>");
-		}
-		else {
-			for (i = 0; i < 5; i++) {
-				sscanf(arguments[i+1].c_str(), "%f", &arg[0]);
-				fGain[i] = arg[0];
-			}
-		}
-	}
+	///// set individual finger force gain. You can set any arbitrary force gain for every participant if they cant do the chord.
+	//else if (arguments[0] == "setFingerGain") {
+	//	if (numArgs != 6) {
+	//		tDisp.print("USAGE: setFingerGain <gain1> <gain2> ... <gain5>");
+	//	}
+	//	else {
+	//		for (i = 0; i < 5; i++) {
+	//			sscanf(arguments[i+1].c_str(), "%f", &arg[0]);
+	//			fGain[i] = arg[0];
+	//		}
+	//	}
+	//}
 	
 	/// reset the centers
 	else if (arguments[0] == "resize") {
@@ -567,23 +567,27 @@ void MyTrial::updateGraphics(int what) {
 		else{
 			diffForce[gs.chord] = (gBox[0].getForce(gs.chord) - gBox[1].getForce(gs.chord));
 			}	
-		}
 		forceCursor[gs.chord].position[0] = (((2 * gs.chord + 1) * FINGWIDTH) - (FINGWIDTH * N_FINGERS)) / 2.0;;
 		forceCursor[gs.chord].position[1] = VERT_SHIFT + forceGain * diffForce[gs.chord];
 
 		forceCursor[gs.chord].draw();
+
+		cout << gs.chord << endl;
 	}
 
 	if (gs.showFeedback) {
 		gScreen.setColor(Screen::white);
 
-		if (gs.earlyMovError)
+		if (gs.earlyMovError) {
 			gScreen.print("Early!", 0, 3, 7);
-		else if (gs.lateMovError)
+		}
+		else if (gs.lateMovError) {
 			gScreen.print("Late!", 0, 3, 7);
-		else 
+		}
+		else {
 			sprintf(buffer, "");
 			gScreen.print(buffer, 0, 3, 7);
+		}
 	}
 
 	if (gs.showRelax) {
@@ -679,7 +683,6 @@ void MyTrial::control() {
 	double targetForceTmp;
 	// PROBLEM WAS HERE: YOU CAN'T SET VARIABLES TO 0 HERE. THEY WILL ALWAYS REMAIN 0. THE CONTROL() IS CALLED EVERY SINGLE UPDATE RATE.
 	// boold check_last_beep_done = 0; MOVED TO .h file. IT'S BETTER THERE.
-
 	switch (state) {
 	case WAIT_TRIAL: //0
 		gs.showLines = 1;	// set screen lines/force bars to show
@@ -695,6 +698,7 @@ void MyTrial::control() {
 		gs.boxColor = 5;	// grey baseline box color
 		earlyMovFlag = 0;
 		lateMovFlag = 0;
+
 
 		for (i = 0; i < NUMDISPLAYLINES; i++) {
 			if (!gs.line[i].empty()) {
@@ -712,27 +716,18 @@ void MyTrial::control() {
 		zeroFCounter = 0; // counter for zeroing the force boxes
 
 		samplingCounter = 0; // counter for sampling the generated force in trial
-
 		break;
 
 	case START_TRIAL: //1
 		gs.targetForce = targetForce;
+		// gs.chord = chord;
 		check_last_beep_done = 0;
-
-		gs.showLines = 1;	// set screen lines/force bars to show
-		gs.showFeedback = 0;
 		// gs.showTimer5 = 0;
-		gs.showForces = 1;
-		gs.boxColor = 5;	// grey baseline box color
-		gs.earlyMovError = 0;
-		gs.lateMovError = 0;
-		earlyMovFlag = 0;	// initialize earlyMovFlag variable in the begining of each trial
-		lateMovFlag = 0; // initialize lateMovFlag variable in the begining of each trial
 
 		//Amin
 		gs.showLines = 1;	// set screen lines/force bars to show
 		gs.showFeedback = 0;
-		gs.showTarget = 1;
+		gs.showTarget = 0;
 		// gs.showTimer5 = 0; // Amin: remove
 		gs.showForces = 1;
 		gs.showDiagnostics = 1;
@@ -858,9 +853,9 @@ void MyTrial::control() {
 		}
 
 		// Calculating points based on the sampled forces during the smoothing window
-		if (gTimer[1] >= (beepInterval * 3 + execSampleTime + SAMPLING_DURATION/2)) { // NEEDS FIXING
+		if (gTimer[1] >= (beepInterval * 3 + execSampleTime + SAMPLING_DURATION / 2)) { // NEEDS FIXING
 			// check fingers' states
-			targetForceTmp = targetForces[gs.chord]; // target force for each finger based on the .tgt file
+			targetForceTmp = targetForce;
 
 			fingerForceTmp = forceTemps[gs.chord] / samplingCounter; // average generated force for each finger during the sampling window
 			FinalExtForces[gs.chord] = extForceTemps[gs.chord] / samplingCounter;
@@ -881,7 +876,7 @@ void MyTrial::control() {
 			//veresion 3: exponential scoring
 			// trialPoint += exp(-1 * pow(fingerForceTmp - targetForceTmp, 2)); // ALI: NICE!
 
-			}
+
 			// trialPoint /= 5;	// average across fingers
 			state = GIVE_FEEDBACK;
 
@@ -889,6 +884,7 @@ void MyTrial::control() {
 			gTimer.reset(2);
 			gTimer.reset(3);
 		}
+		
 		break;
 
 	case GIVE_FEEDBACK:

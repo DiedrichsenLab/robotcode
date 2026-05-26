@@ -17,6 +17,7 @@ Timer gTimer(UPDATERATE);		///< Timer from S626 board experiments
 HapticState hs;					///< This is the haptic State as d by the interrupt 
 GraphicState gs;				///< Graphic state
 char buffer[300];				///< String buffer 
+char textDisplayBuffer[300];    /// Buffer for textDisplay (thread-safety)
 HINSTANCE gThisInst;			///< Instance of Windows application
 Experiment* gExp;				///< Pointer to myExperiment
 Trial* currentTrial;			///< Pointer to current Trial
@@ -367,7 +368,7 @@ void MyBlock::giveFeedback() {
 	gs.showLines = 0;
 	int i, j, n = 0;
 	MyTrial* tpnr;
-	double medianPoints;
+	double medianPoints = 0;
 	double vecPoints[100];
 	blockFeedbackFlag = 1;
 
@@ -383,7 +384,7 @@ void MyBlock::giveFeedback() {
 		}
 	}
 
-	// calculating the median points
+	// calculating the median points //todo: fix
 	if (n > 2) {
 		double dummy;
 		for (i = 0; i < n - 1; i++) {
@@ -472,6 +473,11 @@ void MyTrial::writeDat(ostream& out) {
 		<< targetForces[2] << "\t"
 		<< targetForces[3] << "\t"
 		<< targetForces[4] << "\t"
+		<< FinalExtForces[0] - FinalFlexForces[0] << "\t"
+		<< FinalExtForces[1] - FinalFlexForces[1] << "\t"
+		<< FinalExtForces[2] - FinalFlexForces[2] << "\t"
+		<< FinalExtForces[3] - FinalFlexForces[3] << "\t"
+		<< FinalExtForces[4] - FinalFlexForces[4] << "\t"
 		<< trialCorr << "\t"					// trial is correct or not
 		<< trialErrorType << "\t"				// trial error type
 		<< trialPoint << "\t"					// points received in each trial
@@ -498,12 +504,11 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "targetForce3" << "\t"
 		<< "targetForce4" << "\t"
 		<< "targetForce5" << "\t"
-		// << "verticalShift" << '\t'
-		// << "baselineTopThresh" << '\t'
-		// << "extTopThresh" << '\t'
-		// << "extBotThresh" << '\t'
-		// << "flexTopThresh" << '\t'
-		// << "flexBotThresh" << '\t'
+		<< "endForce1" << "\t"
+		<< "endForce2" << "\t"
+		<< "endForce3" << "\t"
+		<< "endForce4" << "\t"
+		<< "endForce5" << "\t"
 		<< "trialCorr" << "\t"
 		<< "trialErrorType" << "\t"
 		<< "trialPoint" << "\t"
@@ -555,34 +560,34 @@ void MyTrial::copyHaptics() {
 void MyTrial::updateTextDisplay() {
 	int i;
 	double diffForce[5] = { 0,0,0,0,0 };
-	sprintf(buffer, "TR : %d time: %2.2f slice:%d", gCounter.readTR(), gCounter.readTime(), gCounter.readSlice());
-	tDisp.setText(buffer, 2, 0);
-	sprintf(buffer, "Time : %2.2f", gTimer[1]);
-	tDisp.setText(buffer, 3, 0);
+	sprintf(textDisplayBuffer, "TR : %d time: %2.2f slice:%d", gCounter.readTR(), gCounter.readTime(), gCounter.readSlice());
+	tDisp.setText(textDisplayBuffer, 2, 0);
+	sprintf(textDisplayBuffer, "Time : %2.2f", gTimer[1]);
+	tDisp.setText(textDisplayBuffer, 3, 0);
 
-	sprintf(buffer, "State : %d   Trial: %d    TMS: %d", state, gExp->theBlock->trialNum, TrigPlan);
-	tDisp.setText(buffer, 4, 0);
+	sprintf(textDisplayBuffer, "State : %d   Trial: %d    TMS: %d", state, gExp->theBlock->trialNum, TrigPlan);
+	tDisp.setText(textDisplayBuffer, 4, 0);
 
 	// display forces
 	tDisp.setText("Forces", 6, 0);
-	sprintf(buffer, "F1: %2.2f   F2: %2.2f   F3: %2.2f   F4: %2.2f   F5: %2.2f", gBox[1].getForce(0), gBox[1].getForce(1), gBox[1].getForce(2),
+	sprintf(textDisplayBuffer, "F1: %2.2f   F2: %2.2f   F3: %2.2f   F4: %2.2f   F5: %2.2f", gBox[1].getForce(0), gBox[1].getForce(1), gBox[1].getForce(2),
 		gBox[1].getForce(3), gBox[1].getForce(4));
-	tDisp.setText(buffer, 7, 0);
-	sprintf(buffer, "E1: %2.2f   E2: %2.2f   E3: %2.2f   E4: %2.2f   E5: %2.2f", gBox[0].getForce(0), gBox[0].getForce(1), gBox[0].getForce(2),
+	tDisp.setText(textDisplayBuffer, 7, 0);
+	sprintf(textDisplayBuffer, "E1: %2.2f   E2: %2.2f   E3: %2.2f   E4: %2.2f   E5: %2.2f", gBox[0].getForce(0), gBox[0].getForce(1), gBox[0].getForce(2),
 		gBox[0].getForce(3), gBox[0].getForce(4));
-	tDisp.setText(buffer, 8, 0);
+	tDisp.setText(textDisplayBuffer, 8, 0);
 
 	// differential forces
 	for (i = 0; i < 5; i++) {
 		diffForce[i] = gBox[0].getForce(i) - gBox[1].getForce(i);
 	}
-	sprintf(buffer, "D1: %2.2f   D2: %2.2f   D3: %2.2f   D4: %2.2f   D5: %2.2f", diffForce[0], diffForce[1], diffForce[2],
+	sprintf(textDisplayBuffer, "D1: %2.2f   D2: %2.2f   D3: %2.2f   D4: %2.2f   D5: %2.2f", diffForce[0], diffForce[1], diffForce[2],
 		diffForce[3], diffForce[4]);
-	tDisp.setText(buffer, 9, 0);
+	tDisp.setText(textDisplayBuffer, 9, 0);
 	
 	// force gains
-	sprintf(buffer, "GlobalGain = %1.1f     forceGain = %1.1f %1.1f %1.1f %1.1f %1.1f    execAccTime = %f", forceGain, fGain[0], fGain[1], fGain[2], fGain[3], fGain[4], execAccTime);
-	tDisp.setText(buffer, 10, 0);
+	sprintf(textDisplayBuffer, "GlobalGain = %1.1f     forceGain = %1.1f %1.1f %1.1f %1.1f %1.1f    execAccTime = %f", forceGain, fGain[0], fGain[1], fGain[2], fGain[3], fGain[4], execAccTime);
+	tDisp.setText(textDisplayBuffer, 10, 0);
 }
 
 ///////////////////////////////////////////////////////////////
@@ -714,13 +719,16 @@ void MyTrial::updateGraphics(int what) {
 	if (gs.showFeedback) {
 		gScreen.setColor(Screen::white);
 
-		if (gs.earlyMovError)
+		if (gs.earlyMovError) {
 			gScreen.print("Early!", 0, 3, 7);
-		else if (gs.lateMovError)
+		}
+		else if (gs.lateMovError) {
 			gScreen.print("Late!", 0, 3, 7);
-		else 
+		}
+		else {
 			sprintf(buffer, "+%.2f", gs.rewardTrial);
 			gScreen.print(buffer, 0, 3, 7);
+		}
 	}
 
 	if (gs.showRelax) {
@@ -929,7 +937,7 @@ void MyTrial::control() {
 
 		// gTimer[2] is used to time the rings
 		if (gTimer[2] >= beepInterval){
-			cout << "sound" << endl;
+			//cout << "sound" << endl;
 			PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
 			gTimer.reset(2);
 		}

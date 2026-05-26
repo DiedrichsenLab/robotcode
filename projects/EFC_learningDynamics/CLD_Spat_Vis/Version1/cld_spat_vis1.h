@@ -193,5 +193,5 @@ public:
 void ForceCursor::draw() {
 	//setColor(1);
 	gScreen.setColor(color);
-	gScreen.drawBox(Vector2D(size[0], 0.3), Vector2D(position[0], position[1]));
+	gScreen.drawBox(Vector2D(size[0], 0.1), Vector2D(position[0], position[1]));
 }

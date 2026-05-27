@@ -372,6 +372,24 @@ void MyBlock::giveFeedback() {
 	int i, j, n = 0;
 	MyTrial* tpnr;
 	blockFeedbackFlag = 1;
+	double meanEndForce = 0;
+
+	// calculate mean endForce
+	for (i = 0; i < trialNum; i++){
+		tpnr = (MyTrial*)getTrial(i);
+		if (tpnr->trialCorr) {
+			meanEndForce += tpnr->endForce;
+			n++;
+		}
+	}
+	if (n > 0) {
+		meanEndForce /= n;
+	}
+	else {
+		meanEndForce = 0;
+	}
+
+	cout << "Mean end force for correct trials: " << meanEndForce << endl;
 
 	//gScreen.setColor(Screen::white);
 	sprintf(buffer, "End of Block");
@@ -788,7 +806,7 @@ void MyTrial::control() {
 
 		// gTimer[2] is used to time the rings
 		if (gTimer[2] >= beepInterval){
-			cout << "sound" << endl;
+			// cout << "sound" << endl;
 			PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
 			gTimer.reset(2);
 		}
@@ -798,7 +816,7 @@ void MyTrial::control() {
 				gs.showTarget = 1;	// show visual target	
 			}
 			else{
-				gs.showTarget = 0;	// dont show visual target
+				gs.showTarget = 1;	// dont show visual target
 			}
 		}
 		else {
@@ -901,7 +919,7 @@ void MyTrial::control() {
 
 		}
 		else {
-			gs.showTarget = 0;
+			gs.showTarget = 1;
 		}
 		gs.showFeedback = 1;		// showing feedback (refer to MyTrial::updateGraphics() for details)
 

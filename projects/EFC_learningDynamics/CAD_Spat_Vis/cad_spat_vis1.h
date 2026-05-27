@@ -161,7 +161,7 @@ private:
 	bool trialCorr;							///< 1: trial is correct , 2: trial is not correct
 	int trialErrorType;						///< 0: no error , 1: early movement , 2: late movement
 	double RT;								///< Reaction time: time from go cue to full execution of chord
-	double trialPoint;							///< point received in each trial
+	// double trialPoint;							///< point received in each trial
 	 double FinalExtForces[5];					///< The final forces of the 5 fingers at the end of the trial for checking execution error
 	 double FinalFlexForces[5];					///< The final forces of the 5 fingers at the end of the trial for checking execution error
 	bool check_last_beep_done = 0;

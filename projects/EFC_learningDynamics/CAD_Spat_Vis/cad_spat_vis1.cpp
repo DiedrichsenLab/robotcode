@@ -688,11 +688,9 @@ void MyTrial::control() {
 		gs.showLines = 1;	// set screen lines/force bars to show
 		gs.showFeedback = 0;
 		gs.showTarget = 0;
-		// gs.showTimer5 = 0; // Amin: remove
 		gs.showForces = 1;
 		gs.showDiagnostics = 1;
-		// gs.showForceBars = 1;
-		trialPoint = 0;
+
 		gs.earlyMovError = 0;
 		gs.lateMovError = 0;
 		gs.boxColor = 5;	// grey baseline box color
@@ -720,19 +718,15 @@ void MyTrial::control() {
 
 	case START_TRIAL: //1
 		gs.targetForce = targetForce;
-		// gs.chord = chord;
+		gs.chord = chord;
 		check_last_beep_done = 0;
-		// gs.showTimer5 = 0;
 
 		//Amin
 		gs.showLines = 1;	// set screen lines/force bars to show
 		gs.showFeedback = 0;
 		gs.showTarget = 0;
-		// gs.showTimer5 = 0; // Amin: remove
 		gs.showForces = 1;
 		gs.showDiagnostics = 1;
-		// gs.showForceBars = 1;
-		trialPoint = 0;
 		gs.earlyMovError = 0;
 		gs.lateMovError = 0;
 		gs.boxColor = 5;	// grey baseline box color
@@ -802,7 +796,6 @@ void MyTrial::control() {
 		fingerForceTmp = VERT_SHIFT + forceGain * (gBox[0].getForce(this->chord) - gBox[1].getForce(this->chord));
 		if (fingerForceTmp >= (VERT_SHIFT + baseTH) || fingerForceTmp <= (VERT_SHIFT - (baseTH))) {
 			earlyMovFlag = 1; //early movement
-			// gs.showForceBars = 0;
 			gs.showForces = 0; // hide forces if subject goes out of baseline zone
 			state = GIVE_FEEDBACK;
 			break; // Amin: check	

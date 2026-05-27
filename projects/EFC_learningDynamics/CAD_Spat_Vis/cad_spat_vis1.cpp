@@ -94,7 +94,9 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	// gExp->redirectIOToConsole();		// I uncommented this!!!
 	tDisp.init(gThisInst, 0, 0, 600, 20, 9, 2, &(::parseCommand));		// Default setting for the Windows 10 PC
 	tDisp.setText("Subj", 0, 0);
-	gScreen.init(gThisInst, 1920, 0, 1440, 900, &(::updateGraphics));	// Default setting for the Windows 10 PC
+	//gScreen.init(gThisInst, 1920, 0, 1440, 900, &(::updateGraphics));	// Default setting for the Windows 10 PC
+	gScreen.init(gThisInst, 1920, 0, 1680, 1050, &(::updateGraphics)); ///< Display for subject (for setups at 3128 and sensorimotor room, by the window)
+
 	gScreen.setCenter(Vector2D(0, 0));									// In cm //0,2
 	gScreen.setScale(Vector2D(SCR_SCALE, SCR_SCALE));					// cm/pixel
 
@@ -106,6 +108,11 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 		s626.initInterrupt(updateHaptics, UPDATERATE); // initialize at 200 Hz update rate 
 	}
 	gTimer.init(); // Ali Changed Here!!!!
+
+	for (size_t i = 0; i < 5; ++i) {
+		forceCursor[i].size = Vector2D(FINGWIDTH - FINGER_SPACING * 2, FINGWIDTH - FINGER_SPACING * 2);
+		forceCursor[i].setColor(SCR_RED);
+	}
 
 	// 3. stimulation box initialization and calibration
 	// high force 1
@@ -121,7 +128,10 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	//gBox[1].init(BOX_RIGHT, "c:/robot/calib/flatbox2_lowforce_RIGHT_06-Jul-2017.txt");
 
 	gBox[0].init(BOX_LEFT,"c:/robotcode/calib/Flatbox1_highforce2_LEFT_12-Feb-2022.txt");
-	gBox[1].init(BOX_RIGHT,"c:/robotcode/calib/Flatbox1_highforce2_RIGHT_03-Dec-2021.txt");
+	//gBox[1].init(BOX_RIGHT,"c:/robotcode/calib/Flatbox1_highforce2_RIGHT_03-Dec-2021.txt");
+
+	//low force Flatbox3
+	gBox[1].init(BOX_RIGHT, "c:/robotcode/calib/Flatbox3_lowforce_RIGHT_22_Aug_2024.txt");
 
 	// low force
 	//gBox[0].init(BOX_LEFT,"c:/robot/calib/flatbox2_lowforce_LEFT_03-Mar-2017.txt");
@@ -572,7 +582,7 @@ void MyTrial::updateGraphics(int what) {
 
 		forceCursor[gs.chord].draw();
 
-		cout << gs.chord << endl;
+		//cout << gs.chord << endl;
 	}
 
 	if (gs.showFeedback) {
@@ -689,7 +699,7 @@ void MyTrial::control() {
 		gs.showFeedback = 0;
 		gs.showTarget = 0;
 		gs.showForces = 1;
-		gs.showDiagnostics = 1;
+		gs.showDiagnostics = 0;
 
 		gs.earlyMovError = 0;
 		gs.lateMovError = 0;
@@ -714,6 +724,9 @@ void MyTrial::control() {
 		zeroFCounter = 0; // counter for zeroing the force boxes
 
 		samplingCounter = 0; // counter for sampling the generated force in trial
+
+		//gs.chord = chord;
+
 		break;
 
 	case START_TRIAL: //1
@@ -726,7 +739,7 @@ void MyTrial::control() {
 		gs.showFeedback = 0;
 		gs.showTarget = 0;
 		gs.showForces = 1;
-		gs.showDiagnostics = 1;
+		gs.showDiagnostics = 0;
 		gs.earlyMovError = 0;
 		gs.lateMovError = 0;
 		gs.boxColor = 5;	// grey baseline box color
@@ -883,8 +896,13 @@ void MyTrial::control() {
 	case GIVE_FEEDBACK:
 	
 		gs.showLines = 1;			// no force lines/thresholds
-		gs.showTarget = 1;			// no visual targets
-		gs.showTimer5 = 0;
+		if (targetVisible) {
+			gs.showTarget = 1;			// no visual targets
+
+		}
+		else {
+			gs.showTarget = 0;
+		}
 		gs.showFeedback = 1;		// showing feedback (refer to MyTrial::updateGraphics() for details)
 
 		if (earlyMovFlag == 1) {	// if early movement occurred during planning
@@ -900,7 +918,13 @@ void MyTrial::control() {
 		else {
 			trialCorr = 1;
 			trialErrorType = 0;
-			gs.showForces = 1; // show frozen forces during feedback
+			if (targetVisible) {
+				gs.showForces = 1; // show frozen forces during feedback
+			}
+			else {
+				gs.showForces = 0; // don't show frozen forces during feedback
+			}
+
 			}
 		
 		if (gTimer[2] >= feedbackTime) {

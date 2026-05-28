@@ -4,6 +4,7 @@
 #include "cad_spat_vis1.h" 
 #include "StimulatorBox.h"
 #include "Vector2d.h"
+#include <random>
 
 ///////////////////////////////////////////////////////////////
 /// Global variables 
@@ -77,6 +78,15 @@ double execSampleTime = 500; // time point at which the execution is sampled aft
 double SAMPLING_DURATION = 50;  /// duration of the window for sampling generated forces
 double beepInterval = 800; // interval between the beeps
 double relaxTime = 2000; // time after execution to relax and zero the forces before next trial starts
+double purturbationStd = 0.5; // standard deviation of the gaussian noise added to the force feedback for simulating perturbation (in N)
+
+
+// random number generator
+std::random_device rd;
+std::mt19937 gen(rd());
+
+std::normal_distribution<double> dist(0.0, purturbationStd); // mean 0, std dev purturbationStd
+
 
 
 ///////////
@@ -444,6 +454,11 @@ void MyTrial::writeDat(ostream& out) {
 		<< endForces[2] << "\t"
 		<< endForces[3] << "\t"
 		<< endForces[4] << "\t"
+		<< endForcesPurturbed[0] << "\t"
+		<< endForcesPurturbed[1] << "\t"
+		<< endForcesPurturbed[2] << "\t"
+		<< endForcesPurturbed[3] << "\t"
+		<< endForcesPurturbed[4] << "\t"
 		<< planTime << "\t" 
 		<< feedbackTime << "\t" 
 		<< iti << "\t" 
@@ -469,6 +484,11 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "endForce3" << "\t"
 		<< "endForce4" << "\t"
 		<< "endForce5" << "\t"
+		<< "endForcePurturbed1" << "\t"
+		<< "endForcePurturbed2" << "\t"
+		<< "endForcePurturbed3" << "\t"
+		<< "endForcePurturbed4" << "\t"
+		<< "endForcePurturbed5" << "\t"
 		<< "planTime" << "\t" 
 		<< "feedbackTime" << "\t" 
 		<< "iti" << "\t" 
@@ -724,6 +744,7 @@ double flexForceTemps[5] = { 0,0,0,0,0 }; // temporary variable to store the fle
 int i;
 int b;
 int j;
+double purturbation;
 
 int zeroFCounter; // counter for zeroing the force boxes
 int samplingCounter; // counter for sampling the generated force in trial
@@ -908,11 +929,14 @@ void MyTrial::control() {
 
 			for (i = 0; i < 5; i++) {
 				endForces[i] = forceTemps[i] / samplingCounter; // average generated force for each finger during the sampling window
+				// adding normal noise with std of purturbationStd
+				purturbation = dist(gen);
+				endForcesPurturbed[i] = endForces[i] + purturbation;
 				FinalExtForces[i] = extForceTemps[i] / samplingCounter;
 				FinalFlexForces[i] = flexForceTemps[i] / samplingCounter;
 
 				gs.frozenExtForces[i] = FinalExtForces[i];
-				gs.frozenFlexForces[i] = FinalFlexForces[i];
+				gs.frozenFlexForces[i] = FinalFlexForces[i] - purturbation; // positive purturbation: less flexion force
 				gs.isFrozenForces = 1;
 			}
 

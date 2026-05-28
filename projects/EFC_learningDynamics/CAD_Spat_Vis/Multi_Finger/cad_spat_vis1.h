@@ -167,6 +167,7 @@ private:
 	bool check_mov_initiation = 0;
 	double targetForces[5];					///< The target forces for the 5 fingers (in N) - this is used for calculating points and giving feedback.
 	double endForces[5];
+	double endForcesPurturbed[5];				///< The end forces with purturbation added for simulating perturbation in the force feedback
 
 	DataManager<DataRecord, 30000 / 2> dataman;///< For data recording for MOV file 
 };

@@ -86,7 +86,7 @@ public:
 	double frozenFlexForces[5];
 	bool isFrozenForces;			// whether the forces are frozen for visualizing frozen forces
 
-	double targetForces[5];				// target force for visualizing target force bars
+	double targetForces[5] = { 1,1,1,1,1 };				// target force for visualizing target force bars
 
 };
 
@@ -198,5 +198,5 @@ public:
 void ForceCursor::draw() {
 	//setColor(1);
 	gScreen.setColor(color);
-	gScreen.drawBox(Vector2D(size[0], 0.3), Vector2D(position[0], position[1]));
+	gScreen.drawBox(Vector2D(size[0], 0.1), Vector2D(position[0], position[1]));
 }

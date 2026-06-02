@@ -170,6 +170,7 @@ private:
 	double endForcesPurturbed[5];				///< The end forces with purturbation added for simulating perturbation in the force feedback
 	double purturbation1;						///< Pre-generated perturbation for index finger (from .tgt)
 	double purturbation2;						///< Pre-generated perturbation for ring finger (from .tgt)
+	bool isTargetVisible;						///< Whether the target is visible (from .tgt)
 
 	double trialPerturbation(int fingerIndex) const;
 

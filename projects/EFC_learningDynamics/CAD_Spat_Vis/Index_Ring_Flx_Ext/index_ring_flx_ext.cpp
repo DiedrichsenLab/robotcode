@@ -410,6 +410,7 @@ void MyTrial::read(istream& in) {
 		>> targetForces[2]
 		>> targetForces[3]
 		>> targetForces[4]
+		>> isTargetVisible
 		>> purturbation1
 		>> purturbation2
 		>> planTime
@@ -438,6 +439,7 @@ void MyTrial::writeDat(ostream& out) {
 		<< endForcesPurturbed[2] << "\t"
 		<< endForcesPurturbed[3] << "\t"
 		<< endForcesPurturbed[4] << "\t"
+		<< isTargetVisible << "\t"
 		<< purturbation1 << "\t"
 		<< purturbation2 << "\t"
 		<< planTime << "\t" 
@@ -470,6 +472,7 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "endForcePurturbed3" << "\t"
 		<< "endForcePurturbed4" << "\t"
 		<< "endForcePurturbed5" << "\t"
+		<< "isTargetVisible" << "\t"
 		<< "purturbation1" << "\t"
 		<< "purturbation2" << "\t"
 		<< "planTime" << "\t" 
@@ -952,7 +955,12 @@ void MyTrial::control() {
 		else {
 			trialCorr = 1;
 			trialErrorType = 0;
-			gs.showForces = 1; // show frozen forces during feedback
+			if (isTargetVisible) {
+				gs.showForces = 1; // show frozen forces during feedback
+			}
+			else {
+				gs.showForces = 0; // don't show frozen forces during feedback
+			}
 			}
 		
 		if (gTimer[2] >= feedbackTime) {

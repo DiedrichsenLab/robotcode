@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////
 /// ExtensionFlextionChord - Ali Ghavampour , Nov 2022
 ///////////////////////////////////////////////////////////////
-#include "emg.h" 
+#include "EFC_compos.h" 
 #include "StimulatorBox.h"
 #include "Vector2d.h"
 #include <vector>
@@ -55,7 +55,6 @@ int holdTime = 0;
 //int totSuccess = 0;
 
 ///< Basic imaging parameters
-#define TRTIME 1000				///< timer for simulating timer
 //#define HOLDTIME 1000			///< timer for holding key press
 #define MOVETHRESHOLD 0.8		///< above this force, finger detected as moving
 #define RELEASETHRESHOLD 0.6	///< below this force, finger detected as released
@@ -141,7 +140,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 {
 	// 1. initialization window, text display and screen
 	gThisInst = hThisInst;
-	gExp = new MyExperiment("EFC_learningEMG", "EFC_learningEMG", "C:/data/EFC_learningEMG/"); 
+	gExp = new MyExperiment("EFC_compos", "EFC_compos", "C:/data/EFC_compositional_EMG/");
 	//gExp->redirectIOToConsole();
 
 	gExp->redirectIOToConsole();		// I uncommented this!!!
@@ -221,50 +220,6 @@ std::vector<double> subtract_vectors(const std::vector<double>& a, const std::ve
 	}
 	return result;
 }
-
-// Function to calculate MD and distance values
-double calc_md(const std::vector<std::vector<double>>& X) {
-	size_t N = X.size();
-	size_t m = X[0].size();
-
-	// Initial and final vectors
-	std::vector<double> F1 = X[0];
-	//std::vector<double> FN = subtract_vectors(X[N - 1], F1);  // Shift the end point
-	std::vector<double> FN = X[N - 1];
-
-	// Shift all points
-	std::vector<std::vector<double>> shifted_matrix(N, std::vector<double>(m));
-	for (size_t i = 0; i < N; ++i) {
-		shifted_matrix[i] = subtract_vectors(X[i], F1);
-	}
-
-	double MD = 0.0;
-
-	// Calculate distances
-	for (size_t t = 1; t < N - 1; ++t) {
-		std::vector<double> Ft = X[t];
-
-		// Project Ft onto the ideal straight line
-		double proj_scalar = dot_product(Ft, FN) / dot_product(FN, FN);
-		std::vector<double> proj = scale_vector(FN, proj_scalar);
-
-		// Calculate the Euclidean distance
-		double d = calculate_norm(subtract_vectors(Ft, proj));
-
-		MD += d;
-
-		//cout << MD << endl;
-	}
-
-	MD /= (N - 2);
-
-	return MD;
-}
-//
-///////////////////////////////////////////////////////
-//////////////////// end of MD online /////////////////
-///////////////////////////////////////////////////////
-
 
 
 ///////////////////////////////////////////////////////////////
@@ -619,21 +574,13 @@ MyTrial::MyTrial() {
 ///////////////////////////////////////////////////////////////
 void MyTrial::read(istream& in) {
 	// read from .tgt file
-	in >> subNum
+	in  >> subNum
 		>> chordID
 		>> planTime
 		>> success_holdTime
 		>> execMaxTime
 		>> feedbackTime
-		>> iti
-		>> startTime
-		>> endTime
-		>> session
-		>> day
-		>> week;
-
-
-
+		>> iti;
 }
 
 ///////////////////////////////////////////////////////////////
@@ -648,9 +595,6 @@ void MyTrial::writeDat(ostream& out) {
 		<< success_holdTime << "\t"
 		<< execMaxTime << "\t"
 		<< feedbackTime << "\t"
-		<< startTime << "\t"
-		<< startTimeReal << "\t"
-		<< startTRReal << "\t"
 		<< iti << "\t"
 		<< fGain[0] << "\t"						// finger specific gains
 		<< fGain[1] << "\t"
@@ -665,13 +609,9 @@ void MyTrial::writeDat(ostream& out) {
 		<< VERT_SHIFT - (FLX_TOP_Y1) << "\t"	// flex top threshold
 		<< VERT_SHIFT - FLX_BOT_Y1 << "\t"		// flex bot threshold
 		<< RT << "\t"							// reaction time of each trial. 
-		//<< MD << "\t"
 		<< ET << "\t"
 		<< trialPoint << "\t"					// points received in each trial
 		<< planError << "\t"
-		<< day << "\t"
-		<< week << "\t"
-		<< session << "\t"
 		<< current_time << "\t"
 		<< endl;
 }
@@ -688,9 +628,6 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "success_holdTime" << "\t"
 		<< "execMaxTime" << "\t"
 		<< "feedbackTime" << "\t"
-		<< "startTime" << "\t"
-		<< "startTimeReal" << "\t"
-		<< "startTRReal" << "\t"
 		<< "iti" << "\t"
 		<< "fGain1" << "\t"
 		<< "fGain2" << "\t"
@@ -705,13 +642,9 @@ void MyTrial::writeHeader(ostream& out) {
 		<< "flexTopThresh" << '\t'
 		<< "flexBotThresh" << '\t'
 		<< "RT" << "\t"
-		//<< "MD" << "\t"
 		<< "ET" << '\t'
 		<< "trialPoint" << "\t"
 		<< "planError" << "\t"
-		<< "day" << "\t"
-		<< "week" << "\t"
-		<< "session" << "\t"
 		<< "DateTime" << "\t"
 		<< endl;
 }
@@ -761,7 +694,7 @@ void MyTrial::copyHaptics() {
 void MyTrial::updateTextDisplay() {
 	int i;
 	double diffForce[5] = { 0,0,0,0,0 };
-	sprintf(buffer, "TR : %d time: %2.2f slice:%d", gCounter.readTR(), gCounter.readTime(), gCounter.readSlice());
+	sprintf(buffer, "time: %2.2f", gCounter.readTime());
 	tDisp.setText(buffer, 2, 0);
 	sprintf(buffer, "Time : %2.2f", gTimer[1]);
 	tDisp.setText(buffer, 3, 0);
@@ -986,9 +919,6 @@ void MyTrial::updateGraphics(int what) {
 		case WAIT_TRIAL:
 			stateString = "Wait Trial";
 			break;
-		case WAIT_TR:
-			stateString = "Wait TR";
-			break;
 		case START_TRIAL:
 			stateString = "Start Trial";
 			break;
@@ -1153,7 +1083,6 @@ void MyTrial::control() {
 		gs.boxColor = 5;	// grey baseline box color
 
 		//planErrorFlag = 0;
-		//SetDacVoltage(0, 0);	// Ali EMG - gets ~200us to change digital to analog. Does it interrupt the ADC?
 		SetDIOState(0, 0xFFFF); // Ali EMG
 
 		for (i = 0; i < NUMDISPLAYLINES; i++) {
@@ -1174,12 +1103,9 @@ void MyTrial::control() {
 		gs.chordError = 0;
 		//planErrorFlag = 0;	// initialize planErrorFlag variable in the begining of each trial
 		//chordErrorFlag = 1;	// initialize chordErrorFlag variable in the begining of each trial
-		startTriggerEMG = 1;	// Ali EMG: starts EMG trigger in the beginning of each trial
 		trialPoint = 0;
 		gs.rewardTrial = -1;
 		planError = 0;
-
-		//SetDacVoltage(0, emgTrigVolt);	// Ali EMG - gets ~200us to change digital to analog. Does it interrupt the ADC?
 
 		for (i = 0; i < 5; i++) {
 			gs.fingerCorrectGraphic[i] = 0;
@@ -1194,41 +1120,8 @@ void MyTrial::control() {
 		gTimer.reset(3);
 		gTimer.reset(5);
 		gTimer.reset(6);
-
-		state = WAIT_TR;
-		break;
-
-	case WAIT_TR: //2
-
-		holdTime = 0;
-		max_holdTime = 0;
-
-		gs.rewardTrial = -1;
-
-		gs.showTarget = 0;
-		gs.showFeedback = 0;
-		gs.showForces = 1;
-		gs.showLines = 1;
-		gs.showFxCross = 1;
-
-		gs.reset();
-
-		cout << gCounter.readTotTime() << '\n'; \
-			cout << startTime << '\n';
-		if (gCounter.readTR() > 0 && gCounter.readTotTime() >= startTime) {
-			startTimeReal = gCounter.readTotTime();
-			startTRReal = gCounter.readTR(); // number of TR arrived so far
-
-			gTimer.reset(1);					//time for whole trial
-			gTimer.reset(2);					//time for events in the trial			
-			gTimer.reset(3);
-			state = WAIT_PLAN;
-
-			current_time = get_current_time();
-
-			planError = 0;
-
-		}
+		current_time = get_current_time();
+		state = WAIT_PLAN;
 		break;
 
 	case WAIT_PLAN: //2
@@ -1350,7 +1243,7 @@ void MyTrial::control() {
 
 	case GIVE_FEEDBACK:
 		//SetDacVoltage(0, 0); // Ali EMG
-		SetDIOState(0, 0xFFFF);
+		
 
 		if (chordStarted == 1 && chordCorrect == 1 && planError == 0 && max_holdTime >= success_holdTime) {
 			trialPoint = 1;
@@ -1378,6 +1271,8 @@ void MyTrial::control() {
 		break;
 
 	case WAIT_ITI:
+		SetDIOState(0, 0xFFFF);
+
 		gs.showLines = 1;
 		gs.showTarget = 0;
 		gs.showForces = 1;
@@ -1433,10 +1328,6 @@ DataRecord::DataRecord(int s, int t, bool started) {
 	time = gTimer[1];
 	timeReal = gTimer.getRealtime();
 
-	TotTime = gCounter.readTotTime(); //internally generated time initiated at first TTL pulse
-	TR = gCounter.readTR(); //counted TR pulse
-	TRtime = gCounter.readTime(); //time since last TR
-	currentSlice = 0; //gCounter.readSlice();
 
 	for (i = 0; i < 2; i++) {
 		for (j = 0; j < 5; j++) {
@@ -1458,10 +1349,6 @@ DataRecord::DataRecord(int s, int t, bool started) {
 
 }
 
-//double DataRecord::get_MD() const {
-//	return MD;
-//}
-
 /////////////////////////////////////////////////////////////////////////////////////
 // Writes out the data to the *.mov file 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -1470,11 +1357,7 @@ void DataRecord::write(ostream& out) {
 	out << trialNum + 1 << "\t"
 		<< state << "\t"
 		<< timeReal << "\t"
-		<< time << "\t"
-		<< TotTime << "\t" // time from first TR
-		<< TR << "\t" // number of TR so far
-		<< TRtime << "\t" // time since last TR
-		<< currentSlice << "\t";
+		<< time << "\t";
 
 	for (i = 0; i < 2; i++) {	// Flexion and extension force -> fforce[0][:] is extension forces and fforce[1][:] is flexion forces
 		for (j = 0; j < 5; j++) {

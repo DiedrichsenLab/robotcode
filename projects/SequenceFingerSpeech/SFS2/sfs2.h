@@ -31,7 +31,7 @@ using namespace std;
 #define RECORDRATE 5
 #define UPDATE_TEXTDISP 60
 #define SCR_SCALE 1.84/72 //3/72 //2.54/72 // cm/pixel 
-#define MAX_PRESS 7 // max number of finger presses in a sequence
+#define MAX_PRESS 11 // max number of finger presses in a sequence
 
 ///////////////////////////////////////////////////////////////
 // Enumeration of Trial State 
@@ -60,7 +60,6 @@ public:
 };
 
 #define NUMDISPLAYLINES 100 //20
-#define MAX_LEADERBOARD_LINE 20
 
 ///////////////////////////////////////////////////////////////
 // Define graphics state: collection of variables that define the graphic scene 
@@ -80,6 +79,8 @@ public:
 	bool showlines;
 	char seq[MAX_PRESS];
 	char seqMask[MAX_PRESS];
+	char symbol;
+	//char cross;
 };
 
 ///////////////////////////////////////////////////////////////
@@ -108,6 +109,8 @@ public:
 	virtual Trial* getTrial();		// create a new Trial 
 	virtual void giveFeedback();
 	virtual void start();
+	virtual double mean(double array[], int num_val);
+	virtual double std(double array[], int num_val);
 	virtual double percentile(double array[], int num_val, int percent);
 };
 
@@ -136,11 +139,22 @@ public:
 private:
 	TrialState state;						///< State of the Trial 
 	int subNum;									///< Which subject number 
-	int group; 								///< Which group (Control or ADHD)
-	int iti; 								///< inter-trial interval
+	int group;									///< which group
+	bool isTrain;							///< Specific sequence or not
+	//bool isMasked;							///< Showing only symbol or cue as well
+	char symbol;							///< symbol for effector
+	int execTime;							///< Total time of the trial
+	int iti;
+	int precueTime;
+	//string windowSize;
+
+
 	int press[MAX_PRESS];					///< Which digit to press (in intrinsic coordinates 1:thumb 5: pinkie) 
-	int hand;								///< Which board are we using left= 1 right= 2
+	int load;                               ///< How many keypresses to plan? (from 1 to 5)
+	int show;                               ///< Do you show hand information at ecoding (1) or at go cue (2)?
+	int effector;							///< Which effector are we using left hand= 1 right hand= 2, speech = 0
 	int seqCounter;							///< Which position in the seq are we?
+	//int maskCounter;
 	int fixed_dur;							///< Is the trial duration fixed or not?
 
 	int newPress;							///< Is this a new press?
@@ -150,9 +164,19 @@ private:
 	int released;							///< Are all fingers released?
 
 	int numNewThresCross;					///< Has the pre-movement threshold been crossed?
+	int crossedFinger;						///< Which finger crossed the threshold?
+	int belowThres;							///< Are all fingers below pre-mov threshold?
+
+
+	int isExtrinsic;
+	int isIntrinsic;
+	int isRepetition;
+	int handTrans;
 
 	int complete;
 	int isError;							///< Was there an error in the trial?
+	int coord;                              ///< 1: Extrinsic coordinate -- 2: intrinsic coordinate
+	int cueType;                            ///< 1: numerical - 2: alphabetical
 	int isCross;							///< Was there a thres cross in the trial?
 	int numCrosses;							///< How many crosses in the trial?
 	int timeStamp;							///< When was the pre-movement threshold crossed?
@@ -162,7 +186,6 @@ private:
 	int handPressed[MAX_PRESS];             ///< Which hand is pressed
 	int points;							///< How many points did you get in a trial -1/0/+1/+3?
 	int seqLength;							///< How long is the sequence (arbitrary)?
-	int windowSize; 						///< how many digits are visible at each time
 	int startTime;							///< Requested start time for trial in ms
 	int startTimeReal;						///< Actual start time for trial (as recorded) in ms
 	int startTR;							///< Requested start time for trial in TRs
@@ -177,7 +200,17 @@ private:
 	double ET;								///< Execution time (RT + MT)
 	double MT;								///< Movement time 
 
+	bool audioOn;
+	string audioFile;
+	double audioStartReal;
+	double audioStopReal;
+	double beepStartReal;
+	double beepStopReal;
+
+
+
 	string cue;							///< Visual cue for sequences
+	//string seqMask;							///< Mask for visual cues
 	DataManager<DataRecord, 30000 / 2> dataman;///< For data recording for MOV file 
 };
 

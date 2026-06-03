@@ -1,10 +1,9 @@
+#pragma once
 #include <windows.h>
 #include <conio.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <iostream>
 #include <fstream>
-#include <sstream>
 #include <string>
 #include "TextDisplay.h"
 #include "Screen.h"
@@ -17,37 +16,41 @@
 #include "TRCounter626.h" 
 #include "Win626.h"
 #include <gl/glut.h>
-#include <utility>
-#include <vector>
-#include <algorithm>
-//#include "SDL.h" // SDL library
-//#include "SDL_mixer.h" // Necessary for playing multiple sounds (added by a-yokoi)
+#include "Target.h"    // Neda added--> Simple class that implements rectangles that can change color
 
 using namespace std;
 
 #define Pi 3.141592654
+//#define FIX_SIZE 0.004
 #define NUMFINGERS 5
-#define UPDATERATE 5
-#define RECORDRATE 5
+#define UPDATERATE 2    // sampling rate at every UPDATERATE ms 1=1K, 2=500Hz ...
+#define RECORDRATE 2    // recording update rate
 #define UPDATE_TEXTDISP 60
 #define SCR_SCALE 1.84/72 //3/72 //2.54/72 // cm/pixel 
-#define MAX_PRESS 7 // max number of finger presses in a sequence
-
+#define MAX_PRESS 7 // edited by Armin
 ///////////////////////////////////////////////////////////////
 // Enumeration of Trial State 
 ///////////////////////////////////////////////////////////////
-
 enum TrialState {
 	WAIT_TRIAL,			// 0
 	START_TRIAL,		// 1
-	WAIT_TR,			// 2
-	WAIT_PREP,			// 3
+
+	//____________________Neda
+	START_FIX,	    	// 2 wait for eye to fixate at the begining of the seq
+	//____________________end
+	//WAIT_ALLRELEASE,	// -
+	WAIT_GOCUE,		// 3
 	WAIT_PRESS,			// 4
-	WAIT_RELEASE,		// 5
-	WAIT_FEEDBACK,		// 6 
-	WAIT_ITI,			// 7
-	END_TRIAL			// 8
+	WAIT_END_RELEASE,		// 5
+	//WAIT_FEEDBACK,		// -
+	//END_FIX,            // -      
+	WAIT_ITI,			// 6
+	//____________________Neda	
+	END_TRIAL,			// 7 
+	//CALIB        		// -
+	//____________________end
 };
+
 
 ///////////////////////////////////////////////////////////////
 // Define haptic state: collection of variables that define the haptic scene 
@@ -59,32 +62,35 @@ public:
 	long counter[2];	// Holds the raw values of the 2 counters 
 };
 
-#define NUMDISPLAYLINES 100 //20
-#define MAX_LEADERBOARD_LINE 20
-
+#define NUMDISPLAYLINES 30
 ///////////////////////////////////////////////////////////////
 // Define graphics state: collection of variables that define the graphic scene 
 ///////////////////////////////////////////////////////////////
 class GraphicState {
 public:
 	GraphicState();
-	void reset(void);							///< Reset all display lines 
+	void reset(void);							///< Reset all targets to invisble 
+	string line[NUMDISPLAYLINES + 1];				///< Number of lines in Feedback display 
+	double lineXpos[NUMDISPLAYLINES + 1];
+	double lineYpos[NUMDISPLAYLINES + 1];
 	void clearCues(void);						///< Clear all the cues on the screen 
-	string line[NUMDISPLAYLINES];				///< Number of lines in Feedback display 
-	double lineXpos[NUMDISPLAYLINES];
-	double lineYpos[NUMDISPLAYLINES];
-	int lineColor[NUMDISPLAYLINES];
-	int boxColor;
-	GLfloat size[NUMDISPLAYLINES];
+	//Vector2D FixPlusPos[1];
+	double FixPlusX;
+	double FixPlusY;
+	int lineColor[NUMDISPLAYLINES + 1];
+	int boxColor[2];
+	GLfloat size[NUMDISPLAYLINES + 1];
 	bool boxOn;
-	bool showlines;
-	char seq[MAX_PRESS];
-	char seqMask[MAX_PRESS];
+	int showLines;
+
+	char Points[2];
+	char cuePress[14]; // I'm gonna need max 3 finger presses, change this based on your task //AP added
 };
+
 
 ///////////////////////////////////////////////////////////////
 /// Data Record: holds a data frame for DataManager. determines what 
-/// Data is recorded at 200 Hz and written to mov file  
+/// Data is recorded at 500 Hz and written to mov file  
 ///////////////////////////////////////////////////////////////
 class DataRecord {
 public:
@@ -95,9 +101,12 @@ public:
 	int state;
 	double timeReal;
 	double time;
+
 	double force_left[5];
 	double force_right[5];
+
 };
+
 
 ///////////////////////////////////////////////////////////////
 // MyBlock
@@ -108,7 +117,6 @@ public:
 	virtual Trial* getTrial();		// create a new Trial 
 	virtual void giveFeedback();
 	virtual void start();
-	virtual double percentile(double array[], int num_val, int percent);
 };
 
 ///////////////////////////////////////////////////////////////
@@ -135,50 +143,43 @@ public:
 	friend  void MyBlock::giveFeedback();
 private:
 	TrialState state;						///< State of the Trial 
-	int subNum;									///< Which subject number 
-	int group; 								///< Which group (Control or ADHD)
-	int iti; 								///< inter-trial interval
-	int press[MAX_PRESS];					///< Which digit to press (in intrinsic coordinates 1:thumb 5: pinkie) 
-	int hand;								///< Which board are we using left= 1 right= 2
+	int cTrial; 							///< Trial number
+	int Horizon;                            ///< How mnay digits ahead can you see
+	int StimTimeLim;							///< For how long is the seq/chunk displayed
+	//int subNum;
+	int PrepTime;
+	int seqType;							///< Which sequence of finger movments has to be done? 
+	int MovTimeLim;							// Added by SKim for fMRI
+	int TrialTime;							// Added by SKim for fMRI, TrialTime = PrepTime + MovTime + iti
+	int press[MAX_PRESS];					///< Which digit to press 
+	int fGiven[MAX_PRESS];
+	int feedback;							///< Give Feedback or not? 
+	int complete;							///< How much time do you have to complete the seq.?
+	int iti;								///< Timedelay before the next trail starts in[ms]
+	int sounds;								///< Do we play the sounds for finger presses
+	int hand;								///< Which board are we using left= 0 right= 1
 	int seqCounter;							///< Which position in the seq are we?
-	int fixed_dur;							///< Is the trial duration fixed or not?
-
-	int newPress;							///< Is this a new press?
-	int newRelease;							///todo: Should I add this? Ask Jorn
-	int pressedFinger;						///< Which finger was pressed
-	int pressedHand;                        ///< Which hand was pressed
-	int released;							///< Are all fingers released?
-
-	int numNewThresCross;					///< Has the pre-movement threshold been crossed?
-
-	int complete;
-	int isError;							///< Was there an error in the trial?
-	int isCross;							///< Was there a thres cross in the trial?
-	int numCrosses;							///< How many crosses in the trial?
-	int timeStamp;							///< When was the pre-movement threshold crossed?
-
-	int timingError;						///< Was there an error in the timing of finger presses? (e.g. anticipation)
-	int response[MAX_PRESS];				///< Which digit is pressed (in intrinsic coordinates 1:thumb 5: pinkie) 
-	int handPressed[MAX_PRESS];             ///< Which hand is pressed
-	int points;							///< How many points did you get in a trial -1/0/+1/+3?
+	int numNewpress;
+	int released;
+	int DigPressed;							///< For Horizon-wize digit revealing
+	int isError;							///< Was there an error in the finger presses?
+	int nFingerErrors;						// Number of error tappings, SKim
+	int isComplete;							///< Are all presses made  
+	int response[MAX_PRESS];				///< Which key is pressed 
+	int points;								///< How many points did you get in a trial 0/1/-1?
 	int seqLength;							///< How long is the sequence (arbitrary)?
-	int windowSize; 						///< how many digits are visible at each time
-	int startTime;							///< Requested start time for trial in ms
-	int startTimeReal;						///< Actual start time for trial (as recorded) in ms
-	int startTR;							///< Requested start time for trial in TRs
-	int startTRtime;						///< Actual start time for trial (as recorded) in TRs	
-	int useMetronome;						///< Use timer metronome? 1=yes; 0=no
-	int trialDur;							///< How long was this trial? (in ms)
-	double stimOnsetTime;					///< Is it the last trial of the run? 1=yes; 0=no
-	double waitTime;						///< How long to wait before the first trial? (for behavioral version only)	
-	double pressTime[MAX_PRESS];			///< Time when each finger was pressed
-	double releaseTime[MAX_PRESS];			///< Time when each finger was released
-	double RT;								///< Reaction time (from go cue)
-	double ET;								///< Execution time (RT + MT)
-	double MT;								///< Movement time 
+	double pressTime[MAX_PRESS];			///< Time when each finger was pressed 
+	double releaseTime[MAX_PRESS];			///< Time when each finger was release
 
-	string cue;							///< Visual cue for sequences
-	DataManager<DataRecord, 30000 / 2> dataman;///< For data recording for MOV file 
+	double MT;								///< Overall MT 
+	double RT;								// Reaction Time, added by SKim
+	string cueP;							// edited by SKim, using only press cue	
+	//	string cueS, cueC, cueP; 					///< Visual cues for sequence, chunk, and press
+
+	double nPress;					///< Time of the start of the trial 
+	double startTimeReal;				///< Time of the start of the trial 
+
+	DataManager<DataRecord, 30000 / 2> dataman;	///< For data recording for MOV file 
 };
 
 ///////////////////////////////////////////////////////////////
@@ -195,3 +196,22 @@ public:
 
 };
 
+
+//////////////////////////////////////////////////////////////
+class FixCross : public Target {
+public:
+	void draw();
+};
+void FixCross::draw() {
+	gScreen.setColor(color);
+	gScreen.drawBox(Vector2D(size[0], 0.3), Vector2D(position[0], position[1]));
+	gScreen.drawBox(Vector2D(0.3, size[1]), Vector2D(position[0], position[1]));
+}
+
+
+// computing standard deviation
+double mystd(double array[], int sizeOfArray);
+
+// computing percentile
+double myPrctile(double array[], int num_val, double percent);
+///______________________________Neda end#pragma once

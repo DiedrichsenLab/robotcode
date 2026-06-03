@@ -194,8 +194,9 @@ private:
 	int trialDur;							///< How long was this trial? (in ms)
 	double stimOnsetTime;					///< Is it the last trial of the run? 1=yes; 0=no
 	double waitTime;						///< How long to wait before the first trial? (for behavioral version only)	
-	double pressTime[MAX_PRESS];			///< Time when each finger was pressed
-	double releaseTime[MAX_PRESS];			///< Time when each finger was released
+	double pressTime[MAX_PRESS];			///< Time when each finger was pressed (or syllable onset for speech)
+	double releaseTime[MAX_PRESS];			///< Time when each finger was released (or syllable offset for speech)
+	unsigned int syllableDevTime[MAX_PRESS];///< Device-reported timestamp (ms) for each syllable onset (speech only)
 	double RT;								///< Reaction time (from go cue)
 	double ET;								///< Execution time (RT + MT)
 	double MT;								///< Movement time 

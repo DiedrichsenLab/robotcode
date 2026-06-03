@@ -2,6 +2,9 @@
 /// SequenceLearningReward Project - ....
 ///////////////////////////////////////////////////////////////
 
+// SyllableReceiver.h pulls in <winsock2.h>; include it before sfs1.h (which
+// includes <windows.h>) so winsock2 wins over the legacy winsock.h.
+#include "SyllableReceiver.h"
 #include "sfs1.h" 
 #include "StimulatorBox.h"
 #include "AudioRecorder.h"
@@ -21,6 +24,8 @@ TRCounter gCounter;				///< TR Counter
 Timer gTimer(UPDATERATE);		///< Timer from S626 board experiments 
 HapticState hs;					///< This is the haptic State as d by the interrupt 
 AudioRecorder gAudio; 			///< Audio Recorder
+SyllableReceiver gSyllable;		///< UDP receiver for per-syllable speech events
+unsigned short gSyllablePort = 5005;	///< UDP port for syllable events (override with "sylport")
 
 ///< For Thread safety this SHOULD NOT be assessed While 
 ///< the interrupt is running. Use Thread-safe copy to 
@@ -141,6 +146,12 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	}
 
 	gTimer.init();
+
+	// start UDP receiver for per-syllable speech events
+	if (!gSyllable.start(gSyllablePort)) {
+		cout << "Warning: could not start syllable UDP receiver on port " << gSyllablePort << endl;
+	}
+
 	// initialize TR counter 
 	gCounter.init3();
 	gCounter.simulate(TR);
@@ -351,6 +362,21 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 		//todo: fix this
 	}
 
+	/// Set UDP port for the per-syllable speech event receiver
+	else if (arguments[0] == "sylport") {
+		if (numArgs != 2) {
+			tDisp.print("USAGE: sylport port");
+		}
+		else {
+			sscanf(arguments[1].c_str(), "%f", &arg[0]);
+			gSyllablePort = (unsigned short)arg[0];
+			gSyllable.stop();
+			if (!gSyllable.start(gSyllablePort)) {
+				tDisp.print("Could not bind syllable UDP port");
+			}
+		}
+	}
+
 	else {
 		return false; /// Command not recognized
 	}
@@ -363,6 +389,7 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 ///////////////////////////////////////////////////////////////
 void MyExperiment::onExit() {
 	s626.stopInterrupt();
+	gSyllable.stop();
 	tDisp.close();
 	gScreen.close();
 }
@@ -562,6 +589,7 @@ MyTrial::MyTrial() {
 		response[i] = 0;					// finger response
 		pressTime[i] = 0;					// press time	
 		releaseTime[i] = 0;				// release time
+		syllableDevTime[i] = 0;			// device-reported syllable onset time (speech)
 		press[i] = 0;                     // fingers needed to be pressed
 		handPressed[i] = 0;               // which hand
 
@@ -606,6 +634,14 @@ void MyTrial::writeDat(ostream& out) {
 
 	for (i = 0; i < MAX_PRESS; i++) {
 		out << pressTime[i] << "\t";
+	}
+
+	for (i = 0; i < MAX_PRESS; i++) {
+		out << releaseTime[i] << "\t";
+	}
+
+	for (i = 0; i < MAX_PRESS; i++) {
+		out << syllableDevTime[i] << "\t";
 	}
 
 	// out << tempThres1 << "\t"
@@ -670,6 +706,16 @@ void MyTrial::writeHeader(ostream& out) {
 
 	for (i = 0; i < MAX_PRESS; i++) {
 		sprintf(header, "pressTime%d", i + 1);
+		out << header << "\t";
+	}
+
+	for (i = 0; i < MAX_PRESS; i++) {
+		sprintf(header, "releaseTime%d", i + 1);
+		out << header << "\t";
+	}
+
+	for (i = 0; i < MAX_PRESS; i++) {
+		sprintf(header, "syllableDevTime%d", i + 1);
 		out << header << "\t";
 	}
 
@@ -1037,6 +1083,7 @@ void MyTrial::control() {
 			response[i] = 0;
 			pressTime[i] = 0;
 			releaseTime[i] = 0;
+			syllableDevTime[i] = 0;
 		}
 		dataman.clear();
 		timeMet = 0; //reset metronome for next trial
@@ -1081,6 +1128,7 @@ void MyTrial::control() {
 					+ "_Eff" + to_string(effector) + ".wav";
 					audioOn = gAudio.start(audioFile);
 					// audioStartReal = gTimer.getRealtime();
+					gSyllable.flush();		// drop any stale syllable events from before this trial
 
 					state = WAIT_PREP;
 				}
@@ -1111,6 +1159,7 @@ void MyTrial::control() {
 					+ "_Eff" + to_string(effector) + ".wav";
 					audioOn = gAudio.start(audioFile);
 					// audioStartReal = gTimer.getRealtime();
+					gSyllable.flush();		// drop any stale syllable events from before this trial
 
 					state = WAIT_PREP;
 				}
@@ -1140,6 +1189,7 @@ void MyTrial::control() {
 			}
 			gTimer.reset(1); gTimer.reset(2); gTimer.reset(5);
 			dataman.startRecording();
+			gSyllable.flush();		// drop any stale syllable events from before this trial
 			state = WAIT_PREP;
 		}
 		break;
@@ -1244,31 +1294,74 @@ void MyTrial::control() {
 
 
 		// START OF SEQUENCE
-		if (newPress > 0 && seqCounter < seqLength) { // correct timing
-			if (fixed_dur == 1){
-				isError = 1;
-				state = WAIT_RELEASE;
-			}
-			else{
-				response[seqCounter] = pressedFinger;
-				handPressed[seqCounter] = pressedHand;
-				pressTime[seqCounter] = gTimer[1];
-				if (seqCounter == 0) {			// if first press 
-					RT = gTimer[2];
-					gTimer.reset(5);
+		if (effector == 0) { // SPEECH: events come from the experimenter device over UDP
+			SyllableEvent ev;
+			while (gSyllable.poll(ev)) {
+				if (ev.type == 1) { // syllable onset (initiated) -> acts like a press
+					if (seqCounter < seqLength) {
+						response[seqCounter] = ev.syllable;
+						handPressed[seqCounter] = effector;
+						pressTime[seqCounter] = ev.arrivalTime;
+						syllableDevTime[seqCounter] = ev.devTimeMs;
+						if (seqCounter == 0) {			// if first syllable
+							RT = gTimer[2];
+							gTimer.reset(5);
+						}
+						if (response[seqCounter] == press[seqCounter]) { // correct syllable
+							responseArray[seqCounter] = 3; // green
+						}
+						else { // error: wrong syllable spoken
+							responseArray[seqCounter] = 2; // red
+							isError = 1;
+						}
+						seqCounter++;
+					}
 				}
-				if (response[seqCounter] == press[seqCounter] && handPressed[seqCounter] == effector) { // correct press	
-					responseArray[seqCounter] = 3; // green
+				else { // syllable offset (terminated) -> end time of the current syllable
+					if (seqCounter > 0) {
+						releaseTime[seqCounter - 1] = ev.arrivalTime;
+					}
 				}
-				else { // error: wrong key pressed
-					responseArray[seqCounter] = 2; // red
-					isError = 1;
-				}
-				seqCounter++;
 			}
 		}
-		// END OF SEQUENCE: get execution time and movement time
-		if (seqCounter >= seqLength && released == NUMFINGERS) {
+		else { // FINGER: presses detected from force thresholds
+			if (newPress > 0 && seqCounter < seqLength) { // correct timing
+				if (fixed_dur == 1){
+					isError = 1;
+					state = WAIT_RELEASE;
+				}
+				else{
+					response[seqCounter] = pressedFinger;
+					handPressed[seqCounter] = pressedHand;
+					pressTime[seqCounter] = gTimer[1];
+					if (seqCounter == 0) {			// if first press 
+						RT = gTimer[2];
+						gTimer.reset(5);
+					}
+					if (response[seqCounter] == press[seqCounter] && handPressed[seqCounter] == effector) { // correct press	
+						responseArray[seqCounter] = 3; // green
+					}
+					else { // error: wrong key pressed
+						responseArray[seqCounter] = 2; // red
+						isError = 1;
+					}
+					seqCounter++;
+				}
+			}
+		}
+
+		// END OF SEQUENCE: get execution time and movement time.
+		// Speech ends when the last syllable terminates (offset received);
+		// finger ends when all keys are released.
+		bool sequenceDone;
+		if (effector == 0) {
+			sequenceDone = (seqLength > 0 && seqCounter >= seqLength && releaseTime[seqLength - 1] > 0);
+		}
+		else {
+			sequenceDone = (seqCounter >= seqLength && released == NUMFINGERS);
+		}
+
+		if (sequenceDone) {
 			if (complete == 0) {
 				MT = gTimer[5]; // movement time
 				ET = (RT + MT);

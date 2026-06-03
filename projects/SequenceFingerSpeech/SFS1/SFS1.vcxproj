@@ -137,6 +137,7 @@
     <ClCompile Include="..\..\..\source\Screen.cpp" />
     <ClCompile Include="..\..\..\source\Serial.cpp" />
     <ClCompile Include="..\..\..\source\StimulatorBox.cpp" />
+    <ClCompile Include="..\..\..\source\SyllableReceiver.cpp" />
     <ClCompile Include="..\..\..\source\TextDisplay.cpp" />
     <ClCompile Include="..\..\..\source\Timer626.cpp" />
     <ClCompile Include="..\..\..\source\TRCounter626.cpp" />
@@ -151,6 +152,7 @@
     <ClInclude Include="..\..\..\include\Matrix2d.h" />
     <ClInclude Include="..\..\..\include\S626sManager.h" />
     <ClInclude Include="..\..\..\include\Screen.h" />
+    <ClInclude Include="..\..\..\include\SyllableReceiver.h" />
     <ClInclude Include="..\..\..\include\TextDisplay.h" />
     <ClInclude Include="..\..\..\include\Timer626.h" />
     <ClInclude Include="..\..\..\include\TRCounter626.h" />

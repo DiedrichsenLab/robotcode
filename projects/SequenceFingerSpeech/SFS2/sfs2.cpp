@@ -112,9 +112,9 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	tDisp.init(gThisInst, 0, 0, 400, 20, 9, 2, &(::parseCommand));
 
 	tDisp.setText("Subj", 0, 0);
-	//gScreen.init(gThisInst, 1920, 0, 1680, 1050, &(::updateGraphics)); ///< Display for subject (for setups at 3128 and sensorimotor room, by the window)
+	gScreen.init(gThisInst, 1920, 0, 1680, 1050, &(::updateGraphics)); ///< Display for subject (for setups at 3128 and sensorimotor room, by the window)
 
-	gScreen.init(gThisInst, 1920, 0, 1440, 900, &(::updateGraphics));	// Display for sensorimotor room, the other (not by the window)
+	//gScreen.init(gThisInst, 1920, 0, 1440, 900, &(::updateGraphics));	// Display for sensorimotor room, the other (not by the window)
 
 
 	gScreen.setCenter(Vector2D(0, 0));    // In cm //0,2
@@ -123,10 +123,10 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	s626.init("c:/robotcode/calib/s626_single.txt");
 
 	//low force Flatbox3
-	//gBox[1].init(BOX_RIGHT, "c:/robotcode/calib/Flatbox3_lowforce_RIGHT_22_Aug_2024.txt");
+	gBox[1].init(BOX_RIGHT, "c:/robotcode/calib/Flatbox3_lowforce_RIGHT_22_Aug_2024.txt");
 
 	// low force Flatbox2 (FBL-R)
-	gBox[1].init(BOX_RIGHT, "c:/robotcode/calib/flatbox2_highforce2_RIGHT_18-March-2026.txt");
+	//gBox[1].init(BOX_RIGHT, "c:/robotcode/calib/flatbox2_highforce2_RIGHT_18-March-2026.txt");
 
 
 

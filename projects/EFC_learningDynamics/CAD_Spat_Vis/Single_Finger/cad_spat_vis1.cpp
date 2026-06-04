@@ -376,7 +376,7 @@ void MyBlock::giveFeedback() {
 
 	// calculate mean endForce
 	for (i = 0; i < trialNum; i++){
-		tpnr = (MyTrial*)getTrial(i);
+		tpnr = (MyTrial*)trialVec.at(i);
 		if (tpnr->trialCorr) {
 			meanEndForce += tpnr->endForce;
 			n++;

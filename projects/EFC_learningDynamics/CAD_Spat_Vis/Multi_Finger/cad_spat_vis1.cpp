@@ -98,7 +98,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 {
 	// 1. initialization window, text display and screen
 	gThisInst = hThisInst;
-	gExp = new MyExperiment("cad_spat_vis1", "cad_spat_vis1", "C:/data/EFC_learningDynamics/CAD_Spat_Vis/Single_Finger/"); 
+	gExp = new MyExperiment("cad_spat_vis1", "cad_spat_vis1", "C:/data/EFC_learningDynamics/CAD_Spat_Vis/Multi_Finger/"); 
 	gExp->redirectIOToConsole();
 	
 	// gExp->redirectIOToConsole();		// I uncommented this!!!
@@ -384,22 +384,22 @@ void MyBlock::giveFeedback() {
 	blockFeedbackFlag = 1;
 	double meanEndForce = 0;
 
-	// calculate mean endForce
-	for (i = 0; i < trialNum; i++){
-		tpnr = (MyTrial*)getTrial(i);
-		if (tpnr->trialCorr) {
-			meanEndForce += tpnr->endForce;
-			n++;
-		}
-	}
-	if (n > 0) {
-		meanEndForce /= n;
-	}
-	else {
-		meanEndForce = 0;
-	}
+	//// calculate mean endForce
+	//for (i = 0; i < trialNum; i++){
+	//	tpnr = (MyTrial*)trialVec.at(i);
+	//	if (tpnr->trialCorr) {
+	//		meanEndForce += tpnr->endForce;
+	//		n++;
+	//	}
+	//}
+	//if (n > 0) {
+	//	meanEndForce /= n;
+	//}
+	//else {
+	//	meanEndForce = 0;
+	//}
 
-	cout << "Mean end force for correct trials: " << meanEndForce << endl;
+	//cout << "Mean end force for correct trials: " << meanEndForce << endl;
 
 	//gScreen.setColor(Screen::white);
 	sprintf(buffer, "End of Block");
@@ -611,7 +611,7 @@ void MyTrial::updateGraphics(int what) {
 				xSize = x2 - x1;
 				ySize = FLX_ZONE_WIDTH;
 				yPos = targetForce + VERT_SHIFT;
-				gScreen.setColor(myColor[gs.targetColor]);
+				gScreen.setColor(Screen::grey);
 				gScreen.drawBox(xSize, ySize, xPos, yPos);
 			}
 		}
@@ -968,12 +968,7 @@ void MyTrial::control() {
 		else {
 			trialCorr = 1;
 			trialErrorType = 0;
-			if (targetVisible) {
-				gs.showForces = 1; // show frozen forces during feedback
-			}
-			else {
-				gs.showForces = 0; // don't show frozen forces during feedback
-			}
+			gs.showForces = 1;	// show frozen forces during feedback
 
 			}
 		

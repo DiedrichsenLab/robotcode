@@ -540,7 +540,7 @@ void MyTrial::read(istream& in) {
 		>> success_holdTime
 		>> execMaxTime
 		>> feedbackTime
-		>> iti;
+		>> iti
 }
 
 ///////////////////////////////////////////////////////////////

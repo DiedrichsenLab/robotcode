@@ -540,7 +540,7 @@ void MyTrial::read(istream& in) {
 		>> success_holdTime
 		>> execMaxTime
 		>> feedbackTime
-		>> iti
+		>> iti;
 }
 
 ///////////////////////////////////////////////////////////////
@@ -697,8 +697,6 @@ void MyTrial::updateTextDisplay() {
 ///////////////////////////////////////////////////////////////
 /// updateGraphics: Call from ScreenHD 
 ///////////////////////////////////////////////////////////////
-
-
 void MyTrial::updateGraphics(int what) {
 	int i;
 	char tmpChord;
@@ -1051,8 +1049,8 @@ void MyTrial::control() {
 			}
 		}
 		break;
-
-	case START_TRIAL: //1	e
+	
+	case START_TRIAL: //1	
 		gs.showLines = 1;	// set screen lines/force bars to show
 		gs.showFeedback = 0;
 		gs.showTimer5 = 0;
@@ -1091,8 +1089,6 @@ void MyTrial::control() {
 		gs.showLines = 1;
 		gs.showTarget = 1;
 
-		SetDIOState(0, 0x0000);
-
 		for (i = 0; i < 5; i++) {	// RT is the time of the first finger outside the baseline area
 			fingerForceTmp = VERT_SHIFT + forceGain * fGain[i] * (gBox[0].getForce(i) - gBox[1].getForce(i));
 			//check_baseline_hold = 1;
@@ -1112,7 +1108,7 @@ void MyTrial::control() {
 			gTimer.reset(3);	// resetting timer 3 to use in next state
 			gTimer.reset(5);	// resetting timer 4 to use in next state
 		}
-
+		
 		break;
 
 	case WAIT_EXEC:
@@ -1122,7 +1118,7 @@ void MyTrial::control() {
 		gs.showForceBars = 1;
 		gs.showFxCross = 1;
 		gs.boxColor = 5;		// grey baseline box color
-
+		
 		if (chordCorrect == 0 && chordStarted == 0) {
 			for (i = 0; i < 5; i++) {	// RT is the time of the first finger outside the baseline area
 				fingerForceTmp = VERT_SHIFT + forceGain * fGain[i] * (gBox[0].getForce(i) - gBox[1].getForce(i));
@@ -1240,31 +1236,6 @@ void MyTrial::control() {
 			state = ACQUIRE_HRF;
 			dataman.stopRecording();
 			gTimer.reset(2);
-		}
-		break;
-
-	case ACQUIRE_HRF: //6
-
-		gs.showFxCross = 1;
-		gs.showForces = 1;
-		gs.showLines = 1;
-
-		i = gCounter.readTotTime();
-
-		if (gCounter.readTotTime() >= endTime)
-		{
-			state = END_TRIAL;
-			gTimer.reset(2);
-		}
-		else
-		{
-			gs.showTarget = 0;
-			gs.showFeedback = 0;
-			//if (gTimer[2] > hrfTime) {  // wait 12 s at the end of the run
-			//	state = END_TRIAL;
-			//	
-			//	//cout << "HRF acquired for 12 seconds after trial" << endl;
-
 		}
 		break;
 

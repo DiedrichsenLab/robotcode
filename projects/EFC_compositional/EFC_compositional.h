@@ -36,14 +36,12 @@ using namespace std;
 ///////////////////////////////////////////////////////////////
 enum TrialState {
 	WAIT_TRIAL,			// 0
-	WAIT_TR,			// 1
-	START_TRIAL,		// 2
-	WAIT_PLAN,			// 3
-	WAIT_EXEC,			// 4
-	GIVE_FEEDBACK,		// 5
-	WAIT_ITI,			// 6
-	ACQUIRE_HRF,		// 7
-	END_TRIAL			// 8
+	START_TRIAL,		// 1
+	WAIT_PLAN,			// 2
+	WAIT_EXEC,			// 3
+	GIVE_FEEDBACK,		// 4
+	WAIT_ITI,			// 5
+	END_TRIAL			// 6
 };
 
 ///////////////////////////////////////////////////////////////

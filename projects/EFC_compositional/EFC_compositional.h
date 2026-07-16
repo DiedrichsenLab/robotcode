@@ -108,13 +108,10 @@ public:
 	int		TR;
 	int		currentSlice;
 	double	TRtime;
-	static map<int, vector<vector<double>>> X;
 
 	bool MD_done;
 
 };
-
-map<int, vector<vector<double>>> DataRecord::X;
 
 ///////////////////////////////////////////////////////////////
 // MyBlock
@@ -167,12 +164,11 @@ private:
 	int startTime;
 	double diffForceMov1[5];
 	double diffForceMov[5];
-	std::vector<std::vector<double>> X;
 	//bool chordErrorFlag;
 	int endTime;
 	int feedbackTime;						///< The duration between giveFeedback and giveScore
 	int iti;								///< inter trial interval
-	string chordID;							///< Chord identifier. 0: neutral , 1: flexion , 2: extension
+	string chordID;							///< Chord identifier. 9: neutral , 1: flexion , 2: extension
 	bool trialCorr;							///< 1: trial is correct , 2: trial is not correct
 	int trialErrorType;						///< 0: no error , 1: movement during planning , 2: could not execute
 	double RT;								///< Reaction time: time from go cue to full execution of chord

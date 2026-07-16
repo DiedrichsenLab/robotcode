@@ -145,46 +145,6 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	return 0;
 }
 
-//////////////////////
-//// Stuff to calculate MD online 
-/////////////
-
-// Function to calculate the Euclidean norm of a vector
-double calculate_norm(const std::vector<double>& vec) {
-	double sum_of_squares = 0.0;
-	for (double v : vec) {
-		sum_of_squares += v * v;
-	}
-	return std::sqrt(sum_of_squares);
-}
-
-// Function to perform dot product between two vectors
-double dot_product(const std::vector<double>& a, const std::vector<double>& b) {
-	double result = 0.0;
-	for (size_t i = 0; i < a.size(); ++i) {
-		result += a[i] * b[i];
-	}
-	return result;
-}
-
-// Function to scale a vector by a scalar value
-std::vector<double> scale_vector(const std::vector<double>& vec, double scalar) {
-	std::vector<double> result(vec.size());
-	for (size_t i = 0; i < vec.size(); ++i) {
-		result[i] = vec[i] * scalar;
-	}
-	return result;
-}
-
-// Function to subtract two vectors
-std::vector<double> subtract_vectors(const std::vector<double>& a, const std::vector<double>& b) {
-	std::vector<double> result(a.size());
-	for (size_t i = 0; i < a.size(); ++i) {
-		result[i] = a[i] - b[i];
-	}
-	return result;
-}
-
 
 ///////////////////////////////////////////////////////////////
 ///	MyExperiment Class: contains all the additional information on how that specific 
@@ -295,7 +255,7 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 			}
 		}
 	}
-
+	
 	/// play sound
 	//add to target whether sound on or off?
 	else if (arguments[0] == "playsound") {
@@ -431,9 +391,7 @@ void MyBlock::start() {
 ///////////////////////////////////////////////////////////////
 void MyBlock::giveFeedback() {
 	gs.showLines = 0;
-	gs.showFxCross = 0;
 	gs.showForces = 0;
-	double MD;
 	int max_holdTime;
 	int i, j, n = 0;
 	MyTrial* tpnr;
@@ -443,24 +401,17 @@ void MyBlock::giveFeedback() {
 	//double vecMD[2000];
 	blockFeedbackFlag = 1;
 
-
-	// putting MD values in an array
-	for (i = 0; i < 2000; i++) {
-		vecET[i] = 0;
-	}
-	for (i = 0; i < trialNum; i++) { //check each trial
+	// Median time from go cue to initial correct chord acquisition,
+	// calculated only from successful trials.
+	for (i = 0; i < trialNum; i++) {
 		tpnr = (MyTrial*)trialVec.at(i);
-		vecET[n] = tpnr->ET + tpnr->RT;
-		n++;
-		//if (tpnr->trialPoint == 1) { //if trial was correct
-		//	vecMD[n] = tpnr->MD;
-
-		//		//count correct trials
-		//}
+		if (tpnr->trialPoint == 1) {
+			vecET[n] = tpnr->RT + tpnr->ET;
+			n++;
+		}
 	}
 
-	// calculating the median ET and MD
-	if (n > 2) {
+	if (n > 0) {
 		double dummy;
 		for (i = 0; i < n - 1; i++) {
 			for (j = i + 1; j < n; j++) {
@@ -469,22 +420,14 @@ void MyBlock::giveFeedback() {
 					vecET[i] = vecET[j];
 					vecET[j] = dummy;
 				}
-				//if (vecMD[i] > vecMD[j]) {
-				//	dummy = vecMD[i];
-				//	vecMD[i] = vecMD[j];
-				//	vecMD[j] = dummy;
-				//}
 			}
 		}
+
 		if (n % 2 == 0) {
-			i = n / 2;
-			medianET = ((vecET[i - 1] + vecET[i]) / 2);
-			//medianMD = ((vecMD[i - 1] + vecMD[i]) / 2);
+			medianET = (vecET[n / 2 - 1] + vecET[n / 2]) / 2.0;
 		}
 		else {
-			i = (n - 1) / 2;
-			medianET = (vecET[i]);
-			//medianMD = (vecMD[i]);
+			medianET = vecET[n / 2];
 		}
 	}
 
@@ -499,15 +442,10 @@ void MyBlock::giveFeedback() {
 	gs.line[1] = buffer;
 	gs.lineColor[1] = 1;
 
-	if (n > 2) {
-		sprintf(buffer, "Median Execution Time = %.2f ms", medianET);
+	if (n > 0) {
+		sprintf(buffer, "Median execution time = %.2f s", medianET);
 		gs.line[2] = buffer;
 		gs.lineColor[2] = 1;
-
-		/*sprintf(buffer, "Finger Synchrony = %.2f 1/N", 1 / medianMD);
-		gs.line[3] = buffer;
-		gs.lineColor[3] = 1;*/
-		//}
 	}
 }
 
@@ -524,7 +462,6 @@ MyTrial::MyTrial() {
 	trialErrorType = 0;	// flag for the type of trial error -> 0: no error , 1: planning error , 2: execution error
 	RT = 0;
 	ET = 0;
-	MD = 0;
 	fixationCross.setColor(SCR_WHITE);
 
 }
@@ -659,17 +596,9 @@ void MyTrial::updateTextDisplay() {
 	sprintf(buffer, "Time : %2.2f", gTimer[1]);
 	tDisp.setText(buffer, 3, 0);
 
-	//if (state == WAIT_EXEC || state == GIVE_FEEDBACK) {
-	sprintf(buffer, "State : %d   Trial: %d    Hold time: %d    Max hold time: %d, trialPoint: %d, RT: %4.2f, ET: %4.2f, MD: %4.2f, nCorr: %d",
-		state, gExp->theBlock->trialNum, holdTime, max_holdTime, trialPoint, RT, ET, MD, gNumCorr);
+	sprintf(buffer, "State : %d   Trial: %d    Hold time: %d    Max hold time: %d, trialPoint: %d, RT: %4.2f, ET: %4.2f, nCorr: %d",
+		state, gExp->theBlock->trialNum, holdTime, max_holdTime, trialPoint, RT, ET, gNumCorr);
 	tDisp.setText(buffer, 4, 0);
-	//}
-
-	/*else {
-		sprintf(buffer, "State : %d   Trial: %d    Hold time: %d    Max hold time: %d, trialPoint: %d, RT: %4.2f, ET: %4.2f, MD: %4.2f",
-			state, gExp->theBlock->trialNum, holdTime, max_holdTime, trialPoint, RT, ET, MD);
-		tDisp.setText(buffer, 4, 0);
-	}*/
 
 
 	// display forces
@@ -727,12 +656,12 @@ void MyTrial::updateGraphics(int what) {
 			xPos = (x1 + x2) * 0.5;
 			xSize = x2 - x1;
 			ySize = FLX_TOP_Y1 - FLX_BOT_Y1;
-			if (tmpChord == '0') {
+			if (tmpChord == '9') {
 
 			}
 			else if (tmpChord == '1') {
 				yPos = (FLX_TOP_Y1 + FLX_BOT_Y1) * 0.5 + VERT_SHIFT;
-				if (state == WAIT_EXEC) {
+				if (gs.fingerCorrectGraphic[i]) {
 					gScreen.setColor(Screen::green);
 					gScreen.drawBox(xSize, ySize, xPos, yPos);
 				}
@@ -743,7 +672,7 @@ void MyTrial::updateGraphics(int what) {
 			}
 			else if (tmpChord == '2') {
 				yPos = -(FLX_TOP_Y1 + FLX_BOT_Y1) * 0.5 + VERT_SHIFT;
-				if (state == WAIT_EXEC) {
+				if (gs.fingerCorrectGraphic[i]) {
 					gScreen.setColor(Screen::green);
 					gScreen.drawBox(xSize, ySize, xPos, yPos);
 				}
@@ -769,7 +698,12 @@ void MyTrial::updateGraphics(int what) {
 
 	if (gs.showLines == 1) {
 		// Baseline box
-		gScreen.setColor(myColor[gs.boxColor]);
+		if (gs.planError) {
+			gScreen.setColor(myColor[3]); // red baseline box
+		}
+		else {
+			gScreen.setColor(myColor[5]); // grey baseline box
+		}
 		gScreen.drawBox(FINGWIDTH * N_FINGERS, (baseTHhi) * 2, 0, VERT_SHIFT);
 
 		// Baseline lines
@@ -830,29 +764,12 @@ void MyTrial::updateGraphics(int what) {
 
 	if (gs.showFeedback) {
 		gScreen.setColor(Screen::white);
-		if (gs.rewardTrial == 1)
-			sprintf(buffer, "+1, execution time = %.2fs", ET);
+		if (gs.rewardTrial > 0)
+			sprintf(buffer, "+%d, execution time = %.2fs", gs.rewardTrial, ET);
 		gs.line[2] = buffer;
 
-		//if (gs.planError)
-			//gScreen.print("-Moved during planning-", 0, 3, 7);
-		//if (gs.chordError)
-			//gScreen.print("-Chord too short-", 0, 3, 7);
-	}
-
-	if (gs.showFxCross == 1) { // show lines
-
-		if (gs.rewardTrial == 1 /*&& state == GIVE_FEEDBACK*/) {
-			fixationCross.setColor(SCR_GREEN);
-		}
-		else if (gs.rewardTrial == 0 /*&& state == GIVE_FEEDBACK*/) {
-			fixationCross.setColor(SCR_RED);
-
-		}
-		else if (gs.rewardTrial == -1) {
-			fixationCross.setColor(SCR_WHITE);
-		}
-		fixationCross.draw();
+		if (gs.planError)
+			gScreen.print("-Moved during planning-", 0, 3, 7);
 	}
 
 	if (gs.showForces) {
@@ -862,7 +779,7 @@ void MyTrial::updateGraphics(int what) {
 
 		for (i = 0; i < 5; i++) {
 
-			forceCursor[i].position[0] = (((2 * i + 1) * FINGWIDTH) - (FINGWIDTH * N_FINGERS)) / 2.0;;
+			forceCursor[i].position[0] = (((2 * i + 1) * FINGWIDTH) - (FINGWIDTH * N_FINGERS)) / 2.0;
 			forceCursor[i].position[1] = VERT_SHIFT + forceGain * diffForce[i];
 
 			forceCursor[i].draw();
@@ -892,9 +809,6 @@ void MyTrial::updateGraphics(int what) {
 		case WAIT_ITI:
 			stateString = "Wait ITI";
 			break;
-		case ACQUIRE_HRF:
-			stateString = "Acquire HRF";
-			break;
 		case END_TRIAL:
 			stateString = "End Trial";
 			break;
@@ -903,14 +817,6 @@ void MyTrial::updateGraphics(int what) {
 		gScreen.print(stateString, -21, 12, 5);
 	}
 
-}
-
-#include <future>  
-
-std::future<void> mdFuture;  // Future to track async task
-
-void MyTrial::calc_md_async() {
-	mdFuture = std::async(std::launch::async, &MyTrial::calc_md, this);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -935,87 +841,11 @@ void MyTrial::updateHaptics() {
 			dataman.stopRecording();
 		}
 	}
-	if (!mdFuture.valid()) {
-		calc_md_async();  // Start first time
-	}
-	else if (mdFuture.valid() && mdFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
-		calc_md_async();  // Start computation asynchronously
-	}
-}
-
-void MyTrial::calc_md() {
-
-	if (state == 5 && trialPoint == 1 && MD_done == FALSE) {
-		MyBlock block;
-
-		int trialNum = gExp->theBlock->trialNum;
-
-		std::cout << "Calculating MD... TrialNum = " << trialNum << std::endl;
-
-		if (DataRecord::X.find(trialNum) == DataRecord::X.end()) {
-			std::cerr << "ERROR: No data for trialNum " << trialNum << std::endl;
-			return;
-		}
-
-		vector<vector<double>> X = DataRecord::X[trialNum];
-
-		if (X.empty()) {
-			std::cerr << "ERROR: X[" << trialNum << "] is empty!" << std::endl;
-			return;
-		}
-
-		else {
-			std::cout << "X has " << X.size() << "timepoints" << trialNum << std::endl;
-		}
-
-		int max_holdTime_samples = std::round(max_holdTime / 2); // take max_holdTime in samples
-
-		X.resize(X.size() - max_holdTime_samples); //remove holding time from X
-
-		size_t N = X.size();
-		size_t m = X[0].size();
-
-		// Initial and final vectors
-		std::vector<double> F1 = X[0];
-		std::vector<double> FN = subtract_vectors(X[N - 1], F1);  // Shift the end point
-
-		// Shift all points
-		std::vector<std::vector<double>> shifted_matrix(N, std::vector<double>(m));
-		for (size_t i = 0; i < N; ++i) {
-			shifted_matrix[i] = subtract_vectors(X[i], F1);
-		}
-
-		MD = 0.0;
-
-		// Calculate distances
-		for (size_t t = 1; t < N - 1; ++t) {
-			std::vector<double> Ft = shifted_matrix[t];
-
-			// Project Ft onto the ideal straight line
-			double proj_scalar = dot_product(Ft, FN) / dot_product(FN, FN);
-			std::vector<double> proj = scale_vector(FN, proj_scalar);
-
-			// Calculate the Euclidean distance
-			double d = calculate_norm(subtract_vectors(Ft, proj));
-
-			MD += d;
-
-
-		}
-
-		MD /= (N - 2);
-
-		//std::cout << "MD Computed: " << MD << std::endl;  // Debug output
-
-		MD_done = TRUE;
-	}
 }
 
 //////////////////////////////////////////////////////////////////////
 // control Trial: A state-driven routine to guide through the process of a trial
 //////////////////////////////////////////////////////////////////////
-//bool planErrorFlag = 0;		// flag for checking if error happens during planning.
-//bool chordErrorFlag = 0;	// flag for checking if the chord was correct or not.
 bool fingerCorrect[5] = { 0,0,0,0,0 };
 bool chordCorrect = 0;
 bool prev_chordCorrect;
@@ -1026,21 +856,16 @@ void MyTrial::control() {
 	bool check_baseline_hold = 0;
 
 	switch (state) {
-	case WAIT_TRIAL: //0
-		gs.showLines = 1;	// set screen lines/force bars to show
+	case WAIT_TRIAL: // state = 0
+		gs.showLines = 1;
 		gs.showFeedback = 0;
 		gs.showTarget = 0;
-		gs.showFxCross = 0;
 		gs.showTimer5 = 0;
 		gs.showForces = 1;
 		gs.showDiagnostics = 0;
-		// gs.showForceBars = 1;
 		gs.rewardTrial = -1;
 		trialPoint = 0;
-		//gs.planError = 0;
 		gs.boxColor = 5;	// grey baseline box color
-
-		//planErrorFlag = 0;
 
 		for (i = 0; i < NUMDISPLAYLINES; i++) {
 			if (!gs.line[i].empty()) {
@@ -1050,19 +875,24 @@ void MyTrial::control() {
 		}
 		break;
 	
-	case START_TRIAL: //1	
-		gs.showLines = 1;	// set screen lines/force bars to show
+	case START_TRIAL: // state =1	
+		max_holdTime = 0;
+		holdTime = 0;
+		chordCorrect = 0;
+		prev_chordCorrect = 0;
+		chordStarted = 0;
+		RT = 0;
+		ET = 0;
+		gs.showLines = 1;
 		gs.showFeedback = 0;
 		gs.showTimer5 = 0;
-		gs.showFxCross = 1;
 		gs.showForces = 1;
 		gs.boxColor = 5;	// grey baseline box color
 		gs.chordError = 0;
-		//planErrorFlag = 0;	// initialize planErrorFlag variable in the begining of each trial
-		//chordErrorFlag = 1;	// initialize chordErrorFlag variable in the begining of each trial
 		trialPoint = 0;
 		gs.rewardTrial = -1;
 		planError = 0;
+		gs.planError = 0;
 
 		for (i = 0; i < 5; i++) {
 			gs.fingerCorrectGraphic[i] = 0;
@@ -1081,24 +911,23 @@ void MyTrial::control() {
 		state = WAIT_PLAN;
 		break;
 
-	case WAIT_PLAN: //2
-		//gs.planCue = 1;
+	case WAIT_PLAN: // state = 2
 		gs.showTimer5 = 0;
-		gs.showFxCross = 1;
 		gs.showForces = 1;
 		gs.showLines = 1;
-		gs.showTarget = 1;
+		gs.showTarget = 0;
+		gs.planError = 0;
 
-		for (i = 0; i < 5; i++) {	// RT is the time of the first finger outside the baseline area
+		for (i = 0; i < 5; i++) {
 			fingerForceTmp = VERT_SHIFT + forceGain * fGain[i] * (gBox[0].getForce(i) - gBox[1].getForce(i));
-			//check_baseline_hold = 1;
 			if (fingerForceTmp >= (VERT_SHIFT + baseTHhi) || fingerForceTmp <= (VERT_SHIFT - (baseTHhi))) {
 				planError = 1;
+				gs.planError = 1;
 				gs.rewardTrial = 0;
 				break;
 			}
 		}
-
+		
 		// if subjects holds the baseline zone for plan time after visual cue was shown go to execution state:
 		if (gTimer[3] >= planTime) {
 			state = WAIT_EXEC;
@@ -1108,44 +937,31 @@ void MyTrial::control() {
 			gTimer.reset(3);	// resetting timer 3 to use in next state
 			gTimer.reset(5);	// resetting timer 4 to use in next state
 		}
-		
 		break;
 
-	case WAIT_EXEC:
+	case WAIT_EXEC: // state = 3
+		gs.planError = 0;
 		gs.showLines = 1;		// show force bars and thresholds
 		gs.showTarget = 1;		// show the targets on the screen (grey bars)
 		gs.showTimer5 = 0;		// show timer 4 value on screen (duration of holding a chord)
 		gs.showForceBars = 1;
-		gs.showFxCross = 1;
 		gs.boxColor = 5;		// grey baseline box color
 		
 		if (chordCorrect == 0 && chordStarted == 0) {
 			for (i = 0; i < 5; i++) {	// RT is the time of the first finger outside the baseline area
 				fingerForceTmp = VERT_SHIFT + forceGain * fGain[i] * (gBox[0].getForce(i) - gBox[1].getForce(i));
-				//check_baseline_hold = 1;
 				if (fingerForceTmp >= (VERT_SHIFT + baseTHhi) || fingerForceTmp <= (VERT_SHIFT - (baseTHhi))) {
-					diffForceMov1[i] = fingerForceTmp;
 					RT = gTimer[2];
 					chordStarted = 1;
-					std::vector<double> X(5, 0.0);
 					break;
 				}
 			}
-		}
-		else if (chordStarted == 1) {
-			std::vector<double> diffForceMov_offset(5, 0.0);
-			for (i = 0; i < 5; i++) {
-				diffForceMov[i] = (gBox[0].getForce(i) - gBox[1].getForce(i));
-				diffForceMov_offset[i] = diffForceMov[i] - diffForceMov1[i]; // Element-wise subtraction
-			}
-			X.push_back(diffForceMov_offset);  // Append to class member X
 		}
 
 		// checking state of each finger
 		for (i = 0; i < 5; i++) {
 			tmpChord = chordID[i];	// required state of finger i -> 0:relaxed , 1:extended , 2:flexed -- chordID comes from the target file
 			fingerForceTmp = VERT_SHIFT + forceGain * fGain[i] * (gBox[0].getForce(i) - gBox[1].getForce(i));
-			//fingerForceTmp5[i] = fingerForceTmp;
 			switch (tmpChord) {
 			case '9':	// finger i should be in the baseline zone (relaxed)
 				fingerCorrect[i] = ((fingerForceTmp <= VERT_SHIFT + baseTHhi) && (fingerForceTmp >= VERT_SHIFT - baseTHhi));
@@ -1157,7 +973,7 @@ void MyTrial::control() {
 				fingerCorrect[i] = ((fingerForceTmp <= VERT_SHIFT - FLX_BOT_Y1) && (fingerForceTmp >= VERT_SHIFT - (FLX_TOP_Y1)));
 				break;
 			}
-			gs.fingerCorrectGraphic[i] = 1;
+			gs.fingerCorrectGraphic[i] = fingerCorrect[i];
 		}
 
 		// Checking if the whole chord is correct
@@ -1181,40 +997,50 @@ void MyTrial::control() {
 
 		prev_chordCorrect = chordCorrect;
 
-		// if subject held the chord for execAccTime (accepting hold time), trial is correct -> go to feedback state:
+		// if subject held the chord for success_holdTime (accepting hold time), trial is correct -> go to feedback state:
+		if (chordCorrect == 1 && max_holdTime >= success_holdTime) {
+			state = GIVE_FEEDBACK;
+			gTimer.reset(2);
+			gTimer.reset(3);
+		}
+		
+		// if took too long to hold the chord, trial is incorrect -> go to feedback state:
 		if (gTimer[5] >= execMaxTime) {
-
 			// go to the give_feedback state:
 			state = GIVE_FEEDBACK;
 
 			// resetting timers:
 			gTimer.reset(2);
 			gTimer.reset(3);
-
-			MD_done = FALSE;
 		}
 
 		break;
 
-	case GIVE_FEEDBACK:		
-
-		if (chordStarted == 1 && chordCorrect == 1 && planError == 0 && max_holdTime >= success_holdTime) {
-			trialPoint = 1;
-		}
-		else {
-			MD = 0;
-			RT = 0;
-			ET = execMaxTime;
-			trialPoint = 0;
-		}
-
+	case GIVE_FEEDBACK: // state = 4		
 		gs.showLines = 1;			// no force lines/thresholds
 		gs.showTarget = 0;			// no visual targets
 		gs.showTimer5 = 0;
 		gs.showFeedback = 0;		// showing feedback (refer to MyTrial::updateGraphics() for details)
-		gs.rewardTrial = trialPoint;
-		gs.showFxCross = 1;
+		gs.rewardTrial = 0;
 		gs.showForces = 1;
+		gs.planError = planError;
+		if (planError) {
+			trialPoint = 0;
+			gs.showFeedback = 1;
+			gs.rewardTrial = 0;
+			RT = execMaxTime;
+			ET = execMaxTime;
+		}
+		else if (chordStarted == 1 && chordCorrect == 1 && max_holdTime >= success_holdTime) {
+			trialPoint = 1;
+			gs.showFeedback = 1;
+			gs.rewardTrial = trialPoint;
+		}
+		else {
+			RT = execMaxTime;
+			ET = execMaxTime;
+			trialPoint = 0;
+		}
 
 		if (gTimer[2] >= feedbackTime) {
 			state = WAIT_ITI;
@@ -1223,23 +1049,20 @@ void MyTrial::control() {
 		}
 		break;
 
-	case WAIT_ITI:
-		SetDIOState(0, 0xFFFF);
-
+	case WAIT_ITI: // state = 5
 		gs.showLines = 1;
 		gs.showTarget = 0;
 		gs.showForces = 1;
-		gs.showFxCross = 1;
 		gs.showFeedback = 0;
 		gs.rewardTrial = -1;
 		if (gTimer[2] >= iti) {
-			state = ACQUIRE_HRF;
+			state = END_TRIAL;
 			dataman.stopRecording();
 			gTimer.reset(2);
 		}
 		break;
 
-	case END_TRIAL:
+	case END_TRIAL: // state = 6
 		gTimer.reset(1);
 		dataman.stopRecording();
 		break;
@@ -1270,11 +1093,6 @@ DataRecord::DataRecord(int s, int t, bool started) {
 
 		currentDiffForce[i] = forceGain * fGain[i] * (gBox[0].getForce(i) - gBox[1].getForce(i));
 	}
-
-	if (state == 4 && started) {
-		X[trialNum].push_back(currentDiffForce);
-	}
-
 }
 
 /////////////////////////////////////////////////////////////////////////////////////

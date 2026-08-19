@@ -21,8 +21,8 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{ed7dc64a-c7b0-41c9-9edc-b1d6ae891153}</ProjectGuid>
-    <RootNamespace>EFCcompositionalEMG</RootNamespace>
+    <ProjectGuid>{38326b3c-536a-4852-a8fb-298b4450eac1}</ProjectGuid>
+    <RootNamespace>singlegaingeneralization</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -71,14 +71,14 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>C:\robotcode\include;$(IncludePath)</IncludePath>
-    <SourcePath>C:\robotcode\source;$(SourcePath)</SourcePath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);C:\robotcode\include;</IncludePath>
+    <SourcePath>$(VC_SourcePath);C:\robotcode\source</SourcePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS </PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
@@ -131,28 +131,31 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\source\Experiment.cpp" />
-    <ClCompile Include="..\..\..\source\S626sManager.cpp" />
-    <ClCompile Include="..\..\..\source\Screen.cpp" />
-    <ClCompile Include="..\..\..\source\Serial.cpp" />
-    <ClCompile Include="..\..\..\source\StimulatorBox.cpp" />
-    <ClCompile Include="..\..\..\source\TextDisplay.cpp" />
-    <ClCompile Include="..\..\..\source\Timer626.cpp" />
-    <ClCompile Include="..\..\..\source\TRCounter626.cpp" />
-    <ClCompile Include="..\..\..\source\WIN626.C" />
-    <ClCompile Include="EFC_compos_test.cpp" />
+    <ClInclude Include="..\..\..\..\include\DataManager.h" />
+    <ClInclude Include="..\..\..\..\include\Experiment.h" />
+    <ClInclude Include="..\..\..\..\include\S626sManager.h" />
+    <ClInclude Include="..\..\..\..\include\Screen.h" />
+    <ClInclude Include="..\..\..\..\include\Serial.h" />
+    <ClInclude Include="..\..\..\..\include\StimulatorBox.h" />
+    <ClInclude Include="..\..\..\..\include\Target.h" />
+    <ClInclude Include="..\..\..\..\include\TextDisplay.h" />
+    <ClInclude Include="..\..\..\..\include\Timer626.h" />
+    <ClInclude Include="..\..\..\..\include\TRCounter626.h" />
+    <ClInclude Include="..\..\..\..\include\Vector2d.h" />
+    <ClInclude Include="..\..\..\..\include\Win626.h" />
+    <ClInclude Include="single_gain_generalization.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\include\Experiment.h" />
-    <ClInclude Include="..\..\..\include\S626sManager.h" />
-    <ClInclude Include="..\..\..\include\Screen.h" />
-    <ClInclude Include="..\..\..\include\StimulatorBox.h" />
-    <ClInclude Include="..\..\..\include\Target.h" />
-    <ClInclude Include="..\..\..\include\TextDisplay.h" />
-    <ClInclude Include="..\..\..\include\Timer626.h" />
-    <ClInclude Include="..\..\..\include\TRCounter626.h" />
-    <ClInclude Include="..\..\..\include\Win626.h" />
-    <ClInclude Include="EFC_compos_test.h" />
+    <ClCompile Include="..\..\..\..\source\Experiment.cpp" />
+    <ClCompile Include="..\..\..\..\source\S626sManager.cpp" />
+    <ClCompile Include="..\..\..\..\source\Screen.cpp" />
+    <ClCompile Include="..\..\..\..\source\Serial.cpp" />
+    <ClCompile Include="..\..\..\..\source\StimulatorBox.cpp" />
+    <ClCompile Include="..\..\..\..\source\TextDisplay.cpp" />
+    <ClCompile Include="..\..\..\..\source\Timer626.cpp" />
+    <ClCompile Include="..\..\..\..\source\TRCounter626.cpp" />
+    <ClCompile Include="..\..\..\..\source\WIN626.C" />
+    <ClCompile Include="single_gain_generalization.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

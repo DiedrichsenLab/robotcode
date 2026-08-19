@@ -15,9 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="EFC_compos.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\source\Experiment.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -45,11 +42,11 @@
     <ClCompile Include="..\..\..\source\WIN626.C">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="EFC_compos_test.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="EFC_compos.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\include\Experiment.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -75,6 +72,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\include\Win626.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="EFC_compos_test.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -129,10 +129,13 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	//gBox[1].init(BOX_RIGHT, "c:/robot/calib/flatbox2_lowforce_RIGHT_06-Jul-2017.txt");
 
 	gBox[0].init(BOX_LEFT,"c:/robotcode/calib/Flatbox1_highforce2_LEFT_12-Feb-2022.txt");
+	//gBox[0].init(BOX_LEFT,"c:/robotcode/calib/Flatbox1_highforce2_LEFT_12-Aug-2026-Amin-Single-Gain.txt");
 	//gBox[1].init(BOX_RIGHT,"c:/robotcode/calib/Flatbox1_highforce2_RIGHT_03-Dec-2021.txt");
 
 	//low force Flatbox3
 	gBox[1].init(BOX_RIGHT, "c:/robotcode/calib/Flatbox3_lowforce_RIGHT_22_Aug_2024.txt");
+	//gBox[1].init(BOX_RIGHT, "c:/robotcode/calib/Flatbox3_lowforce_RIGHT_12-Aug-2026-Amin_Single-Gain.txt");
+
 
 	// low force
 	//gBox[0].init(BOX_LEFT,"c:/robot/calib/flatbox2_lowforce_LEFT_03-Mar-2017.txt");

@@ -166,7 +166,7 @@ private:
 	bool check_last_beep_done = 0;
 	bool check_mov_initiation = 0;
 	double targetForces[5];					///< The target forces for the 5 fingers (in N) - this is used for calculating points and giving feedback.
-	double endForces[5];
+	double endForces[5] = { 0.0, 0.0, 0.0, 0.0, 0.0 };
 	double trialGain;							///< Visual feedback gain for this trial (from .tgt)
 	bool isTargetVisible;						///< Whether the target is visible (from .tgt)
 

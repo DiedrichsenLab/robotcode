@@ -843,6 +843,7 @@ void MyTrial::control() {
 				earlyMovFlag = 1; //early movement
 				gs.showForces = 0; // hide forces if subject goes out of baseline zone
 				state = GIVE_FEEDBACK;
+				gTimer.reset(2);
 				break;
 			}
 		}
@@ -885,6 +886,8 @@ void MyTrial::control() {
 				lateMovFlag = 1;
 				gs.showForces = 0; // hide forces if subject was late
 				state = GIVE_FEEDBACK;
+				gTimer.reset(2);
+				break;
 			}
 		}
 

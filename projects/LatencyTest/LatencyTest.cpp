@@ -104,6 +104,7 @@ Trial* MyBlock::getTrial() {
 void MyBlock::start() {
 	gs.reset();
 	gs.feedback = "";
+	gTimer.reset(0);			// continuous clock for the whole block
 }
 
 void MyBlock::giveFeedback() {
@@ -120,8 +121,17 @@ MyTrial::MyTrial() {
 	flashDur = 0;
 	onsetTime = 0;
 	offsetTime = 0;
+	duration = 0;
 	onsetTimeReal = 0;
 	offsetTimeReal = 0;
+	durationReal = 0;
+	onsetTimeBlock = 0;
+	offsetTimeBlock = 0;
+	durationBlock = 0;
+	onsetTimeBlockReal = 0;
+	offsetTimeBlockReal = 0;
+	onsetAbs = 0;
+	offsetAbs = 0;
 }
 
 void MyTrial::read(istream& in) {
@@ -132,8 +142,17 @@ void MyTrial::writeDat(ostream& out) {
 	out << flashDur << "\t"
 		<< onsetTime << "\t"
 		<< offsetTime << "\t"
+		<< duration << "\t"
 		<< onsetTimeReal << "\t"
 		<< offsetTimeReal << "\t"
+		<< durationReal << "\t"
+		<< onsetTimeBlock << "\t"
+		<< offsetTimeBlock << "\t"
+		<< durationBlock << "\t"
+		<< onsetTimeBlockReal << "\t"
+		<< offsetTimeBlockReal << "\t"
+		<< onsetAbs << "\t"
+		<< offsetAbs << "\t"
 		<< endl;
 }
 
@@ -141,8 +160,17 @@ void MyTrial::writeHeader(ostream& out) {
 	out << "flashDur" << "\t"
 		<< "onsetTime" << "\t"
 		<< "offsetTime" << "\t"
+		<< "duration" << "\t"
 		<< "onsetTimeReal" << "\t"
 		<< "offsetTimeReal" << "\t"
+		<< "durationReal" << "\t"
+		<< "onsetTimeBlock" << "\t"
+		<< "offsetTimeBlock" << "\t"
+		<< "durationBlock" << "\t"
+		<< "onsetTimeBlockReal" << "\t"
+		<< "offsetTimeBlockReal" << "\t"
+		<< "onsetAbs" << "\t"
+		<< "offsetAbs" << "\t"
 		<< endl;
 }
 
@@ -171,10 +199,10 @@ void MyTrial::copyHaptics() {
 }
 
 void MyTrial::updateTextDisplay() {
-	sprintf(buffer, "State: %d   trial t: %2.1f", state, gTimer[1]);
+	sprintf(buffer, "State: %d   trial t: %2.1f   block t: %2.1f", state, gTimer[1], gTimer[0]);
 	tDisp.setText(buffer, 2, 0);
 
-	sprintf(buffer, "flashDur: %2.1f   onset: %2.1f   offset: %2.1f", flashDur, onsetTime, offsetTime);
+	sprintf(buffer, "flashDur: %2.1f   onset: %2.1f   offset: %2.1f   dur: %2.1f", flashDur, onsetTime, offsetTime, duration);
 	tDisp.setText(buffer, 4, 0);
 }
 
@@ -204,7 +232,7 @@ void MyTrial::updateHaptics() {
 
 	if (dataman.isRecording()) {
 		gTimer.reset(4);
-		bool x = dataman.record(DataRecord(state, gExp->theBlock->trialNum));
+		bool x = dataman.record(DataRecord(state, gExp->theBlock->trialNum, flashDur));
 		if (!x) {
 			dataman.stopRecording();
 		}
@@ -220,8 +248,17 @@ void MyTrial::control() {
 	case START_TRIAL:
 		onsetTime = 0;
 		offsetTime = 0;
+		duration = 0;
 		onsetTimeReal = 0;
 		offsetTimeReal = 0;
+		durationReal = 0;
+		onsetTimeBlock = 0;
+		offsetTimeBlock = 0;
+		durationBlock = 0;
+		onsetTimeBlockReal = 0;
+		offsetTimeBlockReal = 0;
+		onsetAbs = 0;
+		offsetAbs = 0;
 		gs.rectOn = false;
 		gs.feedback = "";
 		dataman.clear();
@@ -236,6 +273,9 @@ void MyTrial::control() {
 			gs.rectOn = true;
 			onsetTime = gTimer[1];
 			onsetTimeReal = gTimer.readReal(1);
+			onsetTimeBlock = gTimer[0];
+			onsetTimeBlockReal = gTimer.readReal(0);
+			onsetAbs = gTimer.getRealtime();
 			gTimer.reset(2);
 		}
 		if (gTimer[2] >= flashDur) {
@@ -248,6 +288,12 @@ void MyTrial::control() {
 			gs.rectOn = false;
 			offsetTime = gTimer[1];
 			offsetTimeReal = gTimer.readReal(1);
+			offsetTimeBlock = gTimer[0];
+			offsetTimeBlockReal = gTimer.readReal(0);
+			offsetAbs = gTimer.getRealtime();
+			duration = offsetTime - onsetTime;
+			durationReal = offsetTimeReal - onsetTimeReal;
+			durationBlock = offsetTimeBlock - onsetTimeBlock;
 			gTimer.reset(2);
 		}
 		if (gTimer[2] >= ITI) {
@@ -262,16 +308,24 @@ void MyTrial::control() {
 	}
 }
 
-DataRecord::DataRecord(int s, int t) {
+DataRecord::DataRecord(int s, int t, double dur) {
 	state = s;
 	trialNum = t;
-	timeReal = gTimer.readReal(1);
-	time = gTimer[1];
+	flashDur = dur;
 	rectOn = gs.rectOn ? 1 : 0;
+	time = gTimer[1];
+	timeReal = gTimer.readReal(1);
+	timeBlock = gTimer[0];
+	timeBlockReal = gTimer.readReal(0);
+	timeAbs = gTimer.getRealtime();
 }
 
 void DataRecord::write(ostream& out) {
-	out << trialNum << "\t" << state << "\t" << timeReal << "\t" << time << "\t" << rectOn << endl;
+	out << trialNum << "\t" << state << "\t" << rectOn << "\t"
+		<< flashDur << "\t"
+		<< time << "\t" << timeReal << "\t"
+		<< timeBlock << "\t" << timeBlockReal << "\t"
+		<< timeAbs << endl;
 }
 
 GraphicState::GraphicState() {

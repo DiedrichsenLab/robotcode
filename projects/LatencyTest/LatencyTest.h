@@ -61,14 +61,18 @@ public:
 class DataRecord {
 public:
 	DataRecord() {}
-	DataRecord(int s, int t);
+	DataRecord(int s, int t, double dur);
 	void write(ostream& out);
 public:
 	int trialNum;
 	int state;
 	int rectOn;
-	double timeReal;
-	double time;
+	double flashDur;
+	double time;				///< trial clock (interrupt)
+	double timeReal;			///< trial clock (s626)
+	double timeBlock;			///< time from block start (interrupt)
+	double timeBlockReal;		///< time from block start (s626)
+	double timeAbs;				///< s626 base clock from program start
 };
 
 ///////////////////////////////////////////////////////////////
@@ -105,10 +109,19 @@ public:
 private:
 	TrialState state;
 	double flashDur;			///< how long the rectangle stays white [ms], from .tgt
-	double onsetTime;			///< trial timer at white onset
-	double offsetTime;			///< trial timer at white offset
-	double onsetTimeReal;		///< s626 real clock at white onset
-	double offsetTimeReal;		///< s626 real clock at white offset
+	double onsetTime;			///< trial clock at white onset
+	double offsetTime;			///< trial clock at white offset
+	double duration;			///< offsetTime - onsetTime
+	double onsetTimeReal;		///< trial s626 clock at white onset
+	double offsetTimeReal;		///< trial s626 clock at white offset
+	double durationReal;		///< offsetTimeReal - onsetTimeReal
+	double onsetTimeBlock;		///< block clock at white onset (aligns with Arduino)
+	double offsetTimeBlock;		///< block clock at white offset
+	double durationBlock;		///< offsetTimeBlock - onsetTimeBlock
+	double onsetTimeBlockReal;	///< block s626 clock at white onset
+	double offsetTimeBlockReal;	///< block s626 clock at white offset
+	double onsetAbs;			///< s626 base clock at white onset
+	double offsetAbs;			///< s626 base clock at white offset
 	DataManager<DataRecord, 30000 / 5> dataman;
 };
 

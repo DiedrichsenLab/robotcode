@@ -20,6 +20,8 @@ char buffer[300];
 HINSTANCE gThisInst;
 Experiment* gExp;
 Trial* currentTrial;
+char gKey;
+bool gKeyPressed;
 
 ///////////////////////////////////////////////////////////////
 /// Main

@@ -7,4 +7,4 @@ Including:</br>
 4- source: source directory (public source files used by projects).</br>
 5- util: some extra utilities.</br></br>
 
-Current codes are made compatible with windows 10 and MS Visual Studio C++ community 2022.
+Current codes are made compatible with windows 10 and MS Visual Studio C++ community 2022 by Ali Ghavampour and Mahdiyar Shahbazi. Ali Ghavampour and Amin Nazerzadeh are working on a more stable version that works in Linux. Stay tuned...

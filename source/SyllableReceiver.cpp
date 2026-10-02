@@ -123,3 +123,37 @@ bool SyllableReceiver::poll(SyllableEvent& out) {
 void SyllableReceiver::flush() {
     head.store(tail.load(std::memory_order_acquire), std::memory_order_release);
 }
+
+bool SyllableReceiver::setRemote(const char* ip, unsigned short port) {
+    sockaddr_in addr{};
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(port);
+    if (inet_pton(AF_INET, ip, &addr.sin_addr) != 1) {
+        std::cerr << "SyllableReceiver: invalid remote IP '" << ip << "'\n";
+        return false;
+    }
+    remoteAddr = addr;
+    remoteSet = true;
+    return true;
+}
+
+bool SyllableReceiver::sendTrialEnd(uint8_t reason, uint32_t trialNum) {
+    if (!running || sock == INVALID_SOCKET || !remoteSet) return false;
+
+    TrialCtrlMsg msg;
+    msg.magic = SYLLABLE_MSG_MAGIC;
+    msg.type = TRIAL_CTRL_TRIAL_END;
+    msg.reason = reason;
+    msg.reserved = 0;
+    msg.trialNum = trialNum;
+
+    // Sending on the same socket the worker thread is receiving on is safe
+    // in Winsock; a UDP sendto does not block in practice.
+    int n = sendto(sock, reinterpret_cast<const char*>(&msg), sizeof(msg), 0,
+                   reinterpret_cast<const sockaddr*>(&remoteAddr), sizeof(remoteAddr));
+    if (n == SOCKET_ERROR) {
+        std::cerr << "SyllableReceiver: sendto() failed (" << WSAGetLastError() << ")\n";
+        return false;
+    }
+    return true;
+}

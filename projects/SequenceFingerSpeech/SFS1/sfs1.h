@@ -137,7 +137,8 @@ public:
 	virtual void writeMov(ostream& out);		// Trial output to data file 
 	friend  void MyBlock::giveFeedback();
 private:
-	TrialState state;						///< State of the Trial 
+	void sendTrialEnd(int reason);				///< Tell the speech classifier the trial ended (once per trial)
+	TrialState state;						///< State of the Trial
 	int subNum;									///< Which subject number 
 	int group;									///< which group
 	bool isTrain;							///< Specific sequence or not
@@ -197,6 +198,7 @@ private:
 	double pressTime[MAX_PRESS];			///< Time when each finger was pressed (or syllable onset for speech)
 	double releaseTime[MAX_PRESS];			///< Time when each finger was released (or syllable offset for speech)
 	unsigned int syllableDevTime[MAX_PRESS];///< Device-reported timestamp (ms) for each syllable onset (speech only)
+	bool trialEndSent;						///< Has the trial-end message been sent to the classifier?
 	double RT;								///< Reaction time (from go cue)
 	double ET;								///< Execution time (RT + MT)
 	double MT;								///< Movement time 

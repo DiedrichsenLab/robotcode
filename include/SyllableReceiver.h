@@ -25,6 +25,31 @@ struct SyllableMsg {
 
 #define SYLLABLE_MSG_MAGIC 0xAB
 
+// Control message sent back to the classifier (same 8-byte layout):
+//   uint8_t  magic      0xAB sanity byte
+//   uint8_t  type       2 = trial end
+//   uint8_t  reason     why the trial ended (TrialEndReason)
+//   uint8_t  reserved   0
+//   uint32_t trialNum   trial number within the block (1-based)
+#pragma pack(push, 1)
+struct TrialCtrlMsg {
+    uint8_t  magic;
+    uint8_t  type;
+    uint8_t  reason;
+    uint8_t  reserved;
+    uint32_t trialNum;
+};
+#pragma pack(pop)
+
+#define TRIAL_CTRL_TRIAL_END 2
+
+enum TrialEndReason : uint8_t {
+    TRIAL_END_COMPLETED = 0, // all syllables produced
+    TRIAL_END_TIMEOUT   = 1, // execTime elapsed
+    TRIAL_END_SPACE     = 2, // experimenter pressed space
+    TRIAL_END_ABORTED   = 3, // pre-go threshold cross or block aborted ('q')
+};
+
 // Event handed to the control loop. arrivalTime is stamped on our clock
 // (gTimer[1], same as finger pressTime) at the moment the packet is received.
 struct SyllableEvent {
@@ -52,6 +77,13 @@ public:
     // Drop all queued events (call at trial start).
     void flush();
 
+    // Set the classifier's address for outgoing control messages.
+    // Kept across stop()/start().
+    bool setRemote(const char* ip, unsigned short port);
+    // Send a trial-end message to the classifier (non-blocking UDP).
+    // Returns false if not running, no remote set, or sendto failed.
+    bool sendTrialEnd(uint8_t reason, uint32_t trialNum);
+
 private:
     void recvLoop();
 
@@ -65,6 +97,9 @@ private:
     std::atomic<bool> running{ false };
     bool wsaStarted = false;
     unsigned short boundPort = 0;
+
+    sockaddr_in remoteAddr{};
+    bool remoteSet = false;
 };
 
 #endif

@@ -26,6 +26,8 @@ HapticState hs;					///< This is the haptic State as d by the interrupt
 AudioRecorder gAudio; 			///< Audio Recorder
 SyllableReceiver gSyllable;		///< UDP receiver for per-syllable speech events
 unsigned short gSyllablePort = 5005;	///< UDP port for syllable events (override with "sylport")
+string gSyllableHost = "127.0.0.1";		///< Classifier IP for trial-end messages (placeholder; override with "sylhost")
+unsigned short gSyllableHostPort = 5006;	///< Classifier UDP port for trial-end messages (placeholder; override with "sylhost")
 
 ///< For Thread safety this SHOULD NOT be assessed While 
 ///< the interrupt is running. Use Thread-safe copy to 
@@ -154,6 +156,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	else {
 		cout << "UDP receiver started" << endl;
 	}
+	gSyllable.setRemote(gSyllableHost.c_str(), gSyllableHostPort);
 
 	// initialize TR counter 
 	gCounter.init3();
@@ -380,6 +383,23 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 		}
 	}
 
+	/// Set classifier IP and UDP port for trial-end messages
+	else if (arguments[0] == "sylhost") {
+		if (numArgs != 3) {
+			tDisp.print("USAGE: sylhost ip port");
+		}
+		else {
+			sscanf(arguments[2].c_str(), "%f", &arg[0]);
+			if (gSyllable.setRemote(arguments[1].c_str(), (unsigned short)arg[0])) {
+				gSyllableHost = arguments[1];
+				gSyllableHostPort = (unsigned short)arg[0];
+			}
+			else {
+				tDisp.print("Invalid classifier IP");
+			}
+		}
+	}
+
 	else {
 		return false; /// Command not recognized
 	}
@@ -583,6 +603,7 @@ MyTrial::MyTrial() {
 
 	audioOn = false;
 	audioFile = "";
+	trialEndSent = true;				// nothing to terminate until start() is called
 	beepStartReal = -1;
 	beepStopReal = -1;
 	// audioStartReal = -1;
@@ -756,13 +777,25 @@ void MyTrial::writeMov(ostream& out) {
 ///////////////////////////////////////////////////////////////
 void MyTrial::start() {
 	dataman.clear();
+	trialEndSent = false;
 	state = START_TRIAL;
 }
 
 ///////////////////////////////////////////////////////////////
-// End the trial 
+// Send trial-end message to the speech classifier (speech trials only,
+// at most once per trial)
+///////////////////////////////////////////////////////////////
+void MyTrial::sendTrialEnd(int reason) {
+	if (effector != 0 || trialEndSent) return;
+	trialEndSent = true;
+	gSyllable.sendTrialEnd((uint8_t)reason, (uint32_t)(gExp->theBlock->trialNum + 1));
+}
+
+///////////////////////////////////////////////////////////////
+// End the trial
 ///////////////////////////////////////////////////////////////
 void MyTrial::end() {
+	sendTrialEnd(TRIAL_END_ABORTED);	// block aborted mid-trial ('q'); no-op if already sent
 	state = END_TRIAL;
 	dataman.stopRecording();
 	if (audioOn) {
@@ -1243,6 +1276,7 @@ void MyTrial::control() {
 			gs.lineYpos[0] = 8;
 
 			if (isCross) {
+				sendTrialEnd(TRIAL_END_ABORTED);
 				state = WAIT_RELEASE;
 			}
 			else {
@@ -1375,6 +1409,7 @@ void MyTrial::control() {
 				ET = (RT + MT);
 				complete = 1;
 				gTimer.reset(5);
+				sendTrialEnd(TRIAL_END_COMPLETED);
 				state = WAIT_RELEASE;
 				// PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
 				// beepStopReal = gTimer.getRealtime();
@@ -1400,6 +1435,7 @@ void MyTrial::control() {
 		else if (fixed_dur == 1){ // fixed trial duration: wait exeTime before moving on to wait release 
 			if (gTimer[2] >= execTime){
 				ET = execTime;
+				sendTrialEnd(TRIAL_END_TIMEOUT);
 				state = WAIT_RELEASE;
 				// PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
 				// beepStopReal = gTimer.getRealtime();
@@ -1409,6 +1445,7 @@ void MyTrial::control() {
 			else if (TextDisplay::keyPressed && TextDisplay::key == ' ') {
 				TextDisplay::keyPressed = false;  // reset so that it doesn't keep terminating trials
 				ET = gTimer[2];
+				sendTrialEnd(TRIAL_END_SPACE);
 				state = WAIT_RELEASE; // move to the state where we wait for finger release and then end the trial
 				// if (isError == 0){
 				// 	PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);

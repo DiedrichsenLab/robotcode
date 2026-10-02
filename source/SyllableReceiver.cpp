@@ -79,6 +79,7 @@ void SyllableReceiver::recvLoop() {
         int n = recvfrom(sock, reinterpret_cast<char*>(&msg), sizeof(msg), 0,
                          reinterpret_cast<sockaddr*>(&from), &fromLen);
         if (n == SOCKET_ERROR) {
+            std::cout << "error occured" << std::endl;
             if (!running) break; // socket closed during shutdown
             continue;            // transient error: keep listening
         }
@@ -91,6 +92,12 @@ void SyllableReceiver::recvLoop() {
         ev.syllable = msg.syllable;
         ev.arrivalTime = gTimer[1];
         ev.devTimeMs = msg.devTimeMs;
+
+        //std::cout << "***************" << std::endl;
+        //std::cout << "packet recieved" << std::endl;
+        //std::cout << ev.type << std::endl;
+        //std::cout << ev.syllable << std::endl;
+
 
         // Push onto SPSC ring (producer side). Drop if full.
         unsigned int t = tail.load(std::memory_order_relaxed);

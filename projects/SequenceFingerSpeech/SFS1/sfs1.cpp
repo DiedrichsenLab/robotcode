@@ -117,9 +117,9 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	tDisp.init(gThisInst, 0, 0, 400, 20, 9, 2, &(::parseCommand));
 
 	tDisp.setText("Subj", 0, 0);
-	//gScreen.init(gThisInst, 1920, 0, 1680, 1050, &(::updateGraphics)); ///< Display for subject (for setups at 3128 and sensorimotor room, by the window)
+	gScreen.init(gThisInst, 1920, 0, 1680, 1050, &(::updateGraphics)); ///< Display for subject (for setups at 3128 and sensorimotor room, by the window)
 
-	gScreen.init(gThisInst, 1920, 0, 1440, 900, &(::updateGraphics));	// Display for sensorimotor room, the other (not by the window)
+	//gScreen.init(gThisInst, 1920, 0, 1440, 900, &(::updateGraphics));	// Display for sensorimotor room, the other (not by the window)
 
 
 	gScreen.setCenter(Vector2D(0, 0));    // In cm //0,2
@@ -150,6 +150,9 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst,
 	// start UDP receiver for per-syllable speech events
 	if (!gSyllable.start(gSyllablePort)) {
 		cout << "Warning: could not start syllable UDP receiver on port " << gSyllablePort << endl;
+	}
+	else {
+		cout << "UDP receiver started" << endl;
 	}
 
 	// initialize TR counter 
@@ -1310,18 +1313,22 @@ void MyTrial::control() {
 						if (response[seqCounter] == press[seqCounter]) { // correct syllable
 							responseArray[seqCounter] = 3; // green
 						}
-						else { // error: wrong syllable spoken
-							responseArray[seqCounter] = 2; // red
-							isError = 1;
+						//// test for vahid 
+						else {
+							responseArray[seqCounter] = 3; // green
 						}
+						//else { // error: wrong syllable spoken
+						//	responseArray[seqCounter] = 2; // red
+						//	isError = 1;
+						//}
 						seqCounter++;
 					}
 				}
-				else { // syllable offset (terminated) -> end time of the current syllable
-					if (seqCounter > 0) {
-						releaseTime[seqCounter - 1] = ev.arrivalTime;
-					}
-				}
+				//else { // syllable offset (terminated) -> end time of the current syllable // Changed for Vahid (onset only for now)
+				//	if (seqCounter > 0) {
+				//		releaseTime[seqCounter - 1] = ev.arrivalTime;
+				//	}
+				//}
 			}
 		}
 		else { // FINGER: presses detected from force thresholds
@@ -1355,7 +1362,8 @@ void MyTrial::control() {
 		// finger ends when all keys are released.
 		bool sequenceDone;
 		if (effector == 0) {
-			sequenceDone = (seqLength > 0 && seqCounter >= seqLength && releaseTime[seqLength - 1] > 0);
+			//sequenceDone = (seqLength > 0 && seqCounter >= seqLength && releaseTime[seqLength - 1] > 0); changed for vahid (onset only now)
+			sequenceDone = (seqLength > 0 && seqCounter >= seqLength);
 		}
 		else {
 			sequenceDone = (seqCounter >= seqLength && released == NUMFINGERS);

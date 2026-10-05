@@ -27,21 +27,28 @@ struct SyllableMsg {
 
 // Control message sent back to the classifier (same 8-byte layout):
 //   uint8_t  magic      0xAB sanity byte
-//   uint8_t  type       2 = trial end
-//   uint8_t  reason     why the trial ended (TrialEndReason)
+//   uint8_t  type       2 = trial end, 3 = block end
+//   uint8_t  reason     TrialEndReason (type 2) or BlockEndReason (type 3)
 //   uint8_t  reserved   0
-//   uint32_t trialNum   trial number within the block (1-based)
+//   uint32_t number     trial number within the block, 1-based (type 2)
+//                       or block number (type 3)
 #pragma pack(push, 1)
 struct TrialCtrlMsg {
     uint8_t  magic;
     uint8_t  type;
     uint8_t  reason;
     uint8_t  reserved;
-    uint32_t trialNum;
+    uint32_t number;
 };
 #pragma pack(pop)
 
 #define TRIAL_CTRL_TRIAL_END 2
+#define TRIAL_CTRL_BLOCK_END 3
+
+enum BlockEndReason : uint8_t {
+    BLOCK_END_COMPLETED = 0, // all trials ran
+    BLOCK_END_ABORTED   = 1, // experimenter pressed 'q'
+};
 
 enum TrialEndReason : uint8_t {
     TRIAL_END_COMPLETED = 0, // all syllables produced
@@ -80,12 +87,14 @@ public:
     // Set the classifier's address for outgoing control messages.
     // Kept across stop()/start().
     bool setRemote(const char* ip, unsigned short port);
-    // Send a trial-end message to the classifier (non-blocking UDP).
-    // Returns false if not running, no remote set, or sendto failed.
+    // Send a trial-end / block-end message to the classifier (non-blocking UDP).
+    // Return false if not running, no remote set, or sendto failed.
     bool sendTrialEnd(uint8_t reason, uint32_t trialNum);
+    bool sendBlockEnd(uint8_t reason, uint32_t blockNum);
 
 private:
     void recvLoop();
+    bool sendCtrl(uint8_t type, uint8_t reason, uint32_t number);
 
     static constexpr int CAP = 256; // ring capacity (power of two)
     SyllableEvent buffer[CAP];

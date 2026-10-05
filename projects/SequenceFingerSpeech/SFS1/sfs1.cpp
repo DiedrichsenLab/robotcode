@@ -506,6 +506,12 @@ double MyBlock::percentile(double array[], int num_val, int percent) {
 ///////////////////////////////////////////////////////////////
 void MyBlock::giveFeedback() {
 	gCounter.stop();
+
+	// Tell the speech classifier the block is over. Called both after the last
+	// trial and on a 'q' abort; an abort leaves trialNum below numTrials.
+	gSyllable.sendBlockEnd(trialNum < numTrials ? BLOCK_END_ABORTED : BLOCK_END_COMPLETED,
+		(uint32_t)blockNumber);
+
 	///*
 	int i;
 	int n = 0; //number of correct trials

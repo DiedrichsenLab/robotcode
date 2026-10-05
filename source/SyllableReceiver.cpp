@@ -138,14 +138,22 @@ bool SyllableReceiver::setRemote(const char* ip, unsigned short port) {
 }
 
 bool SyllableReceiver::sendTrialEnd(uint8_t reason, uint32_t trialNum) {
+    return sendCtrl(TRIAL_CTRL_TRIAL_END, reason, trialNum);
+}
+
+bool SyllableReceiver::sendBlockEnd(uint8_t reason, uint32_t blockNum) {
+    return sendCtrl(TRIAL_CTRL_BLOCK_END, reason, blockNum);
+}
+
+bool SyllableReceiver::sendCtrl(uint8_t type, uint8_t reason, uint32_t number) {
     if (!running || sock == INVALID_SOCKET || !remoteSet) return false;
 
     TrialCtrlMsg msg;
     msg.magic = SYLLABLE_MSG_MAGIC;
-    msg.type = TRIAL_CTRL_TRIAL_END;
+    msg.type = type;
     msg.reason = reason;
     msg.reserved = 0;
-    msg.trialNum = trialNum;
+    msg.number = number;
 
     // Sending on the same socket the worker thread is receiving on is safe
     // in Winsock; a UDP sendto does not block in practice.

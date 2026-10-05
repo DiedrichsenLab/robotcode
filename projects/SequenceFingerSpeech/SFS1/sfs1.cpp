@@ -26,7 +26,7 @@ HapticState hs;					///< This is the haptic State as d by the interrupt
 AudioRecorder gAudio; 			///< Audio Recorder
 SyllableReceiver gSyllable;		///< UDP receiver for per-syllable speech events
 unsigned short gSyllablePort = 5005;	///< UDP port for syllable events (override with "sylport")
-string gSyllableHost = "127.0.0.1";		///< Classifier IP for trial-end messages (placeholder; override with "sylhost")
+string gSyllableHost = "169.254.135.89";		///< Classifier IP for trial-end messages (placeholder; override with "sylhost")
 unsigned short gSyllableHostPort = 5006;	///< Classifier UDP port for trial-end messages (placeholder; override with "sylhost")
 
 ///< For Thread safety this SHOULD NOT be assessed While 

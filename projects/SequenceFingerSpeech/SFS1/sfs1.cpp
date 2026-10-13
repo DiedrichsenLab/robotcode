@@ -92,6 +92,7 @@ string TASKSOUNDS[9] = {
 
 // timings	 
 #define FEEDBACKTIME 1000						// duration of n points feedback on screen
+#define LAST_DIGIT_FEEDBACK_TIME 500			// how long the last digit's color feedback stays on screen before the trial feedback
 //#define TRIAL_MAX_TIME 7500					// maximum time allowed to complete the sequence (from beginning of trial, includes prepTime + execution time)
 //#define EXECUTION_TIME 2500					// maximum time allowed to complete the sequence (from GO cue)
 #define IPI_MET_TIME (EXECUTION_TIME/MAX_PRESS)	// between presses - for fMRI
@@ -1409,16 +1410,18 @@ void MyTrial::control() {
 			sequenceDone = (seqCounter >= seqLength && released == NUMFINGERS);
 		}
 
-		if (sequenceDone) {
+		if (sequenceDone || complete == 1) { // once complete, stay here until the last-digit feedback time has passed
 			if (complete == 0) {
 				MT = gTimer[5]; // movement time
 				ET = (RT + MT);
 				complete = 1;
 				gTimer.reset(5);
 				sendTrialEnd(TRIAL_END_COMPLETED);
-				state = WAIT_RELEASE;
 				// PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
 				// beepStopReal = gTimer.getRealtime();
+			}
+			else if (gTimer[5] >= LAST_DIGIT_FEEDBACK_TIME) { // keep cues on screen so the last digit's feedback is seen
+				state = WAIT_RELEASE;
 			}
 			// if (fixed_dur == 1) { // fixed trial duration: wait exeTime before moving on to wait release (same time for GO and NOGO trials)
 			// 	if (gTimer[2] >= execTime) {

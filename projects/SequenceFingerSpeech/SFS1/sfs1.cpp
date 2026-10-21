@@ -9,6 +9,7 @@
 #include "StimulatorBox.h"
 #include "AudioRecorder.h"
 #include <string>
+#include <sstream>
 #include <chrono>
 
 
@@ -93,6 +94,7 @@ string TASKSOUNDS[9] = {
 // timings	 
 #define FEEDBACKTIME 1000						// duration of n points feedback on screen
 #define LAST_DIGIT_FEEDBACK_TIME 500			// how long the last digit's color feedback stays on screen before the trial feedback
+#define CALIB_PAUSE_TIME 5000					// minimum ITI after the last calibration trial (classifier calibrates during it)
 //#define TRIAL_MAX_TIME 7500					// maximum time allowed to complete the sequence (from beginning of trial, includes prepTime + execution time)
 //#define EXECUTION_TIME 2500					// maximum time allowed to complete the sequence (from GO cue)
 #define IPI_MET_TIME (EXECUTION_TIME/MAX_PRESS)	// between presses - for fMRI
@@ -531,6 +533,9 @@ void MyBlock::giveFeedback() {
 
 	for (i = 0; i < trialNum; i++) { //check each trial
 		tpnr = (MyTrial*)trialVec.at(i);
+		if (tpnr->isCalib == 1) { //calibration trials don't count towards block stats
+			continue;
+		}
 		if (tpnr->isError == 0) { //if correct go trial
 			ETarray[n] = tpnr->ET; //ET from the correct go trials and add them
 			n++; //remember number of correct trials
@@ -611,6 +616,7 @@ MyTrial::MyTrial() {
 	audioOn = false;
 	audioFile = "";
 	trialEndSent = true;				// nothing to terminate until start() is called
+	isCalib = 0;
 	beepStartReal = -1;
 	beepStopReal = -1;
 	// audioStartReal = -1;
@@ -631,8 +637,17 @@ MyTrial::MyTrial() {
 // Read - Done
 ///////////////////////////////////////////////////////////////
 void MyTrial::read(istream& in) {
-	// read from .tgt file
-	in >> subNum >> group >> effector >> symbol >> isTrain >> cue >> fixed_dur >> execTime >> iti >> precueTime;
+	// read from .tgt file, one trial per line. isCalib is an optional last
+	// column (default 0) so target files without it still read correctly.
+	string line;
+	do {
+		getline(in, line);
+	} while (in && line.find_first_not_of(" \t\r") == string::npos); // skip blank lines
+	istringstream ss(line);
+	ss >> subNum >> group >> effector >> symbol >> isTrain >> cue >> fixed_dur >> execTime >> iti >> precueTime;
+	if (!(ss >> isCalib)) {
+		isCalib = 0;
+	}
 	seqLength = cue.length(); //get seqLength
 }
 
@@ -641,7 +656,7 @@ void MyTrial::read(istream& in) {
 ///////////////////////////////////////////////////////////////
 void MyTrial::writeDat(ostream& out) {
 	// write to .dat file
-	out << subNum << "\t" << group << "\t" << effector << "\t" << isTrain << "\t" << cue << "\t";
+	out << subNum << "\t" << group << "\t" << effector << "\t" << isTrain << "\t" << isCalib << "\t" << cue << "\t";
 	int i;
 
 	for (i = 0; i < MAX_PRESS; i++) {
@@ -707,7 +722,7 @@ void MyTrial::writeDat(ostream& out) {
 void MyTrial::writeHeader(ostream& out) {
 	char header[200];
 
-	out << "SubNum" << "\t" << "group" << "\t" << "effector" << "\t" << "isTrain" << "\t" << "cue" << "\t";
+	out << "SubNum" << "\t" << "group" << "\t" << "effector" << "\t" << "isTrain" << "\t" << "isCalib" << "\t" << "cue" << "\t";
 
 	int i;
 
@@ -795,7 +810,7 @@ void MyTrial::start() {
 void MyTrial::sendTrialEnd(int reason) {
 	if (effector != 0 || trialEndSent) return;
 	trialEndSent = true;
-	gSyllable.sendTrialEnd((uint8_t)reason, (uint32_t)(gExp->theBlock->trialNum + 1));
+	gSyllable.sendTrialEnd((uint8_t)reason, (uint32_t)(gExp->theBlock->trialNum + 1), isCalib == 1);
 }
 
 ///////////////////////////////////////////////////////////////
@@ -1067,6 +1082,7 @@ void MyTrial::control() {
 	Vector2D recSize;
 	Vector2D recPos;
 	double force;
+	double itiNow;							// ITI for this trial (extended after the last calibration trial)
 	released = 0;							// init whether fingers released
 	pressedFinger = 0;
 	pressedHand = 0;
@@ -1505,7 +1521,13 @@ void MyTrial::control() {
 
 		// Wait for the release of all keys, assign points
 		if (released == NUMFINGERS) {
-			if (isError == 0) {
+			if (isCalib == 1) { // calibration trial: no score shown
+				points = 0;
+				gs.clearCues();
+				PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
+				beepStopReal = gTimer.getRealtime();
+			}
+			else if (isError == 0) {
 				if (isTrain) {
 					if (effector == 0){ // speech
 						if (ET < estimated_ET_percentiles[0][0]) {
@@ -1606,10 +1628,12 @@ void MyTrial::control() {
 
 		// Wait for feedback time, keep count of ponits
 		if (gTimer[2] > FEEDBACKTIME) {
-			// count how many points and errors in the block
-			gNumPointsBlock += (double)points;
-			gNumCrossesBlock += isCross;
-			gNumErrorsBlock += isError;
+			// count how many points and errors in the block (calibration trials excluded)
+			if (isCalib == 0) {
+				gNumPointsBlock += (double)points;
+				gNumCrossesBlock += isCross;
+				gNumErrorsBlock += isError;
+			}
 			gTimer.reset(2);
 			state = WAIT_ITI;
 		}
@@ -1623,9 +1647,16 @@ void MyTrial::control() {
 			}
 		}
 		gs.clearCues();
-		// Implement inter-trial interval (ITI) and end of run rest (if externally imposed timing only)							
+		// After the last calibration trial, pause at least CALIB_PAUSE_TIME so the classifier can calibrate
+		itiNow = iti;
+		if (isCalib == 1 && (gExp->theBlock->trialNum + 1) < (gExp->theBlock->numTrials)
+			&& ((MyTrial*)gExp->theBlock->trialVec.at(gExp->theBlock->trialNum + 1))->isCalib == 0
+			&& itiNow < CALIB_PAUSE_TIME) {
+			itiNow = CALIB_PAUSE_TIME;
+		}
+		// Implement inter-trial interval (ITI) and end of run rest (if externally imposed timing only)
 		if (startTime > 0 && (gExp->theBlock->trialNum + 1) >= (gExp->theBlock->numTrials)) {
-			if (gTimer[2] > (iti - FEEDBACKTIME + endOfRunRest)) { // for scanner only (wait rest periord before presenting block results)
+			if (gTimer[2] > (itiNow - FEEDBACKTIME + endOfRunRest)) { // for scanner only (wait rest periord before presenting block results)
 				dataman.stopRecording();
 				if (audioOn) {
 					gAudio.stop();
@@ -1637,7 +1668,7 @@ void MyTrial::control() {
 			}
 		}
 		else {
-			if (gTimer[2] > (iti - FEEDBACKTIME)) {
+			if (gTimer[2] > (itiNow - FEEDBACKTIME)) {
 				dataman.stopRecording();
 				if (audioOn) {
 					gAudio.stop();

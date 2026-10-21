@@ -29,7 +29,7 @@ struct SyllableMsg {
 //   uint8_t  magic      0xAB sanity byte
 //   uint8_t  type       2 = trial end, 3 = block end
 //   uint8_t  reason     TrialEndReason (type 2) or BlockEndReason (type 3)
-//   uint8_t  reserved   0
+//   uint8_t  calib      1 = calibration trial, 0 = normal trial (type 2); 0 (type 3)
 //   uint32_t number     trial number within the block, 1-based (type 2)
 //                       or block number (type 3)
 #pragma pack(push, 1)
@@ -37,7 +37,7 @@ struct TrialCtrlMsg {
     uint8_t  magic;
     uint8_t  type;
     uint8_t  reason;
-    uint8_t  reserved;
+    uint8_t  calib;
     uint32_t number;
 };
 #pragma pack(pop)
@@ -89,12 +89,12 @@ public:
     bool setRemote(const char* ip, unsigned short port);
     // Send a trial-end / block-end message to the classifier (non-blocking UDP).
     // Return false if not running, no remote set, or sendto failed.
-    bool sendTrialEnd(uint8_t reason, uint32_t trialNum);
+    bool sendTrialEnd(uint8_t reason, uint32_t trialNum, bool isCalib);
     bool sendBlockEnd(uint8_t reason, uint32_t blockNum);
 
 private:
     void recvLoop();
-    bool sendCtrl(uint8_t type, uint8_t reason, uint32_t number);
+    bool sendCtrl(uint8_t type, uint8_t reason, uint8_t calib, uint32_t number);
 
     static constexpr int CAP = 256; // ring capacity (power of two)
     SyllableEvent buffer[CAP];

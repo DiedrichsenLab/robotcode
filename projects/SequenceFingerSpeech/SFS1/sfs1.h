@@ -142,6 +142,7 @@ private:
 	int subNum;									///< Which subject number 
 	int group;									///< which group
 	bool isTrain;							///< Specific sequence or not
+	int isCalib;							///< Calibration trial for the speech classifier? 1=yes; 0=no
 	//bool isMasked;							///< Showing only symbol or cue as well
 	char symbol;							///< symbol for effector
 	int execTime;							///< Total time of the trial

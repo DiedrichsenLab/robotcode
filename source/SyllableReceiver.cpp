@@ -137,22 +137,22 @@ bool SyllableReceiver::setRemote(const char* ip, unsigned short port) {
     return true;
 }
 
-bool SyllableReceiver::sendTrialEnd(uint8_t reason, uint32_t trialNum) {
-    return sendCtrl(TRIAL_CTRL_TRIAL_END, reason, trialNum);
+bool SyllableReceiver::sendTrialEnd(uint8_t reason, uint32_t trialNum, bool isCalib) {
+    return sendCtrl(TRIAL_CTRL_TRIAL_END, reason, isCalib ? 1 : 0, trialNum);
 }
 
 bool SyllableReceiver::sendBlockEnd(uint8_t reason, uint32_t blockNum) {
-    return sendCtrl(TRIAL_CTRL_BLOCK_END, reason, blockNum);
+    return sendCtrl(TRIAL_CTRL_BLOCK_END, reason, 0, blockNum);
 }
 
-bool SyllableReceiver::sendCtrl(uint8_t type, uint8_t reason, uint32_t number) {
+bool SyllableReceiver::sendCtrl(uint8_t type, uint8_t reason, uint8_t calib, uint32_t number) {
     if (!running || sock == INVALID_SOCKET || !remoteSet) return false;
 
     TrialCtrlMsg msg;
     msg.magic = SYLLABLE_MSG_MAGIC;
     msg.type = type;
     msg.reason = reason;
-    msg.reserved = 0;
+    msg.calib = calib;
     msg.number = number;
 
     // Sending on the same socket the worker thread is receiving on is safe

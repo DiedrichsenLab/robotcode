@@ -6,14 +6,16 @@ Online planning of sequences produced with the fingers or by speech. On every tr
 
 Trial timeline:
 
-1. Cues appear with the effector symbol (`#` hand, `$` speech). The first `windowSize` digits are visible (preview, `precueTime`, 2000 ms). Finger forces must stay inside the baseline area during the preview (hand and speech trials).
+1. Cues appear with the effector symbol (`#` hand, `$` speech). The first `windowSize` digits are visible (preview, `precueTime`, 1600 ms). Finger forces must stay inside the baseline area during the preview (hand and speech trials).
 2. Go tone. Each press (hand) or syllable onset (speech) colours that digit and reveals the next one, so `windowSize` digits ahead stay visible.
 3. The sequence ends when all fingers are released after the last press (hand) or at the offset of the last syllable (speech). The last digit's colour stays for 500 ms, then points are shown.
 4. Speech trials also end at `execTime` after the go tone or when the experimenter presses space; `e` marks the trial as an error.
 
+Each block uses one effector. Speech blocks start with classifier calibration trials (`isCalib` = 1: whole sequence visible, no points), and the ITI after the last one is at least 5 s.
+
 Speech syllables come from the speech classifier over UDP: see [ClassifierProtocol.md](ClassifierProtocol.md).
 
-Points (non-error, non-calibration trials): +3 if ET is below the 25th percentile, +1 between the 25th and 75th, 0 above. Percentiles are estimated separately for each effector and window size from the correct trials of the previous block. Errors get −1, moving before the go cue −5.
+Points (non-error, non-calibration trials): +3 if ET is below the 25th percentile, +1 between the 25th and 75th, 0 above. Percentiles are estimated separately for each effector and window size from the correct trials of the most recent block with that effector. Errors get −1, moving before the go cue −5.
 
 ### Target file (`.tgt`)
 

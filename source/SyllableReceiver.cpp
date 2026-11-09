@@ -5,7 +5,7 @@
 
 #pragma comment(lib, "ws2_32.lib")
 
-// Defined in sfs1.cpp; same trial clock used for finger pressTime.
+// Defined in the experiment .cpp (sfs1.cpp, sfop1.cpp); same trial clock used for finger pressTime.
 extern Timer gTimer;
 
 SyllableReceiver::SyllableReceiver() {}
@@ -90,6 +90,7 @@ void SyllableReceiver::recvLoop() {
         SyllableEvent ev;
         ev.type = msg.type;
         ev.syllable = msg.syllable;
+        ev.index = msg.index;
         ev.arrivalTime = gTimer[1];
         ev.devTimeMs = msg.devTimeMs;
 

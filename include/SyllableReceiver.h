@@ -7,22 +7,29 @@
 #include <atomic>
 #include <cstdint>
 
-// Wire format (little-endian, one event per UDP datagram, 8 bytes):
+// Syllable event sent by the classifier (little-endian, one event per UDP
+// datagram, 8 bytes). The classifier sends one onset and one offset for every
+// syllable it detects; see projects/SpeechFingerOnlinePlanning/ClassifierProtocol.md.
 //   uint8_t  magic      0xAB sanity byte
-//   uint8_t  type       1 = onset (initiated), 0 = offset (terminated)
+//   uint8_t  type       1 = onset (syllable starts), 0 = offset (syllable ends)
 //   uint8_t  syllable   spoken digit 1-5 (matches cue characters)
-//   uint8_t  reserved   0
-//   uint32_t devTimeMs  device's own clock (logged only)
+//   uint8_t  index      position of the syllable in the trial, 1-based; the
+//                       onset and offset of one syllable carry the same index.
+//                       0 = not given: an offset then belongs to the most
+//                       recent onset.
+//   uint32_t devTimeMs  classifier's own clock in ms (logged only)
 #pragma pack(push, 1)
 struct SyllableMsg {
     uint8_t  magic;
     uint8_t  type;
     uint8_t  syllable;
-    uint8_t  reserved;
+    uint8_t  index;
     uint32_t devTimeMs;
 };
 #pragma pack(pop)
 
+#define SYLLABLE_OFFSET 0
+#define SYLLABLE_ONSET  1
 #define SYLLABLE_MSG_MAGIC 0xAB
 
 // Control message sent back to the classifier (same 8-byte layout):
@@ -60,8 +67,9 @@ enum TrialEndReason : uint8_t {
 // Event handed to the control loop. arrivalTime is stamped on our clock
 // (gTimer[1], same as finger pressTime) at the moment the packet is received.
 struct SyllableEvent {
-    int          type;        // 1 = onset, 0 = offset
+    int          type;        // SYLLABLE_ONSET or SYLLABLE_OFFSET
     int          syllable;    // digit 1-5
+    int          index;       // 1-based position in the trial, 0 = not given
     double       arrivalTime; // gTimer[1] at receive
     unsigned int devTimeMs;   // device timestamp (logged only)
 };

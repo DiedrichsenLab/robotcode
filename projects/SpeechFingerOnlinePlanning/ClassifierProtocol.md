@@ -41,7 +41,7 @@ How the experiment uses them (speech trials only):
 - The experiment times every message by its own trial clock on arrival (`pressTime` for onsets, `releaseTime` for offsets in the `.dat` file, same clock as finger presses). `devTimeMs` is stored as `syllableOnsetDevTime` / `syllableOffsetDevTime`.
 - Each onset fills the next position of the sequence, in arrival order, and in SFOP1 reveals the next masked digit. Onsets after the last position are ignored.
 - An offset with index *k* is stored for position *k*. An offset with index 0 is stored for the most recent onset. Offsets for positions that have not had an onset yet are ignored.
-- The trial ends at the offset of the last syllable (SFOP1 default; `sylend 0` ends it at the last onset instead), at `execTime` after the go cue, or when the experimenter presses space.
+- The trial ends at the offset of the last syllable (SFOP1 default; `sylend 0` ends it at the last onset instead), when the experimenter presses space, or at `execTime` after the go cue if a time limit is set.
 - Messages that arrive before the cues of a trial appear are discarded, so the index restarts at 1 every trial. The classifier should reset its count when it receives a trial-end message.
 
 ## Experiment → classifier: trial and block end

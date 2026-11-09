@@ -1487,10 +1487,10 @@ void MyTrial::control() {
 			// }
 			// SEQUENCE TIME OUT
 		}
-		else if (fixed_dur == 1){ // fixed trial duration: wait exeTime before moving on to wait release 
-			if (gTimer[2] >= execTime){
+		else if (fixed_dur == 1){ // speech: optional time limit (execTime > 0) and experimenter keys
+			if (execTime > 0 && gTimer[2] >= execTime){
 				ET = execTime;
-				timingError = 1;	// sequence not finished within execTime (logged; not counted as an error)
+				timingError = 1;	// trial not finished by the participant (logged; not counted as an error)
 				sendTrialEnd(TRIAL_END_TIMEOUT);
 				state = WAIT_RELEASE;
 				// PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
@@ -1501,6 +1501,7 @@ void MyTrial::control() {
 			else if (TextDisplay::keyPressed && TextDisplay::key == ' ') {
 				TextDisplay::keyPressed = false;  // reset so that it doesn't keep terminating trials
 				ET = gTimer[2];
+				timingError = 1;	// trial ended by the experimenter (logged; not counted as an error)
 				sendTrialEnd(TRIAL_END_SPACE);
 				state = WAIT_RELEASE; // move to the state where we wait for finger release and then end the trial
 				// if (isError == 0){

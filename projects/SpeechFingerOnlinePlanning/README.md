@@ -6,7 +6,7 @@ Online planning of sequences produced with the fingers or by speech. On every tr
 
 Trial timeline:
 
-1. Cues appear with the effector symbol (`#` hand, `$` speech). The first `windowSize` digits are visible (preview, `precueTime`, 1600 ms). Finger forces must stay inside the baseline area during the preview (hand and speech trials).
+1. Cues appear with the effector symbol (`#` hand, `$` speech). The first `windowSize` digits are visible (preview, `precueTime`, 1600 ms). Finger forces must stay inside the baseline area during the preview (hand and speech trials). Moving a finger, or a syllable onset from the classifier in a speech trial, before the go tone aborts the trial at the end of the preview (`isCross` = 1, error, −5 points); calibration trials are not aborted for speech.
 2. Go tone. Each press (hand) or syllable onset (speech) colours that digit and reveals the next one, so `windowSize` digits ahead stay visible.
 3. The sequence ends when all fingers are released after the last press (hand) or at the offset of the last syllable (speech). The last digit's colour stays for 500 ms, then points are shown.
 4. Speech trials have no time limit when `execTime` is 0. The experimenter ends a trial with space (e.g. when the classifier missed a syllable); `e` marks the trial as an error, and space then ends it.

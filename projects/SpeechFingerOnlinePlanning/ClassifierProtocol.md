@@ -50,7 +50,7 @@ How the experiment uses them (speech trials only):
 |------|-------|-------|
 | 0 | magic | `0xAB` |
 | 1 | type | `2` = trial end, `3` = block end |
-| 2 | reason | trial end: `0` completed, `1` timeout (`execTime` reached), `2` experimenter pressed space, `3` aborted (movement before the go cue, or block aborted with `q`). Block end: `0` all trials ran, `1` aborted with `q` |
+| 2 | reason | trial end: `0` completed, `1` timeout (`execTime` reached), `2` experimenter pressed space, `3` aborted (finger movement or syllable onset before the go cue, or block aborted with `q`). Block end: `0` all trials ran, `1` aborted with `q` |
 | 3 | calib | trial end: `1` calibration trial, `0` normal trial. Block end: `0` |
 | 4–7 | number | trial end: trial number within the block, 1-based. Block end: block number |
 

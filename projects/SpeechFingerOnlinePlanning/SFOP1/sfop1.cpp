@@ -1517,6 +1517,25 @@ void MyTrial::control() {
 			}
 		}
 
+		// CHECK FOR SPEECH BEFORE THE GO TONE: a syllable onset during the preview aborts the trial
+		// like an early finger press (calibration trials are not aborted)
+		if (effector == 0 && isCalib == 0 && gTimer[1] < precueTime) {
+			SyllableEvent ev;
+			while (gSyllable.poll(ev)) {
+				if (ev.type == SYLLABLE_ONSET && isCross == 0) {
+					timeStamp = gTimer[1];
+					isError = 1;
+					isCross = 1;
+				}
+			}
+			if (isCross && startTime == 0) { // display warning message until the end of the preview (practice blocks only)
+				sprintf(buffer, "Please wait for the go tone");
+				gs.lineColor[0] = 1;
+				gs.line[0] = buffer;
+				gs.lineYpos[0] = 8;
+			}
+		}
+
 		if (gTimer[1] >= precueTime) { // give go/nogo signal
 			sprintf(buffer, "");
 			gs.lineColor[0] = 1;

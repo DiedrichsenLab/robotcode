@@ -15,7 +15,7 @@ Each block uses one effector. Speech blocks start with classifier calibration tr
 
 Speech syllables come from the speech classifier over UDP: see [ClassifierProtocol.md](ClassifierProtocol.md).
 
-Points (non-error, non-calibration trials): +3 if ET is below the 25th percentile, +1 between the 25th and 75th, 0 above. Percentiles are estimated separately for each effector and window size from the correct trials of the most recent block with that effector. Errors get −1, moving before the go cue −5.
+Points (non-error, non-calibration trials): +3 if ET is below the low threshold, +1 between the thresholds, 0 above. Each effector has its own two thresholds, the 25th and 75th percentiles of ET over the correct trials of a block of that effector, all window sizes pooled. After every block a threshold is replaced only by a faster one, and only if that effector's error rate in the block is below 20% (`ERthreshold`); calibration trials and trials skipped with space are left out. Until an effector has thresholds, its trials show no points. Errors get −1, moving before the go cue −5.
 
 ### Target file (`.tgt`)
 
@@ -45,8 +45,8 @@ Target files are made by `TargetFileMaker.ipynb` in the SpeechFingerOnlinePlanni
 | `sylport <port>` | port for syllable events (default 5005) |
 | `sylend 1\|0` | speech sequence ends at the last offset (1, default) or last onset (0) |
 | `sylcheck 1\|0` | wrong classified syllable is an error (1) or any syllable is accepted (0, default) |
-| `Finger_ET_percentile <w> <low> <high>` | set the hand ET thresholds for window size w |
-| `Speech_ET_percentile <w> <low> <high>` | set the speech ET thresholds for window size w |
+| `Finger_ET_percentile <low> <high>` | set the hand ET thresholds (ms) |
+| `Speech_ET_percentile <low> <high>` | set the speech ET thresholds (ms) |
 
 ### Data (`.dat`)
 

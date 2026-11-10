@@ -145,8 +145,8 @@ private:
 	int group;									///< which group
 	int isCalib;							///< Calibration trial for the speech classifier? 1=yes; 0=no
 	int windowSize;							///< Horizon: how many upcoming digits are visible at each point (1..MAX_HORIZON)
-	double ETpercentileLow;					///< ET threshold for +3 points used in this trial (effector x windowSize estimate)
-	double ETpercentileHigh;				///< ET threshold for 0 points used in this trial (effector x windowSize estimate)
+	double ETpercentileLow;					///< ET threshold for +3 points used in this trial (0 = not set)
+	double ETpercentileHigh;				///< ET threshold for 0 points used in this trial (0 = not set)
 	//bool isMasked;							///< Showing only symbol or cue as well
 	char symbol;							///< symbol for effector
 	int execTime;							///< Total time of the trial

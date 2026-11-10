@@ -62,7 +62,7 @@ int timeMet = 0;						///< Initialize time for metronome
 int showLine = 0;					///< Show force lines or not
 float timeThresPercent = 105;		///< 105% of current median MT (best block)
 float superThresPercent = 98;		///< 98% of current median MT (best block)
-float ERthreshold = 20;				///< Threshold of 20% of error rate in order to lower MT thresholds
+float ERthreshold = 20;				///< Point thresholds are only updated from blocks with an error rate below 20%
 double timeThreshold = 3500; 			///< Time threshold for normal points (+0)
 double timeThresholdSuper = 2940;		///< Time threshold for super points (+3)
 double tempThres1 = timeThreshold;
@@ -71,10 +71,9 @@ double tempThres2 = timeThresholdSuper;
 int percentile_low = 25;	///< Lower percentile for ETs
 int percentile_high = 75;	///< Upper percentile for ETs
 
-/// Estimated lower and upper ET percentiles, per effector (0 speech, 2 right hand) and window size.
-/// Updated at the end of every block from that block's correct trials; a cell with
-/// no correct trials in the block keeps its previous estimate.
-double estimated_ET_percentiles[3][MAX_HORIZON + 1][2] = {};
+/// ET point thresholds (25th and 75th percentile of correct trials) per effector (0 speech, 2 right hand),
+/// all window sizes pooled. Set at the end of each block (see MyBlock::giveFeedback); 0 = not set yet.
+double estimated_ET_percentiles[3][2] = {};
 
 double responseArray[MAX_PRESS] = { 1,1,1,1,1,1,1,1 };
 int symbolColor = 1;
@@ -339,24 +338,17 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 		}
 	}
 
-	/// Set estimated ET percentile thresholds for one window size
+	/// Set the ET point thresholds of one effector
 	else if (arguments[0] == "Finger_ET_percentile" || arguments[0] == "Speech_ET_percentile") {
-		if (numArgs != 4) {
-			tDisp.print("USAGE: Finger_ET_percentile|Speech_ET_percentile windowSize low high");
+		if (numArgs != 3) {
+			tDisp.print("USAGE: Finger_ET_percentile|Speech_ET_percentile low high");
 		}
 		else {
 			int eff = (arguments[0] == "Finger_ET_percentile") ? 2 : 0;
 			sscanf(arguments[1].c_str(), "%f", &arg[0]);
 			sscanf(arguments[2].c_str(), "%f", &arg[1]);
-			sscanf(arguments[3].c_str(), "%f", &arg[2]);
-			int w = (int)arg[0];
-			if (w < 1 || w > MAX_HORIZON) {
-				tDisp.print("windowSize out of range");
-			}
-			else {
-				estimated_ET_percentiles[eff][w][0] = arg[1];
-				estimated_ET_percentiles[eff][w][1] = arg[2];
-			}
+			estimated_ET_percentiles[eff][0] = arg[0];
+			estimated_ET_percentiles[eff][1] = arg[1];
 		}
 	}
 
@@ -539,12 +531,16 @@ void MyBlock::giveFeedback() {
 	gSyllable.sendBlockEnd(trialNum < numTrials ? BLOCK_END_ABORTED : BLOCK_END_COMPLETED,
 		(uint32_t)blockNumber);
 
-	int i, e, w;
-	int n = 0; //number of correct trials
-	int nn = 0; //number of total trials
-	double ETarray[100];							///< ETs of the correct trials of the block
-	static double ETcell[3][MAX_HORIZON + 1][100];	///< ETs of the correct trials per effector and window size
-	int nCell[3][MAX_HORIZON + 1] = {};
+	int i, e;
+	int n = 0;			//number of correct trials
+	int nn = 0;			//number of completed trials (calibration and experimenter-skipped trials excluded)
+	int nErr = 0;		//number of error trials among them
+	double ETarray[100];				///< ETs of the correct trials of the block
+	double ETeff[3][100];				///< ETs of the correct trials per effector
+	int nEff[3] = { 0, 0, 0 };
+	int nnEff[3] = { 0, 0, 0 };
+	int nErrEff[3] = { 0, 0, 0 };
+	double est, erEff;
 	MyTrial* tpnr;
 
 	medianETarray[0] = 20000;	//initialize ET array for the 0th block to be 20000 (impossible value, we have no median ET before that)
@@ -553,40 +549,48 @@ void MyBlock::giveFeedback() {
 
 	for (i = 0; i < trialNum; i++) { //check each trial
 		tpnr = (MyTrial*)trialVec.at(i);
-		if (tpnr->isCalib == 1) { //calibration trials don't count towards block stats
+		if (tpnr->isCalib == 1 || tpnr->timingError == 1) { // calibration and skipped trials don't count
 			continue;
 		}
-		if (tpnr->isError == 0 && n < 100) { //if correct go trial
+		e = tpnr->effector;
+		nn++;
+		if (e >= 0 && e < 3) nnEff[e]++;
+		if (tpnr->isError == 1) {
+			nErr++;
+			if (e >= 0 && e < 3) nErrEff[e]++;
+		}
+		else if (n < 100) { // correct trial
 			ETarray[n] = tpnr->ET;
 			n++;
-			e = tpnr->effector;
-			w = tpnr->windowSize;
-			if (e >= 0 && e < 3 && w >= 1 && w <= MAX_HORIZON && nCell[e][w] < 100) {
-				ETcell[e][w][nCell[e][w]] = tpnr->ET;
-				nCell[e][w]++;
+			if (e >= 0 && e < 3 && nEff[e] < 100) {
+				ETeff[e][nEff[e]] = tpnr->ET;
+				nEff[e]++;
 			}
 		}
-		nn++; //count total trials
 	}
 
+	// Point thresholds per effector (all window sizes pooled). A threshold is only
+	// replaced by a faster one, and only if the effector's error rate in this block
+	// is below ERthreshold. The first estimate of an effector is always taken.
 	for (e = 0; e < 3; e++) {
-		for (w = 1; w <= MAX_HORIZON; w++) {
-			if (nCell[e][w] > 0) {
-				estimated_ET_percentiles[e][w][0] = percentile(ETcell[e][w], nCell[e][w], percentile_low);
-				estimated_ET_percentiles[e][w][1] = percentile(ETcell[e][w], nCell[e][w], percentile_high);
-			}
-		}
+		if (nEff[e] == 0) continue;
+		erEff = 100.0 * nErrEff[e] / nnEff[e];
+		bool first = (estimated_ET_percentiles[e][1] <= 0);
+		if (!first && erEff >= ERthreshold) continue;
+		est = percentile(ETeff[e], nEff[e], percentile_low);
+		if (first || est < estimated_ET_percentiles[e][0]) estimated_ET_percentiles[e][0] = est;
+		est = percentile(ETeff[e], nEff[e], percentile_high);
+		if (first || est < estimated_ET_percentiles[e][1]) estimated_ET_percentiles[e][1] = est;
 	}
 
 	b = b + 1; //increase counter of block number
 	if (n > 0) { //if at least one correct trial
 		medianETarray[b] = median(ETarray, n); //median of execution times
-		ERarray[b] = (((double)gNumErrorsBlock) / (double)(nn) * 100); //error rate
 	}
 	else {
 		medianETarray[b] = 0;
-		ERarray[b] = 100;
 	}
+	ERarray[b] = (nn > 0) ? 100.0 * nErr / nn : 100; //error rate
 
 	// print FEEDBACK on the screen 
 	sprintf(buffer, "Acc %3.1f%%     ET %2.0fms     PTS %2.1f", 100 - ERarray[b], medianETarray[b], gNumPointsBlock);
@@ -894,7 +898,7 @@ void MyTrial::updateTextDisplay() {
 	// sprintf(tDispBuffer, "time: %2.2f   TRtime: %d   slice:%d   metronome: %d ", gCounter.readTotTime(), gCounter.readTR(), gCounter.readSlice(), timeMet);
 	// tDisp.setText(tDispBuffer, 2, 0);
 
-	sprintf(tDispBuffer, "effector: %d   windowSize: %d   ET perc low: %.0f  high: %.0f", effector, windowSize, ETpercentileLow, ETpercentileHigh);
+	sprintf(tDispBuffer, "effector: %d   windowSize: %d   ET thresholds low: %.0f  high: %.0f", effector, windowSize, ETpercentileLow, ETpercentileHigh);
 	tDisp.setText(tDispBuffer, 1, 0);
 
 	sprintf(tDispBuffer, "sylend: %s   sylcheck: %d   seqCounter: %d/%d", gSpeechEndOnOffset ? "offset" : "onset", gSpeechCheckSyllable, seqCounter, seqLength);
@@ -1201,8 +1205,8 @@ void MyTrial::control() {
 		for (i = 0; i < NUMFINGERS; i++) {
 			fingerPressIdx[i] = -1;
 		}
-		ETpercentileLow = estimated_ET_percentiles[effector][windowSize][0];
-		ETpercentileHigh = estimated_ET_percentiles[effector][windowSize][1];
+		ETpercentileLow = estimated_ET_percentiles[effector][0];
+		ETpercentileHigh = estimated_ET_percentiles[effector][1];
 		dataman.clear();
 		timeMet = 0; //reset metronome for next trial
 
@@ -1560,8 +1564,11 @@ void MyTrial::control() {
 				beepStopReal = gTimer.getRealtime();
 			}
 			else if (isError == 0) {
-				// points against this effector's ET percentiles for this window size (from previous blocks)
-				if (ET < ETpercentileLow) {
+				// points against this effector's ET thresholds (from previous blocks); none until they are set
+				if (ETpercentileHigh <= 0) {
+					points = 0;
+				}
+				else if (ET < ETpercentileLow) {
 					points = 3;
 				}
 				else if (ET > ETpercentileHigh) {
@@ -1572,7 +1579,12 @@ void MyTrial::control() {
 				}
 				gs.clearCues();
 				gs.size[1] = 8; // size of feedback text
-				sprintf(buffer, "+%d", points);
+				if (ETpercentileHigh > 0) {
+					sprintf(buffer, "+%d", points);
+				}
+				else {
+					sprintf(buffer, ""); // no thresholds yet for this effector: no points shown
+				}
 				PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
 				beepStopReal = gTimer.getRealtime();
 

@@ -15,7 +15,7 @@ Each block uses one effector. Speech blocks start with classifier calibration tr
 
 Speech syllables come from the speech classifier over UDP: see [ClassifierProtocol.md](ClassifierProtocol.md).
 
-Points (non-error, non-calibration trials): +3 if ET is below the low threshold, +1 between the thresholds, 0 above. Each effector has its own two thresholds, the 25th and 75th percentiles of ET over the correct trials of a block of that effector, all window sizes pooled. After every block a threshold is replaced only by a faster one, and only if that effector's error rate in the block is below 20% (`ERthreshold`); calibration trials and trials skipped with space are left out. Until an effector has thresholds, its trials show no points. Errors get −1, moving before the go cue −5.
+Points (non-error, non-calibration trials): +3 if ET is below the low threshold, +1 between the thresholds, 0 above. Each effector has its own two thresholds, the 25th and 75th percentiles of ET over the correct trials of a block of that effector, all window sizes pooled. After every block a threshold is replaced only by a faster one, and only if that effector's error rate in the block is below 20% (`ERthreshold`); calibration trials and trials skipped with space are left out. Until an effector has thresholds, its trials show no points. Errors get −1, moving before the go cue −5. Thresholds are saved after every block to `SpeechFingerOnlinePlanning_<subj>_thresholds.txt` in the data folder and loaded again for that subject, so they carry over to a restart and to day 2.
 
 ### Target file (`.tgt`)
 
@@ -35,7 +35,24 @@ Tab-separated with a header row, one trial per line:
 | precueTime | preview duration, ms |
 | isCalib | optional; 1 = classifier calibration trial (speech only, no points) |
 
-Target files are made by `TargetFileMaker.ipynb` in the SpeechFingerOnlinePlanning analysis folder.
+Target files are named `sn<subject>_bn<block>.tgt` and are made by `TargetFileMaker.ipynb` in the SpeechFingerOnlinePlanning analysis folder.
+
+### Running a block
+
+```
+subj 3
+run 4 sn3_bn4.tgt
+```
+
+Before a block starts, the program checks:
+
+- the subject number is set with `subj` and is a plain number (`3`, not `03` or `s3`);
+- the file name matches the subject and block number (`sn3_bn4.tgt` only runs as block 4 of subject 3); other file names ask for confirmation;
+- every trial in the file is for this subject, and the block has one effector (0 or 2);
+- the previous block has been run (otherwise it asks for confirmation);
+- the block has not been run already (otherwise it asks before overwriting; the `.dat` rows of a re-run block are appended, so the analysis has to drop the earlier run).
+
+The command window then shows the subject, block, effector, number of trials and the current point thresholds.
 
 ### Command window
 
@@ -45,8 +62,8 @@ Target files are made by `TargetFileMaker.ipynb` in the SpeechFingerOnlinePlanni
 | `sylport <port>` | port for syllable events (default 5005) |
 | `sylend 1\|0` | speech sequence ends at the last offset (1, default) or last onset (0) |
 | `sylcheck 1\|0` | wrong classified syllable is an error (1) or any syllable is accepted (0, default) |
-| `Finger_ET_percentile <low> <high>` | set the hand ET thresholds (ms) |
-| `Speech_ET_percentile <low> <high>` | set the speech ET thresholds (ms) |
+| `Finger_ET_percentile <low> <high>` | set the hand ET thresholds (ms) for the current subject (saved to the thresholds file) |
+| `Speech_ET_percentile <low> <high>` | set the speech ET thresholds (ms) for the current subject (saved to the thresholds file) |
 
 ### Data (`.dat`)
 

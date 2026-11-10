@@ -74,6 +74,10 @@ int percentile_high = 75;	///< Upper percentile for ETs
 /// ET point thresholds (25th and 75th percentile of correct trials) per effector (0 speech, 2 right hand),
 /// all window sizes pooled. Set at the end of each block (see MyBlock::giveFeedback); 0 = not set yet.
 double estimated_ET_percentiles[3][2] = {};
+string gStateSubject = "";		///< Subject whose point thresholds are loaded (see loadSubjectState)
+int subjectNumber();
+void loadSubjectState();
+void saveSubjectState(int blockn);
 
 double responseArray[MAX_PRESS] = { 1,1,1,1,1,1,1,1 };
 int symbolColor = 1;
@@ -344,11 +348,17 @@ bool MyExperiment::parseCommand(string arguments[], int numArgs) {
 			tDisp.print("USAGE: Finger_ET_percentile|Speech_ET_percentile low high");
 		}
 		else {
+			if (subjectNumber() == 0) {
+				tDisp.print("Set the subject number first: subj <number>");
+				return true;
+			}
 			int eff = (arguments[0] == "Finger_ET_percentile") ? 2 : 0;
 			sscanf(arguments[1].c_str(), "%f", &arg[0]);
 			sscanf(arguments[2].c_str(), "%f", &arg[1]);
+			loadSubjectState();
 			estimated_ET_percentiles[eff][0] = arg[0];
 			estimated_ET_percentiles[eff][1] = arg[1];
+			saveSubjectState(0);
 		}
 	}
 
@@ -437,10 +447,188 @@ void MyExperiment::onExit() {
 }
 
 ///////////////////////////////////////////////////////////////
+/// Run checks and per-subject point thresholds
+///////////////////////////////////////////////////////////////
+
+/// Subject number set with "subj": a positive whole number without leading zeros; 0 if not set or not valid
+int subjectNumber() {
+	const string& s = gExp->subjectName;
+	if (s.empty() || s.size() > 6 || s[0] == '0') return 0;
+	for (size_t i = 0; i < s.size(); i++) {
+		if (s[i] < '0' || s[i] > '9') return 0;
+	}
+	return atoi(s.c_str());
+}
+
+/// File with the subject's point thresholds, so they carry over to a restart or to day 2.
+/// One line per update: block effector low high; the last line of each effector is the current value.
+string thresholdFilename() {
+	return gExp->dataDir + gExp->getCode() + "_" + gExp->subjectName + "_thresholds.txt";
+}
+
+/// .mov file of a block of the current subject (same name as Block::init uses)
+string blockMovFile(int blockn) {
+	char buffer[16];
+	snprintf(buffer, sizeof(buffer), "%2.2d", blockn);
+	return gExp->dataDir + gExp->getCode() + "_" + gExp->subjectName + "_" + buffer + ".mov";
+}
+
+bool fileExists(const string& name) {
+	ifstream f(name.c_str());
+	return f.good();
+}
+
+/// On a new subject: clear thresholds and session points, then load the subject's saved thresholds
+void loadSubjectState() {
+	if (gExp->subjectName == gStateSubject) return;
+	gStateSubject = gExp->subjectName;
+	for (int e = 0; e < 3; e++) {
+		estimated_ET_percentiles[e][0] = 0;
+		estimated_ET_percentiles[e][1] = 0;
+	}
+	gNumPoints = 0;
+	b = 0;
+	ifstream in(thresholdFilename().c_str());
+	int bn, e;
+	double low, high;
+	while (in >> bn >> e >> low >> high) {
+		if (e >= 0 && e < 3) {
+			estimated_ET_percentiles[e][0] = low;
+			estimated_ET_percentiles[e][1] = high;
+		}
+	}
+}
+
+/// Append the current thresholds to the subject's threshold file
+void saveSubjectState(int blockn) {
+	ofstream out(thresholdFilename().c_str(), ios::out | ios::app);
+	if (!out) {
+		tDisp.print("Could not write " + thresholdFilename());
+		return;
+	}
+	for (int e = 0; e < 3; e++) {
+		if (estimated_ET_percentiles[e][1] > 0) {
+			out << blockn << "\t" << e << "\t" << estimated_ET_percentiles[e][0] << "\t" << estimated_ET_percentiles[e][1] << endl;
+		}
+	}
+}
+
+/// OK/Cancel popup for the experimenter; true on OK
+bool confirmRun(const string& text) {
+	return MessageBoxA(tDisp.windowHnd, text.c_str(), "Check before running", MB_ICONEXCLAMATION | MB_OKCANCEL) == IDOK;
+}
+
+///////////////////////////////////////////////////////////////
 /// Constructor 
 ///////////////////////////////////////////////////////////////
 MyBlock::MyBlock() {
 	state = WAIT_BLOCK;
+}
+
+///////////////////////////////////////////////////////////////
+/// init: checks the subject, block and target file before loading the block.
+/// - the subject number must be set ("subj <number>")
+/// - a target file named sn<N>_bn<M>.tgt must match the subject and block number
+///   (other names ask for confirmation)
+/// - every trial in the file must be for this subject, with one effector (0 or 2)
+/// - running a block before the previous one has been run asks for confirmation
+/// - Block::init asks before overwriting a block that already exists
+///////////////////////////////////////////////////////////////
+bool MyBlock::init(int blockn, string filename) {
+	char buffer[400];
+	int sn = subjectNumber();
+	if (sn == 0) {
+		if (gExp->subjectName.empty()) tDisp.print("Set the subject number first: subj <number>  (e.g. subj 3)");
+		else tDisp.print("Subject must be a plain number such as 3 (not 03 or s3): subj <number>");
+		return false;
+	}
+	if (blockn < 1) {
+		tDisp.print("The block number must be 1 or higher");
+		return false;
+	}
+
+	// Target file name sn<N>_bn<M>.tgt
+	int fileSn = 0, fileBn = 0, nChar = 0;
+	if (sscanf(filename.c_str(), "sn%d_bn%d.tgt%n", &fileSn, &fileBn, &nChar) == 2 && nChar == (int)filename.size()) {
+		if (fileSn != sn) {
+			snprintf(buffer, sizeof(buffer), "%s is for subject %d, but the subject is %d. Not run.", filename.c_str(), fileSn, sn);
+			tDisp.print(buffer);
+			return false;
+		}
+		if (fileBn != blockn) {
+			snprintf(buffer, sizeof(buffer), "%s is block %d, not block %d. Use: run %d %s", filename.c_str(), fileBn, blockn, fileBn, filename.c_str());
+			tDisp.print(buffer);
+			return false;
+		}
+	}
+	else {
+		snprintf(buffer, sizeof(buffer), "%s is not named sn%d_bn%d.tgt.\n\nRun it as block %d of subject %d anyway?", filename.c_str(), sn, blockn, blockn, sn);
+		if (!confirmRun(buffer)) return false;
+	}
+
+	// Trials in the target file: all for this subject, one effector
+	ifstream tgt(("target/" + filename).c_str());
+	if (!tgt) {
+		tDisp.print(filename + " Not Found");
+		return false;
+	}
+	string line;
+	getline(tgt, line); // header
+	int rows = 0, lineNum = 1, rowSn, rowGroup, rowEff, blockEff = -1;
+	while (getline(tgt, line)) {
+		lineNum++;
+		if (line.find_first_not_of(" \t\r") == string::npos) continue;
+		istringstream ss(line);
+		if (!(ss >> rowSn >> rowGroup >> rowEff)) {
+			snprintf(buffer, sizeof(buffer), "Cannot read line %d of %s. Not run.", lineNum, filename.c_str());
+			tDisp.print(buffer);
+			return false;
+		}
+		if (rowSn != sn) {
+			snprintf(buffer, sizeof(buffer), "Line %d of %s is for subject %d, but the subject is %d. Not run.", lineNum, filename.c_str(), rowSn, sn);
+			tDisp.print(buffer);
+			return false;
+		}
+		if (rowEff != 0 && rowEff != 2) {
+			snprintf(buffer, sizeof(buffer), "Line %d of %s has effector %d (must be 0 or 2). Not run.", lineNum, filename.c_str(), rowEff);
+			tDisp.print(buffer);
+			return false;
+		}
+		if (blockEff < 0) {
+			blockEff = rowEff;
+		}
+		else if (rowEff != blockEff) {
+			snprintf(buffer, sizeof(buffer), "%s mixes speech and hand trials. Not run.", filename.c_str());
+			tDisp.print(buffer);
+			return false;
+		}
+		rows++;
+	}
+	tgt.close();
+	if (rows == 0) {
+		tDisp.print(filename + " has no trials. Not run.");
+		return false;
+	}
+
+	// Blocks are run in order
+	if (blockn > 1 && !fileExists(blockMovFile(blockn - 1))) {
+		snprintf(buffer, sizeof(buffer), "Block %d of subject %d has not been run yet.\n\nRun block %d anyway?", blockn - 1, sn, blockn);
+		if (!confirmRun(buffer)) return false;
+	}
+
+	loadSubjectState();
+	if (!Block::init(blockn, filename)) return false;
+
+	if (estimated_ET_percentiles[blockEff][1] > 0) {
+		snprintf(buffer, sizeof(buffer), "Subj %d  Block %d  %s  %d trials  points thresholds %.0f / %.0f ms", sn, blockn,
+			blockEff == 0 ? "SPEECH" : "HAND", numTrials, estimated_ET_percentiles[blockEff][0], estimated_ET_percentiles[blockEff][1]);
+	}
+	else {
+		snprintf(buffer, sizeof(buffer), "Subj %d  Block %d  %s  %d trials  no point thresholds yet", sn, blockn,
+			blockEff == 0 ? "SPEECH" : "HAND", numTrials);
+	}
+	tDisp.print(buffer);
+	return true;
 }
 
 ///////////////////////////////////////////////////////////////
@@ -582,6 +770,7 @@ void MyBlock::giveFeedback() {
 		est = percentile(ETeff[e], nEff[e], percentile_high);
 		if (first || est < estimated_ET_percentiles[e][1]) estimated_ET_percentiles[e][1] = est;
 	}
+	saveSubjectState(blockNumber);
 
 	b = b + 1; //increase counter of block number
 	if (n > 0) { //if at least one correct trial

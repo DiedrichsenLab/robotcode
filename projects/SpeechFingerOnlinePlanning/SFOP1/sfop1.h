@@ -107,6 +107,7 @@ public:
 class MyBlock :public Block {
 public:
 	MyBlock();
+	virtual bool init(int blocknum, string filename);	// checks subject, block and target file, then loads the block
 	virtual Trial* getTrial();		// create a new Trial 
 	virtual void giveFeedback();
 	virtual void start();

@@ -9,13 +9,13 @@ Trial timeline:
 1. Cues appear with the effector symbol (`#` hand, `$` speech). The first `windowSize` digits are visible (preview, `precueTime`, 1600 ms). Finger forces must stay inside the baseline area during the preview (hand and speech trials). Moving a finger, or a syllable onset from the classifier in a speech trial, before the go tone aborts the trial at the end of the preview (`isCross` = 1, error, −5 points); calibration trials are not aborted for speech.
 2. Go tone. Each press (hand) or syllable onset (speech) colours that digit and reveals the next one, so `windowSize` digits ahead stay visible.
 3. The sequence ends when all fingers are released after the last press (hand) or at the offset of the last syllable (speech). The last digit's colour stays for 500 ms, then points are shown.
-4. Speech trials have no time limit when `execTime` is 0. The experimenter ends a trial with space (e.g. when the classifier missed a syllable); `e` marks the trial as an error, and space then ends it.
+4. Speech trials have no time limit when `execTime` is 0. The experimenter ends a trial with space (e.g. when the classifier missed a syllable); `e` marks the trial as an error, and space then ends it. A trial ended with space gets no points (0), or −1 if it was marked with `e`.
 
 Each block uses one effector. Speech blocks start with classifier calibration trials (`isCalib` = 1: whole sequence visible, no points), and the ITI after the last one is at least 5 s.
 
 Speech syllables come from the speech classifier over UDP: see [ClassifierProtocol.md](ClassifierProtocol.md).
 
-Points (non-error, non-calibration trials): +3 if ET is below the low threshold, +1 between the thresholds, 0 above. Each effector has its own two thresholds, the 25th and 75th percentiles of ET over the correct trials of a block of that effector, all window sizes pooled. After every block a threshold is replaced only by a faster one, and only if that effector's error rate in the block is below 20% (`ERthreshold`); calibration trials and trials skipped with space are left out. Until an effector has thresholds, its trials show no points. Errors get −1, moving before the go cue −5. Thresholds are saved after every block to `SpeechFingerOnlinePlanning_<subj>_thresholds.txt` in the data folder and loaded again for that subject, so they carry over to a restart and to day 2.
+Points (non-error, non-calibration trials): +3 if ET is below the low threshold, +1 between the thresholds, 0 above. Each effector has its own two thresholds, the 25th and 75th percentiles of ET over the correct trials of a block of that effector, all window sizes pooled. After every block a threshold is replaced only by a faster one, and only if that effector's error rate in the block is below 20% (`ERthreshold`); calibration trials and trials skipped with space are left out (a skipped trial marked with `e` counts as an error). Until an effector has thresholds, its trials show no points. Errors get −1, moving before the go cue −5. Thresholds are saved after every block to `SpeechFingerOnlinePlanning_<subj>_thresholds.txt` in the data folder and loaded again for that subject, so they carry over to a restart and to day 2.
 
 ### Target file (`.tgt`)
 
@@ -71,7 +71,7 @@ The command window then shows the subject, block, effector, number of trials and
 
 - Times are ms on the trial clock (from cue onset). `pressTime` is the press or syllable onset, `releaseTime` the release of that key or the syllable offset.
 - `RT` is from the go tone to the first press / onset, `MT` from the first press / onset to the end of the sequence, `ET = RT + MT`.
-- `timingError` = 1 when a speech trial was ended by the experimenter (space) or reached `execTime`. Such trials are not errors, but their ET is not the participant's.
+- `timingError` = 1 when a speech trial was ended by the experimenter (space) or reached `execTime`. Such trials are not errors (unless marked with `e`, then `isError` = 1), but their ET is not the participant's.
 - `ETpercentileLow/High` are the point thresholds used on that trial.
 
 Data go to `C:/data/SpeechFingerOnlinePlanning/SFOP1/`, with one `.wav` per trial.

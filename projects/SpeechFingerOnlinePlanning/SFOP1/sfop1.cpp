@@ -737,7 +737,7 @@ void MyBlock::giveFeedback() {
 
 	for (i = 0; i < trialNum; i++) { //check each trial
 		tpnr = (MyTrial*)trialVec.at(i);
-		if (tpnr->isCalib == 1 || tpnr->timingError == 1) { // calibration and skipped trials don't count
+		if (tpnr->isCalib == 1 || (tpnr->timingError == 1 && tpnr->isError == 0)) { // calibration and skipped trials don't count; skipped after 'e' is an error
 			continue;
 		}
 		e = tpnr->effector;
@@ -1771,6 +1771,12 @@ void MyTrial::control() {
 				PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
 				beepStopReal = gTimer.getRealtime();
 			}
+			else if (isError == 0 && timingError == 1) { // ended by the experimenter (space): no points
+				points = 0;
+				gs.clearCues();
+				PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
+				beepStopReal = gTimer.getRealtime();
+			}
 			else if (isError == 0) {
 				// points against this effector's ET thresholds (from previous blocks); none until they are set
 				if (ETpercentileHigh <= 0) {
@@ -1819,7 +1825,7 @@ void MyTrial::control() {
 				gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
 			}
 
-			else if (isError == 1 && timingError == 0) {
+			else if (isError == 1) { // error, including 'e' followed by space
 				points = -1;
 				// PLAY SOUND 
 				PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
@@ -1827,15 +1833,6 @@ void MyTrial::control() {
 				gs.clearCues(); sprintf(buffer, "%d", points);
 				gs.lineColor[1] = 2; // red
 				gs.line[1] = buffer; gs.lineYpos[1] = 5.4;
-			}
-			else if (isError ==1 && fixed_dur == 1){
-				points = -1;
-				// PLAY SOUND 
-				PlaySound(TASKSOUNDS[0].c_str(), NULL, SND_ASYNC);
-				beepStopReal = gTimer.getRealtime();
-				gs.clearCues(); sprintf(buffer, "Finger pressed");
-				gs.lineColor[2] = 2; // red
-				gs.line[2] = buffer; gs.lineYpos[2] = 5.4;
 			}
 			//else if (isError == 1 && timingError == 1) {
 			//	points = -1;

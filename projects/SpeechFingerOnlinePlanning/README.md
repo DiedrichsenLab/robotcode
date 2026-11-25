@@ -1,6 +1,6 @@
 # SpeechFingerOnlinePlanning
 
-Online planning of sequences produced with the fingers or by speech. On every trial the participant presses (right hand) or says (speech) a random sequence of 8 digits (1–5 for the hand, one digit per finger; 2–6 for speech). Only the next `windowSize` digits are visible (the horizon); the others are shown as `*`, and each press or syllable onset reveals one more digit.
+Online planning of sequences produced with the fingers or by speech. On every trial the participant presses (right hand) or says (speech) a random sequence of 8 digits (2–6; for the hand 2 = thumb … 6 = little finger, set by `THUMB_DIGIT` in sfop1.cpp). Only the next `windowSize` digits are visible (the horizon); the others are shown as `*`, and each press or syllable onset reveals one more digit.
 
 ## SFOP1
 
@@ -73,5 +73,6 @@ The command window then shows the subject, block, effector, number of trials and
 - `RT` is from the go tone to the first press / onset, `MT` from the first press / onset to the end of the sequence, `ET = RT + MT`.
 - `timingError` = 1 when a speech trial was ended by the experimenter (space) or reached `execTime`. Such trials are not errors (unless marked with `e`, then `isError` = 1), but their ET is not the participant's.
 - `ETpercentileLow/High` are the point thresholds used on that trial.
+- `press1..8` are the cue digits and `response1..8` the produced digits: the classified syllable (speech) or the pressed finger as a cue digit (hand, 2 = thumb … 6 = little finger).
 
 Data go to `C:/data/SpeechFingerOnlinePlanning/SFOP1/`, with one `.wav` per trial.

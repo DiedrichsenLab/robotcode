@@ -35,6 +35,7 @@ string gSyllableHost = "169.254.135.89";		///< Classifier IP for trial-end messa
 unsigned short gSyllableHostPort = 5006;	///< Classifier UDP port for trial-end messages (placeholder; override with "sylhost")
 int gSpeechEndOnOffset = 1;		///< Speech sequence ends at the last syllable's offset (1) or onset (0); set with "sylend"
 int gSpeechCheckSyllable = 0;	///< Score the classifier's syllable identity: wrong syllable = error (1) or accept any (0); set with "sylcheck"
+const int THUMB_DIGIT = 2;		///< Cue digit of the thumb: digits 2-6 = thumb to little finger (2-6 for speech too)
 char MASK_CHAR = '*';			///< Character shown in place of digits outside the horizon
 
 ///< For Thread safety this SHOULD NOT be assessed While 
@@ -1636,7 +1637,7 @@ void MyTrial::control() {
 					state = WAIT_RELEASE;
 				}
 				else{
-					response[seqCounter] = pressedFinger;
+					response[seqCounter] = pressedFinger + THUMB_DIGIT - 1;	// as a cue digit (2 = thumb ... 6 = little finger)
 					handPressed[seqCounter] = pressedHand;
 					pressTime[seqCounter] = gTimer[1];
 					fingerPressIdx[pressedFinger - 1] = seqCounter;	// its release time is taken in the force loop

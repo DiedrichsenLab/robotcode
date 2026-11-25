@@ -1,6 +1,6 @@
 # SpeechFingerOnlinePlanning
 
-Online planning of sequences produced with the fingers or by speech. On every trial the participant presses (right hand) or says (speech) a random sequence of 8 digits (1–5). Only the next `windowSize` digits are visible (the horizon); the others are shown as `*`, and each press or syllable onset reveals one more digit.
+Online planning of sequences produced with the fingers or by speech. On every trial the participant presses (right hand) or says (speech) a random sequence of 8 digits (1–5 for the hand, one digit per finger; 2–6 for speech). Only the next `windowSize` digits are visible (the horizon); the others are shown as `*`, and each press or syllable onset reveals one more digit.
 
 ## SFOP1
 

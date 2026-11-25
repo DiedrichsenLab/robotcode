@@ -15,7 +15,7 @@ Every message is one UDP datagram of 8 bytes, little-endian, Python `struct` for
 |------|-------|-------|
 | 0 | magic | `0xAB` |
 | 1 | type | `1` = onset (syllable starts), `0` = offset (syllable ends) |
-| 2 | syllable | spoken digit, 1–5 |
+| 2 | syllable | spoken digit, 2–6 |
 | 3 | index | position of the syllable in the trial, 1-based (1 for the first syllable after the go cue). The onset and offset of the same syllable carry the same index. `0` = not given |
 | 4–7 | devTimeMs | classifier clock in ms (uint32), written to the `.dat` file only |
 

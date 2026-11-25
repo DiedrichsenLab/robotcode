@@ -70,14 +70,14 @@ def main():
     threading.Thread(target=listen, args=(sock,), daemon=True).start()
     dest = (args.host, args.port)
     t0 = time.monotonic()
-    print(f'Sending to {dest[0]}:{dest[1]}, listening on {args.listen_port}. Type digits 1-5 and Enter; Ctrl+C quits.')
+    print(f'Sending to {dest[0]}:{dest[1]}, listening on {args.listen_port}. Type digits 2-6 and Enter; Ctrl+C quits.')
     try:
         while True:
             seq = input('> ').strip()
             if not seq:
                 continue
-            if not all(c in '12345' for c in seq):
-                print('digits 1-5 only')
+            if not all(c in '23456' for c in seq):
+                print('digits 2-6 only')
                 continue
             send_sequence(sock, dest, seq, args.ioi, args.dur, not args.no_index, t0)
     except (KeyboardInterrupt, EOFError):

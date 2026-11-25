@@ -1,12 +1,13 @@
 """Stand-in for the speech classifier, for testing SFOP1 (and SFS1) without it.
 
-Type a digit sequence (e.g. 13524135) and press Enter: the script sends one
+Type a digit sequence (e.g. 35246325) and press Enter: the script sends one
 onset and one offset per digit to the experiment PC, using the message format
 in ../ClassifierProtocol.md. It also prints the trial-end and block-end
 messages the experiment sends back.
 
     python fake_classifier.py --host 127.0.0.1
     python fake_classifier.py --host 169.254.10.2 --ioi 350 --dur 200 --no-index
+    python fake_classifier.py --digits 12345      # SFS1 cues are 1-5
 
 On the experiment PC, point SFOP1 at this machine with `sylhost <ip> 5006`.
 """
@@ -63,6 +64,7 @@ def main():
     p.add_argument('--ioi', type=float, default=300, help='onset-to-onset interval, ms')
     p.add_argument('--dur', type=float, default=180, help='syllable duration (onset to offset), ms')
     p.add_argument('--no-index', action='store_true', help='send index 0 (offset pairs with the latest onset)')
+    p.add_argument('--digits', default='23456', help='allowed digits (SFOP1: 23456, SFS1: 12345)')
     args = p.parse_args()
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -70,14 +72,14 @@ def main():
     threading.Thread(target=listen, args=(sock,), daemon=True).start()
     dest = (args.host, args.port)
     t0 = time.monotonic()
-    print(f'Sending to {dest[0]}:{dest[1]}, listening on {args.listen_port}. Type digits 2-6 and Enter; Ctrl+C quits.')
+    print(f'Sending to {dest[0]}:{dest[1]}, listening on {args.listen_port}. Type digits {args.digits} and Enter; Ctrl+C quits.')
     try:
         while True:
             seq = input('> ').strip()
             if not seq:
                 continue
-            if not all(c in '23456' for c in seq):
-                print('digits 2-6 only')
+            if not all(c in args.digits for c in seq):
+                print(f'digits {args.digits} only')
                 continue
             send_sequence(sock, dest, seq, args.ioi, args.dur, not args.no_index, t0)
     except (KeyboardInterrupt, EOFError):

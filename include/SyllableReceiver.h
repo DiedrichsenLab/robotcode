@@ -12,7 +12,7 @@
 // syllable it detects; see projects/SpeechFingerOnlinePlanning/ClassifierProtocol.md.
 //   uint8_t  magic      0xAB sanity byte
 //   uint8_t  type       1 = onset (syllable starts), 0 = offset (syllable ends)
-//   uint8_t  syllable   spoken digit 1-5 (matches cue characters)
+//   uint8_t  syllable   spoken digit (matches cue characters: 2-6 in SFOP1, 1-5 in SFS1)
 //   uint8_t  index      position of the syllable in the trial, 1-based; the
 //                       onset and offset of one syllable carry the same index.
 //                       0 = not given: an offset then belongs to the most
@@ -68,7 +68,7 @@ enum TrialEndReason : uint8_t {
 // (gTimer[1], same as finger pressTime) at the moment the packet is received.
 struct SyllableEvent {
     int          type;        // SYLLABLE_ONSET or SYLLABLE_OFFSET
-    int          syllable;    // digit 1-5
+    int          syllable;    // spoken digit (as in the cue)
     int          index;       // 1-based position in the trial, 0 = not given
     double       arrivalTime; // gTimer[1] at receive
     unsigned int devTimeMs;   // device timestamp (logged only)
